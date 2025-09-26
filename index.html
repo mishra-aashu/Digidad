@@ -30,6 +30,7 @@
         .chat-header { display: flex; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #eee; margin-bottom: 10px; }
         .chat-header button { background: none; color: #007bff; padding: 0 10px 0 0; font-size: 24px; }
         .chat-input-area { display: flex; position: relative; }
+        .edit-name-icon { cursor: pointer; font-size: 16px; margin-left: 8px; }
         .chat-input-area input { flex-grow: 1; margin-right: 10px; margin-bottom: 0; }
         .media-img { max-width: 100%; border-radius: 15px; }
         .media-video { max-width: 100%; border-radius: 15px; }
@@ -90,6 +91,7 @@
                 <button onclick="showHomeScreen()">&#8592;</button>
                 <img id="peerProfilePic" class="profile-pic header-profile-pic" src="">
                 <div id="peerStatus" style="font-size: 12px; color: #007bff; margin-left: -10px;"></div>
+                <h3 style="margin: 0;" id="chatWith"></h3><span class="edit-name-icon" onclick="promptToEditPeerName()">✏️</span>
                 <h3 style="margin: 0;" id="chatWith"></h3>
             </div>
             <div id="chatBox"></div>
@@ -136,7 +138,7 @@
         toggleEmojiPicker(); // Hide picker after selection
     });
 
-    const api = "https://script.google.com/macros/s/AKfycbynOO8oN-JpMMaAxd3z9zVA8RN2rSb2blTmbzXdwFkA7IS1GMWWMHTtPypXCdWjdeMw/exec";
+    const api = "https://script.google.com/macros/s/AKfycbxC1ioZA7cszj_21LErm3b2EdQvUFiO2m0Wk6x2o2yopxz8mEisUj7WOo8s7LvEh5qN/exec";
     let userId = null, peerId = null, peerPhotoUrl = null;
     let messageInterval, chatListInterval, heartbeatInterval;
 
@@ -157,6 +159,18 @@
         });
     }
 
+    // Helper function for button loading states
+    function setButtonLoadingState(button, isLoading, text = "Loading...") {
+        if (isLoading) {
+            button.dataset.originalText = button.innerText;
+            button.innerText = text;
+            button.disabled = true;
+        } else {
+            button.innerText = button.dataset.originalText || button.innerText;
+            button.disabled = false;
+        }
+    }
+
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(el => el.style.display = 'none');
         document.getElementById(screenId).style.display = 'block';
@@ -165,10 +179,10 @@
     async function login() {
         const phoneInput = document.getElementById("phone");
         const phone = phoneInput.value;
+        const loginButton = phoneInput.nextElementSibling;
         if (!phone) { alert("Please enter a phone number."); return; }
         
-        // Show loading state
-        phoneInput.disabled = true;
+        setButtonLoadingState(loginButton, true);
         try {
             const data = await jsonpRequest(`${api}?action=login&phone=${phone}`);
             
@@ -193,7 +207,7 @@
             console.error("Login failed:", error);
             alert("Login request failed. Please check your connection and try again.");
         } finally {
-            phoneInput.disabled = false;
+            setButtonLoadingState(loginButton, false);
         }
     }
 
@@ -233,9 +247,10 @@
     async function startNewChat() {
         const phoneInput = document.getElementById("newPeerPhone");
         const phone = phoneInput.value;
+        const chatButton = phoneInput.nextElementSibling;
         if (!phone) { alert("Please enter a number to search."); return; }
 
-        phoneInput.disabled = true;
+        setButtonLoadingState(chatButton, true);
         try {
             const data = await jsonpRequest(`${api}?action=findUser&phone=${phone}`);
             if (data.status === 'found') {
@@ -247,7 +262,7 @@
             console.error("Find user failed:", error);
             alert("Could not search for the user. Please try again.");
         } finally {
-            phoneInput.disabled = false;
+            setButtonLoadingState(chatButton, false);
         }
     }
 
@@ -266,6 +281,24 @@
         loadMessages();
         if (messageInterval) clearInterval(messageInterval);
         messageInterval = setInterval(loadMessages, 3000); // Auto-refresh messages
+    }
+
+    function promptToEditPeerName() {
+        const currentName = document.getElementById('chatWith').innerText.replace('Chat with ', '');
+        const newName = prompt("Enter a new name for this contact:", currentName);
+
+        if (newName && newName.trim() !== "") {
+            google.script.run
+                .withSuccessHandler(response => {
+                    if (response.status === 'success') {
+                        document.getElementById('chatWith').innerText = `Chat with ${response.newName}`;
+                        alert("Name updated successfully!");
+                    } else {
+                        alert("Error updating name: " + response.message);
+                    }
+                })
+                .editPeerName(userId, peerId, newName.trim());
+        }
     }
 
     function showHomeScreen(isFirstLoad = false) {
@@ -289,17 +322,163 @@
     function uploadProfilePicture() {
         const fileInput = document.getElementById('photoUpload');
         const file = fileInput.files[0];
+        const uploadButton = document.querySelector('button[onclick*="photoUpload"]');
         if (!file) return;
 
         const reader = new FileReader();
         reader.onload = async function(event) {
             const fileData = event.target.result;
             const statusDiv = document.getElementById('upload-status');
-            statusDiv.innerText = "Uploading...";
+            setButtonLoadingState(uploadButton, true, "Uploading...");
 
-            try {
-                const data = await jsonpRequest(`${api}?action=uploadPhoto&userId=${userId}&mimeType=${file.type}&fileData=${encodeURIComponent(fileData)}`);
-                if (data.status === 'uploaded') {
+            google.script.run
+                .withSuccessHandler(response => {
+                    setButtonLoadingState(uploadButton, false);
+                    if (response.status === 'uploaded') {
+                        statusDiv.innerText = "Upload successful!";
+                        document.getElementById('myProfilePic').src = response.photoUrl;
+                    } else {
+                        statusDiv.innerText = "Upload failed: " + (response.message || 'Unknown error');
+                    }
+                })
+                .withFailureHandler(error => {
+                    setButtonLoadingState(uploadButton, false);
+                    statusDiv.innerText = "Upload request failed: " + error.message;
+                })
+                .uploadPhoto(userId, fileData, file.type);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function sendMedia() {
+        const fileInput = document.getElementById('mediaUpload');
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const fileData = event.target.result;
+            const type = file.type.startsWith('image/') ? 'image' : 'video';
+            
+            google.script.run
+                .withSuccessHandler(response => {
+                    if (response.status === 'sent') {
+                        loadMessages();
+                    } else {
+                        alert("Failed to send media: " + response.message);
+                    }
+                })
+                .withFailureHandler(error => alert("Failed to send media: " + error.message))
+                .sendMediaMessage(userId, peerId, fileData, file.type, type);
+        };
+        reader.readAsDataURL(file);
+        fileInput.value = ''; // Reset file input
+    }
+
+    async function sendMsg() {
+        const msgInput = document.getElementById("msg");
+        if (!msgInput.value) return;
+        await jsonpRequest(`${api}?action=sendMessage&fromId=${userId}&toId=${peerId}&type=text&msg=${encodeURIComponent(msgInput.value)}`);
+        msgInput.value = "";
+        loadMessages(); // Refresh messages after sending
+    }
+
+    async function deleteMessage(messageId) {
+        if (!confirm("Are you sure you want to delete this message?")) return;
+        
+        const data = await jsonpRequest(`${api}?action=deleteMessage&messageId=${messageId}&userId=${userId}`);
+        if (data.status === 'deleted') {
+            loadMessages();
+        } else {
+            alert("Error: Could not delete the message.");
+        }
+    }
+
+    function showEditInput(messageId, currentMsg) {
+        const bubble = document.querySelector(`[data-message-id='${messageId}']`);
+        if (!bubble) return;
+
+        // Remove "(edited)" tag for editing
+        const originalMsg = currentMsg.replace(/\s\(edited\)$/, '');
+        bubble.innerHTML = `
+            <input type="text" value="${originalMsg}" class="edit-input" style="width: 80%;"/>
+            <button onclick="saveEdit('${messageId}')">Save</button>
+            <button onclick="loadMessages()">Cancel</button>
+        `;
+    }
+
+    async function saveEdit(messageId) {
+        const input = document.querySelector(`[data-message-id='${messageId}'] .edit-input`);
+        if (!input) return;
+
+        const newMsg = input.value;
+        if (!newMsg) { alert("Message cannot be empty."); return; }
+
+        const data = await jsonpRequest(`${api}?action=editMessage&messageId=${messageId}&newMsg=${encodeURIComponent(newMsg)}&userId=${userId}`);
+        if (data.status === 'edited') {
+            loadMessages();
+        } else {
+            alert("Error: Could not edit the message.");
+        }
+    }
+
+    async function loadMessages() {
+        if (!userId || !peerId) return;
+        const data = await jsonpRequest(`${api}?action=getMessages&userId=${userId}&peerId=${peerId}`);
+        if (data.status === 'error') {
+            console.error("Error loading messages:", data.message);
+            // Stop trying if there's an error to avoid spamming
+            if (messageInterval) clearInterval(messageInterval);
+            return;
+        }
+
+        // Handle typing indicator
+        const typingIndicator = document.getElementById("typingIndicator");
+        typingIndicator.style.display = data.isTyping ? 'block' : 'none';
+        // Adjust input area if typing indicator is shown
+
+        // Update peer's online status in chat header
+        document.getElementById('peerStatus').innerText = data.isOnline ? 'Online' : '';
+
+        document.querySelector('.chat-input-area input').style.width = data.isTyping ? 'calc(100% - 100px)' : 'calc(100% - 26px)';
+
+        const isScrolledToBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 1;
+
+        const box = document.getElementById("chatBox");
+        box.innerHTML = "";
+        data.messages.forEach(m => {
+            const messageContainer = document.createElement("div");
+            messageContainer.className = "message-container";
+            const bubble = document.createElement("div");
+            
+            if (m.type === 'image' && m.mediaUrl) {
+                bubble.className = "media-bubble " + (m.from == userId ? "me" : "them");
+                bubble.innerHTML = `<img src="${m.mediaUrl}" class="media-img">`;
+            } else if (m.type === 'video' && m.mediaUrl) {
+                bubble.className = "media-bubble " + (m.from == userId ? "me" : "them");
+                bubble.innerHTML = `<video src="${m.mediaUrl}" class="media-video" controls></video>`;
+            } else {
+                // Default to text message
+                bubble.dataset.messageId = m.id; // Set message ID as a data attribute
+                bubble.className = "message-bubble " + (m.from == userId ? "me" : "them");
+                bubble.innerText = m.msg + (m.from == userId && m.seen === "true" ? " ✔" : "");
+            }
+
+            messageContainer.appendChild(bubble);
+            box.appendChild(messageContainer);
+
+            // Add event listeners for own messages
+            if (m.type === 'text' && m.from == userId && !m.msg.includes("[This message was deleted]")) {
+                bubble.style.cursor = 'pointer';
+                bubble.onclick = () => deleteMessage(m.id); // Single click to delete
+                bubble.ondblclick = (e) => { e.preventDefault(); showEditInput(m.id, m.msg); }; // Double click to edit
+            }
+        });
+        if(isScrolledToBottom) box.scrollTop = box.scrollHeight;
+    }
+    </script>
+</body>
+</html>
                     statusDiv.innerText = "Upload successful!";
                     document.getElementById('myProfilePic').src = data.photoUrl;
                 } else {
