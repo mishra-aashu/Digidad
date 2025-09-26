@@ -23,12 +23,12 @@
   </div>
 
   <script>
-    const api = "https://script.google.com/macros/s/AKfycbyUekoAqWq8ZYWbo2rK-ElCq_IH8id1skBFkNCTP-3LIn7qQk2rr6WhQIdGpcck0pPJ/exec";
+    const api = "https://script.google.com/macros/s/AKfycbzNumhHH1qiAoEZdelZ2qYO2R9OXPpjx-IwCt4oXNww0J1dDzLGCIgRp4WX1U0S-vn6/exec";
     let userId = null, peerId = null;
 
     async function register() {
       let phone = document.getElementById("phone").value;
-      let res = await fetch(api + "?action=register&phone=" + phone, {method: "POST"});
+      let res = await fetch(api + "?action=register&phone=" + phone);
       let data = await res.json();
       userId = data.userId;
       document.getElementById("loginScreen").style.display = "none";
@@ -37,7 +37,7 @@
 
     async function setPeer() {
       let phone = document.getElementById("peerPhone").value;
-      let res = await fetch(api + "?action=register&phone=" + phone, {method:"POST"});
+      let res = await fetch(api + "?action=register&phone=" + phone);
       let data = await res.json();
       peerId = data.userId;
       loadMessages();
@@ -46,13 +46,13 @@
 
     async function sendMsg() {
       let msg = document.getElementById("msg").value;
-      await fetch(api + `?action=sendMessage&fromId=${userId}&toId=${peerId}&msg=${encodeURIComponent(msg)}`, {method:"POST"});
+      await fetch(api + `?action=sendMessage&fromId=${userId}&toId=${peerId}&msg=${encodeURIComponent(msg)}`);
       document.getElementById("msg").value = "";
       loadMessages();
     }
 
     async function loadMessages() {
-      let res = await fetch(api + `?action=getMessages&userId=${userId}&peerId=${peerId}`, {method:"POST"});
+      let res = await fetch(api + `?action=getMessages&userId=${userId}&peerId=${peerId}`);
       let data = await res.json();
       let box = document.getElementById("chatBox");
       box.innerHTML = "";
