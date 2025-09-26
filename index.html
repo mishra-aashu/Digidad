@@ -10,7 +10,7 @@
         #chatBox div { margin: 5px 0; padding: 8px; border-radius: 5px; max-width: 70%; }
         .me { text-align: right; background-color: #dcf8c6; margin-left: auto; }
         .them { text-align: left; background-color: #f1f0f0; }
-        #chatList div { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .chat-list-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
         #chatList div:hover { background-color: #f9f9f9; }
         .screen { display: none; }
         #loginScreen { display: block; }
@@ -47,9 +47,17 @@
     </div>
 
     <script>
-    const api = "https://script.google.com/macros/s/AKfycbyEDnMmt4_IfG8DFUKiO9p_-NA4M9Uj0K7BWAzh0O5vDpQ-5wBGnbifChNQeQ6oIaUY/exec";
+    // Add event listener for 'Enter' key on message input
+    document.getElementById("msg").addEventListener("keyup", function(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            sendMsg();
+        }
+    });
+
+    const api = "https://script.google.com/macros/s/AKfycbwCH81OuCzlIAqVUvDXC8kmCArF_PXEmmD7QLkek-A1I5yNX9oWHWAaiOlWtm-Omic/exec";
     let userId = null, peerId = null;
-    let messageInterval;
+    let messageInterval, chatListInterval;
 
     // JSONP request function to bypass CORS issues
     function jsonpRequest(url) {
@@ -80,12 +88,26 @@
         
         // Show loading state
         phoneInput.disabled = true;
-        const data = await jsonpRequest(`${api}?action=login&phone=${phone}`);
-        phoneInput.disabled = false;
+        try {
+            const data = await jsonpRequest(`${api}?action=login&phone=${phone}`);
+            
+            // Backend se error aane par alert dikhayein
+            if (data.status === 'error') {
+                alert('An error occurred: ' + data.message);
+                return;
+            }
 
-        userId = data.userId;
-        showScreen('homeScreen');
-        renderChatList(data.chats);
+            // Login safal hone par userId set karein aur home screen dikhayein
+            userId = data.userId;
+            showScreen('homeScreen'); // Turant home screen par switch karein
+            showHomeScreen(true); // Chat list refresh setup karein
+            renderChatList(data.chats);
+        } catch (error) { // Network ya JSONP error hone par
+            console.error("Login failed:", error);
+            alert("Login request failed. Please check your connection and try again.");
+        } finally {
+            phoneInput.disabled = false;
+        }
     }
 
     function renderChatList(chats) {
@@ -97,27 +119,50 @@
         }
         chats.forEach(chat => {
             const div = document.createElement("div");
-            div.innerText = `Chat with ${chat.peerPhone}`;
+            div.className = "chat-list-item";
             div.onclick = () => openChat(chat.peerId, chat.peerPhone);
+
+            const time = chat.lastMessage.ts ? new Date(chat.lastMessage.ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
+
+            div.innerHTML = `
+                <div style="display: flex; justify-content: space-between;">
+                    <strong>${chat.peerPhone}</strong>
+                    <small>${time}</small>
+                </div>
+                <p style="margin: 4px 0 0; color: #555;">${chat.lastMessage.msg}</p>
+            `;
             chatListDiv.appendChild(div);
         });
     }
 
     async function startNewChat() {
-        const phone = document.getElementById("newPeerPhone").value;
+        const phoneInput = document.getElementById("newPeerPhone");
+        const phone = phoneInput.value;
         if (!phone) { alert("Please enter a number to search."); return; }
 
-        const data = await jsonpRequest(`${api}?action=findUser&phone=${phone}`);
-
-        if (data.status === 'found') {
-            openChat(data.userId, phone);
-        } else {
-            alert("User not found.");
+        phoneInput.disabled = true;
+        try {
+            const data = await jsonpRequest(`${api}?action=findUser&phone=${phone}`);
+            if (data.status === 'found') {
+                openChat(data.userId, phone);
+            } else {
+                alert("User not found.");
+            }
+        } catch (error) {
+            console.error("Find user failed:", error);
+            alert("Could not search for the user. Please try again.");
+        } finally {
+            phoneInput.disabled = false;
         }
     }
 
     function openChat(pId, pPhone) {
         peerId = pId;
+        
+        // Stop refreshing the chat list while in a chat
+        if (chatListInterval) clearInterval(chatListInterval);
+        chatListInterval = null;
+
         document.getElementById('chatWith').innerText = `Chat with ${pPhone}`;
         showScreen('chatScreen');
         loadMessages();
@@ -125,10 +170,21 @@
         messageInterval = setInterval(loadMessages, 3000); // Auto-refresh messages
     }
 
-    function showHomeScreen() {
+    function showHomeScreen(isFirstLoad = false) {
         if (messageInterval) clearInterval(messageInterval);
+        if (chatListInterval) clearInterval(chatListInterval);
         peerId = null;
         showScreen('homeScreen');
+
+        // Start auto-refreshing the chat list
+        chatListInterval = setInterval(async () => {
+            if (!userId) return;
+            const data = await jsonpRequest(`${api}?action=login&phone=${document.getElementById("phone").value}`);
+            if (data.chats) {
+                renderChatList(data.chats);
+            }
+        }, 5000); // Refresh chat list every 5 seconds
+
     }
 
     async function sendMsg() {
@@ -142,6 +198,12 @@
     async function loadMessages() {
         if (!userId || !peerId) return;
         const data = await jsonpRequest(`${api}?action=getMessages&userId=${userId}&peerId=${peerId}`);
+        if (data.status === 'error') {
+            console.error("Error loading messages:", data.message);
+            // Stop trying if there's an error to avoid spamming
+            if (messageInterval) clearInterval(messageInterval);
+            return;
+        }
         const box = document.getElementById("chatBox");
         box.innerHTML = "";
         data.messages.forEach(m => {
