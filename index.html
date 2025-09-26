@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Spreadsheet Messenger</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    #chatBox { border: 1px solid #ccc; height: 300px; overflow-y: scroll; padding: 10px; }
+    #chatBox div { margin: 5px 0; }
+    .me { text-align: right; color: blue; }
+    .them { text-align: left; color: green; }
+  </style>
+</head>
+<body>
+  <div id="loginScreen">
+    <h3>Enter Phone Number</h3>
+    <input type="text" id="phone"><button onclick="register()">Login</button>
+  </div>
+
+  <div id="chatScreen" style="display:none;">
+    <h3>Chat with <input type="text" id="peerPhone"><button onclick="setPeer()">Start</button></h3>
+    <div id="chatBox"></div>
+    <input type="text" id="msg"><button onclick="sendMsg()">Send</button>
+  </div>
+
+  <script>
+    const api = "https://script.google.com/macros/s/AKfycbyUekoAqWq8ZYWbo2rK-ElCq_IH8id1skBFkNCTP-3LIn7qQk2rr6WhQIdGpcck0pPJ/exec";
+    let userId = null, peerId = null;
+
+    async function register() {
+      let phone = document.getElementById("phone").value;
+      let res = await fetch(api + "?action=register&phone=" + phone, {method: "POST"});
+      let data = await res.json();
+      userId = data.userId;
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("chatScreen").style.display = "block";
+    }
+
+    async function setPeer() {
+      let phone = document.getElementById("peerPhone").value;
+      let res = await fetch(api + "?action=register&phone=" + phone, {method:"POST"});
+      let data = await res.json();
+      peerId = data.userId;
+      loadMessages();
+      setInterval(loadMessages, 3000); // auto refresh
+    }
+
+    async function sendMsg() {
+      let msg = document.getElementById("msg").value;
+      await fetch(api + `?action=sendMessage&fromId=${userId}&toId=${peerId}&msg=${encodeURIComponent(msg)}`, {method:"POST"});
+      document.getElementById("msg").value = "";
+      loadMessages();
+    }
+
+    async function loadMessages() {
+      let res = await fetch(api + `?action=getMessages&userId=${userId}&peerId=${peerId}`, {method:"POST"});
+      let data = await res.json();
+      let box = document.getElementById("chatBox");
+      box.innerHTML = "";
+      data.messages.forEach(m => {
+        let div = document.createElement("div");
+        div.className = (m.from == userId) ? "me" : "them";
+        div.innerText = m.msg + (m.seen == "true" ? " ✔" : "");
+        box.appendChild(div);
+      });
+      box.scrollTop = box.scrollHeight;
+    }
+  </script>
+</body>
+</html>
