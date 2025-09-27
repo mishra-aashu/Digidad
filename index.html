@@ -345,12 +345,14 @@
         <!-- Home Screen (Chat List & New Chat) -->
         <div id="homeScreen" class="screen">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h4>Start a New Chat</h4>
+                <h4>Digidad</h4>
                 <div>
+                    <button id="contacts-btn" onclick="showContactsScreen()" style="font-size: 18px; padding: 6px 10px; margin-right: 5px;">👥</button>
                     <button id="profile-btn" onclick="showProfileScreen()" style="font-size: 18px; padding: 6px 10px; margin-right: 5px;">👤</button>
                     <button id="theme-toggle-home" style="font-size: 18px; padding: 6px 10px;">🌙</button>
                 </div>
             </div>
+            <h4>Start a New Chat</h4>
             <input type="text" id="newPeerPhone" placeholder="Enter peer's phone...">
             <button onclick="startNewChat()">Chat</button>
             <hr style="margin: 20px 0;" id="chat-list-divider">
@@ -394,6 +396,22 @@
             </div>
             <div id="profile-details"></div>
         </div>
+
+        <!-- Contacts Screen -->
+        <div id="contactsScreen" class="screen">
+            <div class="chat-header">
+                <button class="back-button" onclick="showHomeScreen()"><i class="chevron"></i></button>
+                <h3 style="margin: 0; flex-grow: 1;">Your Contacts</h3>
+            </div>
+            <div style="padding: 20px; height: 100%; overflow-y: auto;">
+                <h4>Add New Contact</h4>
+                <input type="text" id="newContactName" placeholder="Contact Name...">
+                <input type="text" id="newContactPhone" placeholder="Contact Phone...">
+                <button onclick="saveNewContact()">Save Contact</button>
+                <hr style="margin: 20px 0;">
+                <div id="contactsList"></div>
+            </div>
+        </div>
     </div>
 
     <!-- Context Menu for Messages -->
@@ -415,7 +433,7 @@
     // =================================================================================
     // App State & Constants
     // =================================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbxjbDqkqfoJIjnAkPYHyvSFZ_X-7sOhvo__2l8wfakac0Qk9NRvlEbbM_MnsWYJQk29/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbw08rDhS4X9n_73m8S6XrWzVMPLvxGhEH3E_dB-E_UySonS44v3C4dHlgfa-Af0Gro/exec";
     const appState = {
         userId: null,
         userName: null,
@@ -702,6 +720,11 @@
             if (data.chats) {
                 localStorage.setItem('chatList', JSON.stringify(data.chats));
                 renderChatList(data.chats);
+            }
+            // Save contacts to localStorage
+            if (data.contacts) {
+                localStorage.setItem('contacts', JSON.stringify(data.contacts));
+                // We don't need to render them here, only on the contacts screen
             }
 
             startHeartbeat();
@@ -1014,6 +1037,88 @@
     }
 
     // =================================================================================
+    // Contacts Management
+    // =================================================================================
+
+    /**
+     * Shows the contacts screen and renders the list of saved contacts.
+     */
+    function showContactsScreen() {
+        showScreen('contactsScreen');
+        const savedContacts = JSON.parse(localStorage.getItem('contacts')) || [];
+        renderContacts(savedContacts);
+        // Optionally, you can fetch fresh contacts from the server here
+        // refreshContacts(); 
+    }
+
+    /**
+     * Renders the list of contacts.
+     * @param {Array<Object>} contacts - Array of contact objects {name, phone}.
+     */
+    function renderContacts(contacts) {
+        const contactsListDiv = document.getElementById("contactsList");
+        contactsListDiv.innerHTML = ""; // Clear previous list
+
+        if (!contacts || contacts.length === 0) {
+            contactsListDiv.innerHTML = "<p>No contacts saved yet.</p>";
+            return;
+        }
+
+        contacts.forEach(contact => {
+            const div = document.createElement("div");
+            div.className = "chat-list-item"; // Re-using style
+            div.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>${contact.name}</strong>
+                        <p style="margin: 4px 0 0; color: var(--list-item-subtext-color);">${contact.phone}</p>
+                    </div>
+                    <button onclick="startChatFromContact('${contact.phone}')">Chat</button>
+                </div>
+            `;
+            contactsListDiv.appendChild(div);
+        });
+    }
+
+    /**
+     * Saves a new contact to the server.
+     */
+    async function saveNewContact() {
+        const nameInput = document.getElementById("newContactName");
+        const phoneInput = document.getElementById("newContactPhone");
+        const name = nameInput.value.trim();
+        const phone = phoneInput.value.trim();
+
+        if (!name || !phone) {
+            showToast("Name and phone cannot be empty.", 'error');
+            return;
+        }
+
+        showToast("Saving contact...", 'info');
+        try {
+            const data = await jsonpRequest(`${API_URL}?action=addContact&ownerId=${appState.userId}&contactName=${encodeURIComponent(name)}&contactPhone=${encodeURIComponent(phone)}`);
+            if (data.status === 'success') {
+                showToast("Contact saved successfully!", 'success');
+                nameInput.value = '';
+                phoneInput.value = '';
+                // Refresh contacts list
+                const updatedContacts = data.contacts || [];
+                localStorage.setItem('contacts', JSON.stringify(updatedContacts));
+                renderContacts(updatedContacts);
+            } else {
+                showToast("Error: " + (data.message || "Could not save contact."), 'error');
+            }
+        } catch (error) {
+            showToast("Request failed. Check your connection.", 'error');
+        }
+    }
+    
+    function startChatFromContact(phone) {
+        document.getElementById('newPeerPhone').value = phone;
+        startNewChat();
+    }
+
+    // =================================================================================
     // Chat & Message Handling
     // =================================================================================
     function getChatId(userA, userB) {
@@ -1029,17 +1134,21 @@
         const msgInput = document.getElementById("msg");
         if (!msgInput.value) return;
         const msgText = msgInput.value;
+        msgInput.value = ""; // Clear input immediately
 
         // Optimistically add to UI and save to localStorage
         const tempMsg = {
             from: appState.userId,
             msg: msgText,
+            ts: new Date().toISOString(),
+            id: `temp_${Date.now()}` // Give it a temporary ID
         };
-        renderMessages([tempMsg], false); // Optimistically show the message
-        msgInput.value = "";
+        // Append the new message instead of re-rendering everything
+        renderSingleMessage(tempMsg);
+        scrollToBottom();
 
         try {
-            await jsonpRequest(`${API_URL}?action=sendMessage&fromId=${appState.userId}&toId=${appState.peerId}&msg=${encodeURIComponent(msgText)}`);
+            const data = await jsonpRequest(`${API_URL}?action=sendMessage&fromId=${appState.userId}&toId=${appState.peerId}&msg=${encodeURIComponent(msgText)}`);
             // After sending, refresh messages from server to get the final version
             loadMessages(true);
         } catch (error) {
@@ -1235,6 +1344,67 @@
     }
 
     /**
+     * Renders a single message object and appends it to the chat box.
+     * @param {Object} m - The message object to render.
+     */
+    function renderSingleMessage(m) {
+        const box = document.getElementById("chatBox");
+        const isMe = m.from == appState.userId || m.fromId == appState.userId;
+        const isTemp = !m.id || m.id.toString().startsWith('temp_');
+        const isDeleted = m.msg.includes("[This message was deleted]");
+
+        const messageContainer = document.createElement("div");
+        messageContainer.className = `message-container ${isMe ? 'me' : 'them'}`;
+        // Use a data attribute to easily find and replace the temp message later
+        if (isTemp) {
+            messageContainer.dataset.tempId = m.id;
+        } else {
+            messageContainer.dataset.messageId = m.id;
+        }
+
+        const bubble = document.createElement("div");
+        bubble.className = `message-bubble ${isMe ? 'me' : 'them'}`;
+
+        let statusIconHtml = '';
+        if (isMe) {
+            if (isTemp) {
+                statusIconHtml = '<span class="status-icon"> 🕒</span>'; // Clock for sending
+            } else if (m.seen === "true") {
+                statusIconHtml = '<span class="status-icon seen"> ✔✔</span>'; // Double check for seen
+            } else {
+                statusIconHtml = '<span class="status-icon"> ✓</span>'; // Single check for sent
+            }
+        }
+        const timestamp = m.ts ? new Date(m.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        
+        bubble.innerHTML = `<span class="message-text">${m.msg}</span><br><small style="opacity: 0.7;">${timestamp}</small>${statusIconHtml}`;
+
+        messageContainer.appendChild(bubble);
+        box.appendChild(messageContainer);
+
+        // Add event listeners for own, non-temporary, non-deleted messages
+        if (isMe && !isTemp && !isDeleted) {
+            let longPressTimer;
+
+            // For Desktop: Right-click
+            bubble.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                showContextMenu(e, m.id, m.msg);
+            });
+
+            // For Mobile: Long-press
+            bubble.addEventListener('touchstart', (e) => {
+                longPressTimer = setTimeout(() => {
+                    showContextMenu(e, m.id, m.msg);
+                }, 500); // 500ms for long press
+            });
+
+            bubble.addEventListener('touchend', () => clearTimeout(longPressTimer));
+            bubble.addEventListener('touchmove', () => clearTimeout(longPressTimer));
+        }
+    }
+
+    /**
      * Renders an array of message objects into the chat box.
      * @param {Array<Object>} messages - The messages to render.
      * @param {boolean} [shouldScroll=true] - Whether to scroll to the bottom.
@@ -1243,61 +1413,10 @@
         const box = document.getElementById("chatBox");
         const isScrolledToBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 1;
 
-        // Clear previous messages before rendering new ones
-        if (messages.length > 0) {
-            box.innerHTML = "";
-        }
-        messages.forEach(m => {
-            const isMe = m.from == appState.userId || m.fromId == appState.userId;
-            const isTemp = !m.id || m.id.toString().startsWith('temp_');
-            const isDeleted = m.msg.includes("[This message was deleted]");
+        // Always clear the chat box before rendering new messages
+        box.innerHTML = "";
 
-            const messageContainer = document.createElement("div");
-            messageContainer.className = `message-container ${isMe ? 'me' : 'them'}`;
-            messageContainer.dataset.messageId = m.id;
-
-            const bubble = document.createElement("div");
-            bubble.className = `message-bubble ${isMe ? 'me' : 'them'}`;
-
-            let statusIconHtml = '';
-            if (isMe) {
-                if (isTemp) {
-                    statusIconHtml = '<span class="status-icon"> 🕒</span>'; // Clock for sending
-                } else if (m.seen === "true") {
-                    statusIconHtml = '<span class="status-icon seen"> ✔✔</span>'; // Double check for seen
-                } else {
-                    statusIconHtml = '<span class="status-icon"> ✓</span>'; // Single check for sent
-                }
-            }
-            const timestamp = m.ts ? new Date(m.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-            
-            // Display message, timestamp, and status icon
-            bubble.innerHTML = `<span class="message-text">${m.msg}</span><br><small style="opacity: 0.7;">${timestamp}</small>${statusIconHtml}`;
-
-            messageContainer.appendChild(bubble);
-            box.appendChild(messageContainer);
-
-            // Add event listeners for own, non-temporary, non-deleted messages
-            if (isMe && !isTemp && !isDeleted) {
-                let longPressTimer;
-
-                // For Desktop: Right-click
-                bubble.addEventListener('contextmenu', (e) => {
-                    e.preventDefault();
-                    showContextMenu(e, m.id, m.msg);
-                });
-
-                // For Mobile: Long-press
-                bubble.addEventListener('touchstart', (e) => {
-                    longPressTimer = setTimeout(() => {
-                        showContextMenu(e, m.id, m.msg);
-                    }, 500); // 500ms for long press
-                });
-
-                bubble.addEventListener('touchend', () => clearTimeout(longPressTimer));
-                bubble.addEventListener('touchmove', () => clearTimeout(longPressTimer));
-            }
-        });
+        messages.forEach(m => renderSingleMessage(m));
 
         // Always scroll to bottom if shouldScroll is true (e.g., after sending a message),
         // or if the user was already at the bottom.
