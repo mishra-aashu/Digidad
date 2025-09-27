@@ -93,11 +93,21 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            background: var(--body-bg);
-            margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; 
-            transition: background 0.5s ease;
+            background: #000; /* Set the main background to black */
+            margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; box-sizing: border-box;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            position: relative; /* Needed for the pseudo-element */
+            overflow: hidden; /* Hide overflow from pseudo-element */
+        }
+        /* This pseudo-element holds the gradient, sitting behind the container */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--body-bg);
+            transition: background 0.5s ease;
+            z-index: -1;
         }
         .container { 
             background: var(--container-bg);
@@ -107,10 +117,24 @@
             -webkit-backdrop-filter: blur(10px);
             border: var(--container-border);
             max-width: 450px; width: 100%;
+            height: calc(100vh - 40px); /* Full height minus body padding */
             transition: background 0.5s ease, border 0.5s ease;
             animation: fadeInScaleUp 0.6s ease-out forwards;
+            display: flex; /* This will be overridden by .container[style*="display: none"] initially */
+            flex-direction: column;
             position: relative; /* Needed for absolute positioning of screens */
             overflow: hidden;
+        }
+        #homeScreen, #loginScreen, #profileScreen {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        #chatScreen {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 0; /* Remove padding to allow full control */
         }
         .screen { 
             padding: 20px; 
@@ -127,41 +151,59 @@
         }
         h3, h4 { color: var(--text-color); text-shadow: var(--text-shadow); transition: color 0.5s ease; }
         input[type="text"] { padding: 12px; width: calc(100% - 26px); margin-bottom: 10px; border: 1px solid var(--input-border); background: var(--input-bg); border-radius: 8px; font-size: 16px; color: var(--text-color); transition: background 0.5s ease, border 0.5s ease, color 0.5s ease; }
-        input[type="text"]::placeholder { color: var(--input-placeholder-color); }
-        button { padding: 12px 18px; cursor: pointer; border: none; border-radius: 8px; background: var(--button-bg); color: var(--button-text-color); font-size: 16px; transition: background-color 0.3s, color 0.5s ease; backdrop-filter: blur(2px); }
-        button:hover { background: var(--button-hover-bg); }
+        input[type="text"]::placeholder { color: var(--input-placeholder-color); transition: color 0.5s ease; }
+        input[type="text"]:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--button-hover-bg);
+            border-color: var(--button-bg);
+        }
+        button { padding: 12px 18px; cursor: pointer; border: none; border-radius: 8px; background: var(--button-bg); color: var(--button-text-color); font-size: 16px; transition: background-color 0.3s, color 0.5s ease, transform 0.2s ease, box-shadow 0.3s ease; backdrop-filter: blur(2px); }
+        button:hover { background: var(--button-hover-bg); transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         button:disabled { background: var(--button-disabled-bg); cursor: not-allowed; }
         
-        #chatBox { background: var(--chatbox-bg); height: 450px; overflow-y: auto; padding: 10px; margin-bottom: 10px; display: flex; flex-direction: column; border-radius: 8px; transition: background 0.5s ease; scroll-behavior: smooth; }
+        /* Custom Scrollbar */
+        #chatBox::-webkit-scrollbar { width: 6px; }
+        #chatBox::-webkit-scrollbar-track { background: transparent; }
+        #chatBox::-webkit-scrollbar-thumb { background-color: var(--button-bg); border-radius: 6px; }
+        #chatBox::-webkit-scrollbar-thumb:hover { background-color: var(--button-hover-bg); }
+
+        #chatBox { flex-grow: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; transition: background 0.5s ease; scroll-behavior: smooth; gap: 4px; }
         .message-bubble { padding: 8px 12px; border-radius: 18px; max-width: 75%; word-wrap: break-word; line-height: 1.4; transition: background-color 0.5s ease, color 0.5s ease; }
         .me { background: var(--message-me-bg); align-self: flex-end; color: var(--message-me-color); }
         .them { background: var(--message-them-bg); align-self: flex-start; color: var(--message-them-color); }
-        .message-container { display: flex; flex-direction: column; margin: 2px 0; animation: message-fade-in 0.4s ease-out; }
+        .message-container { display: flex; flex-direction: column; animation: message-fade-in 0.4s ease-out forwards; }
 
         .chat-list-item { padding: 12px; border-bottom: 1px solid var(--list-item-border); cursor: pointer; transition: background-color 0.3s, border-color 0.5s ease; }
         .chat-list-item-content { display: flex; align-items: center; }
-        #chatList div:hover { background-color: var(--list-item-hover-bg); }
+        #chatList div:hover { background-color: var(--list-item-hover-bg); border-radius: 8px; }
         
-        .chat-header { display: flex; align-items: center; padding-bottom: 10px; border-bottom: 1px solid var(--list-item-border); margin-bottom: 10px; transition: border-color 0.5s ease; }
-        .chat-header button { background: none; color: var(--header-button-color); padding: 0 10px 0 0; font-size: 24px; }
-        .chat-input-area { display: flex; position: relative; }
+        .chat-header { display: flex; align-items: center; padding: 20px 20px 10px 20px; border-bottom: 1px solid var(--list-item-border); transition: border-color 0.5s ease; flex-shrink: 0; }
+        .chat-header .back-button { background: none; color: var(--header-button-color); padding: 0; font-size: 24px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; margin-right: 5px; }
+        .back-button .chevron { border: solid var(--header-button-color); border-width: 0 3px 3px 0; display: inline-block; padding: 4px; transform: rotate(135deg); transition: border-color 0.5s ease; }
+        .chat-input-area { display: flex; position: relative; padding: 10px 20px; flex-shrink: 0; }
         .chat-input-area input { flex-grow: 1; margin-right: 10px; margin-bottom: 0; }
         .edit-name-icon { cursor: pointer; font-size: 16px; margin-left: 8px; }
         
         /* Online Indicator Styles - Kept for user status */
-        .online-indicator {
+        .online-indicator-small {
             width: 10px; height: 10px; border-radius: 50%;
             background-color: #aaa; /* Grey for offline */
             border: 2px solid white;
             position: absolute; bottom: 0; right: 12px;
         }
-        .online-indicator.online { background-color: #28a745; } /* Green for online */
+        .online-indicator-small.online { background-color: #28a745; } /* Green for online */
+
+        .online-indicator-list {
+            width: 10px; height: 10px; border-radius: 50%;
+            background-color: #aaa; margin-right: 8px; flex-shrink: 0;
+        }
+        .online-indicator-list.online { background-color: #28a745; }
 
         .emoji-button { background: none; border: none; font-size: 24px; cursor: pointer; padding: 0 10px; color: var(--emoji-button-color); align-self: center; }
         emoji-picker {
             position: absolute;
             bottom: 50px; /* Position it above the input area */
-            right: 0;
+            right: 20px; /* Align with new padding */
             z-index: 100;
         }
 
@@ -217,6 +259,69 @@
             animation: float 6s ease-in-out infinite;
         }
     </style>
+    <style>
+        /* Added styles for new features */
+        #scrollToBottomBtn { position: absolute; bottom: 60px; right: 20px; background: var(--button-bg); border-radius: 50%; width: 40px; height: 40px; font-size: 20px; display: none; align-items: center; justify-content: center; z-index: 50; animation: pop-in 0.3s ease; }
+        #chat-search-input { display: none; flex-grow: 1; margin-left: 10px; }
+        .highlight { background-color: yellow; color: black; }
+        .chat-header .search-icon { background: none; color: var(--header-button-color); padding: 0 5px; font-size: 18px; }
+        .message-bubble .status-icon { font-size: 14px; opacity: 0.8; }
+        .message-bubble .status-icon.seen { color: #34b7f1; } /* Blue ticks for seen */
+    </style>
+    <style>
+        /* Styles for the new context menu */
+        .context-menu {
+            position: absolute;
+            display: none;
+            background: var(--container-bg);
+            border: 1px solid var(--container-border);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 1000;
+            overflow: hidden;
+            padding: 5px 0;
+        }
+        .context-menu-item {
+            padding: 10px 20px;
+            cursor: pointer;
+            color: var(--text-color);
+            transition: background-color 0.2s;
+        }
+        .context-menu-item:hover { background-color: var(--button-hover-bg); }
+        .context-menu-item#context-delete:hover { background-color: #e53935; color: white; }
+    </style>
+    <style>
+        /* Styles for the new Toast Notification system */
+        #toast-container {
+            position: fixed;
+            top: 80px; /* Position below the container's top edge */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            pointer-events: none; /* Allow clicks to pass through */
+        }
+        .toast {
+            padding: 10px 20px;
+            border-radius: 20px;
+            color: white;
+            font-size: 14px;
+            box-shadow: var(--container-shadow);
+            backdrop-filter: blur(5px);
+            animation: toast-in 0.4s ease forwards;
+            opacity: 0;
+        }
+        .toast.success { background-color: rgba(40, 167, 69, 0.8); }
+        .toast.error { background-color: rgba(229, 57, 53, 0.8); }
+        .toast.info { background-color: rgba(52, 152, 219, 0.8); }
+        @keyframes toast-in { to { opacity: 1; transform: translateY(0); } }
+        @keyframes toast-out { from { opacity: 1; } to { opacity: 0; } }
+    </style>
 </head>
 <body>
     <div id="intro-screen">
@@ -248,22 +353,25 @@
             </div>
             <input type="text" id="newPeerPhone" placeholder="Enter peer's phone...">
             <button onclick="startNewChat()">Chat</button>
-            <hr style="margin: 20px 0;">
+            <hr style="margin: 20px 0;" id="chat-list-divider">
             <h3>Your Chats</h3>
             <div id="chatList"></div>
         </div>
 
         <!-- Chat Screen -->
-        <div id="chatScreen" class="screen">
+        <div id="chatScreen" class="screen" style="padding: 0;">
             <div class="chat-header">
-                <button onclick="showHomeScreen()">&#8592;</button>
+                <button class="back-button" onclick="showHomeScreen()"><i class="chevron"></i></button>
                 <div id="peerStatus" style="font-size: 12px; color: var(--text-color); margin-left: -10px;"></div>
                 <div style="flex-grow: 1; display: flex; align-items: center;">
                     <h3 style="margin: 0;" id="chatWith"></h3><span class="edit-name-icon" onclick="promptToEditPeerName()">✏️</span>
                 </div>
+                <input type="text" id="chat-search-input" placeholder="Search messages...">
+                <button class="search-icon" onclick="toggleSearch()">🔍</button>
                 <button id="theme-toggle-chat" style="font-size: 18px; padding: 6px 10px;">🌙</button>
             </div>
             <div id="chatBox"></div>
+            <button id="scrollToBottomBtn" onclick="scrollToBottom()">&#8595;</button>
             <div class="chat-input-area">
                 <button class="emoji-button" onclick="toggleEmojiPicker()">😊</button>
                 <input type="text" id="msg" placeholder="Type a message...">
@@ -276,7 +384,7 @@
         <!-- Profile Screen -->
         <div id="profileScreen" class="screen">
             <div class="chat-header">
-                <button onclick="showHomeScreen()">&#8592;</button>
+                <button class="back-button" onclick="showHomeScreen()"><i class="chevron"></i></button>
                 <h3 style="margin: 0; flex-grow: 1;">Your Profile</h3>
             </div>
             <div id="profile-actions" style="margin-top: 20px;">
@@ -288,10 +396,39 @@
         </div>
     </div>
 
+    <!-- Context Menu for Messages -->
+    <div id="message-context-menu" class="context-menu">
+        <div class="context-menu-item" id="context-edit">Edit</div>
+        <div class="context-menu-item" id="context-delete">Delete</div>
+    </div>
+
+    <!-- Context Menu for Chats on Home Screen -->
+    <div id="chat-context-menu" class="context-menu">
+        <div class="context-menu-item" id="chat-context-archive">Archive</div>
+        <div class="context-menu-item" id="chat-context-delete">Delete</div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
+
     <script>
+    // =================================================================================
+    // App State & Constants
+    // =================================================================================
+    const API_URL = "https://script.google.com/macros/s/AKfycbxjbDqkqfoJIjnAkPYHyvSFZ_X-7sOhvo__2l8wfakac0Qk9NRvlEbbM_MnsWYJQk29/exec";
+    const appState = {
+        userId: null,
+        userName: null,
+        peerId: null,
+        intervals: {} // To manage all setInterval calls
+    };
     // Add event listener for 'Enter' key on message input
 
     // --- Theme Toggle ---
+    /**
+     * Applies a theme (light or dark) to the document.
+     * @param {string} theme - The theme to apply ('light' or 'dark').
+     */
     function applyTheme(theme) {
         const body = document.body;
         const toggles = document.querySelectorAll('#theme-toggle, #theme-toggle-home, #theme-toggle-chat');
@@ -304,6 +441,9 @@
         }
     }
 
+    /**
+     * Toggles the theme between light and dark mode and saves the preference.
+     */
     function toggleTheme() {
         const currentTheme = localStorage.getItem('theme') || 'light';
         const newTheme = currentTheme === 'light' ? 'dark' : 'light';
@@ -311,6 +451,13 @@
         applyTheme(newTheme);
     }
 
+    // =================================================================================
+    // App Initialization & Lifecycle
+    // =================================================================================
+
+    /**
+     * Main entry point, runs when the DOM is fully loaded.
+     */
     document.addEventListener('DOMContentLoaded', () => {
         function showThemeHint() {
             if (!localStorage.getItem('themeHintShown')) {
@@ -320,27 +467,41 @@
             }
         }
 
-        // --- Session and Intro Logic ---
+        // Apply theme on initial load
+        applyTheme(localStorage.getItem('theme') || 'light');
+
+        // Attach all event listeners
+        attachEventListeners();
+
+        // --- Session & Intro Logic ---
         const storedUserId = localStorage.getItem('userId');
         if (storedUserId) {
-            // If user is already logged in, skip intro and go to home screen
+            // User is logged in, initialize session directly
             initializeSession(storedUserId);
         } else {
-            // If not logged in, show intro animation
+            // New user, show intro animation then the login screen
             setTimeout(() => {
                 document.getElementById('intro-screen').style.display = 'none';
                 document.querySelector('.container').style.display = 'block';
                 showThemeHint();
             }, 3000); // Show intro for 3 seconds
         }
-
-        // Apply theme regardless of login state
-        applyTheme(localStorage.getItem('theme') || 'light');
-        document.querySelectorAll('#theme-toggle, #theme-toggle-home, #theme-toggle-chat').forEach(toggle => toggle.onclick = toggleTheme);
     });
-    
-    const msgInput = document.getElementById("msg");
-    msgInput.addEventListener("keyup", function(event) {
+
+    /**
+     * Attaches all primary event listeners for the application.
+     */
+    function attachEventListeners() {
+        // Theme toggles
+        document.querySelectorAll('#theme-toggle, #theme-toggle-home, #theme-toggle-chat').forEach(toggle => toggle.onclick = toggleTheme);
+
+        // Emoji picker
+        const emojiPicker = document.querySelector('emoji-picker');
+        emojiPicker.addEventListener('emoji-click', handleEmojiSelection);
+
+        // Message input 'Enter' key and typing detection
+        const msgInput = document.getElementById("msg");
+        msgInput.addEventListener("keyup", (event) => {
         if (event.key === "Enter") {
             event.preventDefault();
             sendMsg();
@@ -348,30 +509,79 @@
     });
 
     // Add event listener to detect typing
-    msgInput.addEventListener("input", function() {
-        if (userId && peerId) {
-            jsonpRequest(`${api}?action=setTypingStatus&fromId=${userId}&toId=${peerId}`);
-        }
-    });
+        msgInput.addEventListener("input", () => {
+            if (appState.userId && appState.peerId) {
+                jsonpRequest(`${API_URL}?action=setTypingStatus&fromId=${appState.userId}&toId=${appState.peerId}`);
+            }
+        });
 
-    // Toggle emoji picker visibility
+        // Scroll to bottom button visibility
+        const chatBox = document.getElementById("chatBox");
+        chatBox.addEventListener('scroll', () => {
+            const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
+            // Show button if scrolled up more than one screen height
+            if (chatBox.scrollHeight - chatBox.scrollTop > chatBox.clientHeight * 2) {
+                scrollToBottomBtn.style.display = 'flex';
+            } else {
+                scrollToBottomBtn.style.display = 'none';
+            }
+        });
+
+        document.getElementById('chat-search-input').addEventListener('input', handleSearch);
+    }
+
+    /**
+     * Handles the selection of an emoji from the picker.
+     * @param {CustomEvent} event - The 'emoji-click' event.
+     */
+    function handleEmojiSelection(event) {
+        const msgInput = document.getElementById('msg');
+        msgInput.value += event.detail.unicode;
+        toggleEmojiPicker(); // Hide picker after selection
+    }
+
+    // =================================================================================
+    // API & Utility Functions
+    // =================================================================================
+
+    /**
+     * Toggles the visibility of the emoji picker.
+     */
     function toggleEmojiPicker() {
         const picker = document.querySelector('emoji-picker');
         picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
     }
 
-    // Add selected emoji to the message input
-    document.querySelector('emoji-picker').addEventListener('emoji-click', event => {
-        const msgInput = document.getElementById('msg');
-        msgInput.value += event.detail.unicode;
-        toggleEmojiPicker(); // Hide picker after selection
-    });
+    /**
+     * Shows a toast notification.
+     * @param {string} message - The message to display.
+     * @param {'success'|'error'|'info'} [type='info'] - The type of toast.
+     * @param {number} [duration=3000] - How long the toast stays on screen in ms.
+     */
+    function showToast(message, type = 'info', duration = 3000) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
 
-    const api = "https://script.google.com/macros/s/AKfycbxjbDqkqfoJIjnAkPYHyvSFZ_X-7sOhvo__2l8wfakac0Qk9NRvlEbbM_MnsWYJQk29/exec";
-    let userId = null, peerId = null, userName = null;
-    let messageInterval, chatListInterval, heartbeatInterval;
+        container.appendChild(toast);
 
-    // JSONP request function to bypass CORS issues
+        // Animate out and remove
+        setTimeout(() => {
+            toast.style.animation = 'toast-out 0.5s ease forwards';
+            toast.addEventListener('animationend', () => {
+                if (container.contains(toast)) {
+                    container.removeChild(toast);
+                }
+            });
+        }, duration);
+    }
+
+    /**
+     * Performs a JSONP request to bypass CORS issues with Google Apps Script.
+     * @param {string} url - The URL for the JSONP request.
+     * @returns {Promise<any>} A promise that resolves with the data from the server.
+     */
     function jsonpRequest(url) {
         return new Promise((resolve, reject) => {
             const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
@@ -388,7 +598,12 @@
         });
     }
 
-    // Helper function for button loading states
+    /**
+     * Sets the loading state for a button, disabling it and changing its text.
+     * @param {HTMLButtonElement} button - The button element.
+     * @param {boolean} isLoading - Whether the button should be in a loading state.
+     * @param {string} [text="Loading..."] - The text to display while loading.
+     */
     function setButtonLoadingState(button, isLoading, text = "Loading...") {
         if (isLoading) {
             button.dataset.originalText = button.innerText;
@@ -400,6 +615,33 @@
         }
     }
 
+    /**
+     * Starts a polling interval, ensuring no duplicates for the same name.
+     * @param {string} name - A unique name for the interval.
+     * @param {Function} func - The function to execute.
+     * @param {number} time - The interval time in milliseconds.
+     */
+    function startPolling(name, func, time) {
+        stopPolling(name); // Ensure no duplicates
+        appState.intervals[name] = setInterval(func, time);
+    }
+
+    /**
+     * Stops a polling interval by its name.
+     * @param {string} name - The unique name of the interval to stop.
+     */
+    function stopPolling(name) {
+        if (appState.intervals[name]) {
+            clearInterval(appState.intervals[name]);
+            delete appState.intervals[name];
+        }
+    }
+
+    // --- UI Navigation ---
+    /**
+     * Shows a specific screen and hides all others.
+     * @param {string} screenId - The ID of the screen to show.
+     */
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(el => {
             el.classList.remove('active');
@@ -408,10 +650,18 @@
         if (screen) screen.classList.add('active');
     }
 
+    // =================================================================================
+    // Authentication & Session Management
+    // =================================================================================
+
+    /**
+     * Initializes the user session if a user ID is found in localStorage.
+     * @param {string} storedUserId - The user ID from localStorage.
+     */
     function initializeSession(storedUserId) {
-        // If user is already logged in, skip intro and login screen
-        userId = storedUserId;
-        userName = localStorage.getItem('userName');
+        // Set state for a logged-in user
+        appState.userId = storedUserId;
+        appState.userName = localStorage.getItem('userName');
         document.getElementById('phone').value = localStorage.getItem('userPhone') || ''; // Keep phone number in input for context
         
         document.querySelector('.container').style.display = 'block';
@@ -421,6 +671,9 @@
         startHeartbeat();
     }
 
+    /**
+     * Logs in or registers a user with their phone number.
+     */
     async function login() {
         const phoneInput = document.getElementById("phone");
         const phone = phoneInput.value;
@@ -429,22 +682,21 @@
         
         setButtonLoadingState(loginButton, true);
         try {
-            const data = await jsonpRequest(`${api}?action=login&phone=${phone}`);
+            const data = await jsonpRequest(`${API_URL}?action=login&phone=${phone}`);
             
-            // Backend se error aane par alert dikhayein
-            if (data.status === 'error') {
-                alert('An error occurred: ' + data.message);
+            if (data.status === 'error' || !data.userId) {
+                showToast('Login failed: ' + (data.message || 'Unknown error'), 'error');
                 return;
             }
 
-            // Login safal hone par userId set karein aur home screen dikhayein
-            userId = data.userId;
-            userName = data.name || ''; // Store the user's name
+            // Set app state on successful login
+            appState.userId = data.userId;
+            appState.userName = data.name || '';
 
             // Save session to localStorage
-            localStorage.setItem('userId', userId);
+            localStorage.setItem('userId', appState.userId);
             localStorage.setItem('userPhone', phone);
-            localStorage.setItem('userName', userName);
+            localStorage.setItem('userName', appState.userName);
 
             // Save the initial chat list to localStorage
             if (data.chats) {
@@ -452,42 +704,58 @@
                 renderChatList(data.chats);
             }
 
-            showScreen('homeScreen'); // Turant home screen par switch karein
-            showHomeScreen(true); // Chat list refresh setup karein
-            renderChatList(data.chats);
-
             startHeartbeat();
+            showHomeScreen();
         } catch (error) { // Network ya JSONP error hone par
             console.error("Login failed:", error);
-            alert("Login request failed. Please check your connection and try again.");
+            showToast("Login request failed. Check your connection.", 'error');
         } finally {
             setButtonLoadingState(loginButton, false);
         }
     }
 
+    /**
+     * Starts a periodic heartbeat to keep the user's online status active.
+     */
     function startHeartbeat() {
-        if (heartbeatInterval) clearInterval(heartbeatInterval);
-        heartbeatInterval = setInterval(() => {
-            if (userId) jsonpRequest(`${api}?action=heartbeat&userId=${userId}`);
+        startPolling('heartbeat', () => {
+            if (appState.userId) jsonpRequest(`${API_URL}?action=heartbeat&userId=${appState.userId}`);
         }, 15000); // every 15 seconds
     }
 
+    /**
+     * Logs the user out, clearing all session data and reloading the page.
+     */
     function logout() {
+        // Stop all background processes
+        Object.keys(appState.intervals).forEach(stopPolling);
+
         // Clear session from localStorage
         localStorage.removeItem('userId');
         localStorage.removeItem('userPhone');
         localStorage.removeItem('userName');
 
-        // Stop all background processes and reset state
-        if (heartbeatInterval) clearInterval(heartbeatInterval);
-        userId = null;
+        // Reset app state
+        appState.userId = null;
+        appState.userName = null;
+        appState.peerId = null;
+
         window.location.reload(); // Reload the page to go back to login screen
     }
 
+    /**
+     * Renders the list of chats on the home screen.
+     * @param {Array<Object>} chats - The array of chat objects to render.
+     * @param {boolean} [isOffline=false] - Whether to show an offline indicator.
+     */
     function renderChatList(chats, isOffline = false) {
         const chatListDiv = document.getElementById("chatList");
         chatListDiv.innerHTML = "";
-        if (chats.length === 0) {
+
+        // Filter out archived chats from the main view
+        const activeChats = chats.filter(chat => !chat.isArchived);
+
+        if (activeChats.length === 0) {
             chatListDiv.innerHTML = "<p>No active chats. Start a new one!</p>" + (isOffline ? "<p><small>(Showing offline data)</small></p>" : "");
             return;
         }
@@ -499,19 +767,37 @@
             offlineNote.style.textAlign = 'center';
             chatListDiv.appendChild(offlineNote);
         }
-        chats.forEach(chat => {
+        
+        activeChats.forEach(chat => {
             const div = document.createElement("div");
             div.className = "chat-list-item";
             div.onclick = () => openChat(chat.peerId, chat.peerPhone);
 
-            const time = chat.lastMessage.ts ? new Date(chat.lastMessage.ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
+            // --- Add Context Menu Listeners ---
+            let longPressTimer;
+            // For Desktop: Right-click
+            div.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                e.stopPropagation(); // Stop it from bubbling up
+                showChatContextMenu(e, chat.peerId);
+            });
+            // For Mobile: Long-press
+            div.addEventListener('touchstart', (e) => {
+                longPressTimer = setTimeout(() => {
+                    e.preventDefault();
+                    showChatContextMenu(e, chat.peerId);
+                }, 500);
+            });
+            div.addEventListener('touchend', () => clearTimeout(longPressTimer));
+            div.addEventListener('touchmove', () => clearTimeout(longPressTimer));
 
+            const time = chat.lastMessage.ts ? new Date(chat.lastMessage.ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
             div.innerHTML = `
                 <div class="chat-list-item-content">
                     <div style="flex-grow: 1;">
                         <div style="display: flex; justify-content: space-between;">
                             <strong style="display: flex; align-items: center;">
-                                <span class="online-indicator ${chat.isOnline ? 'online' : ''}" style="position: static; margin-right: 8px;"></span>
+                                <span class="online-indicator-list ${chat.isOnline ? 'online' : ''}"></span>
                                 ${chat.peerPhone}
                             </strong>
                             <small>${time}</small>
@@ -520,10 +806,14 @@
                     </div>
                 </div>
             `;
+
             chatListDiv.appendChild(div);
         });
     }
 
+    /**
+     * Finds a user by phone number and starts a new chat.
+     */
     async function startNewChat() {
         const phoneInput = document.getElementById("newPeerPhone");
         const phone = phoneInput.value;
@@ -532,7 +822,7 @@
 
         setButtonLoadingState(chatButton, true);
         try {
-            const data = await jsonpRequest(`${api}?action=findUser&phone=${phone}`);
+            const data = await jsonpRequest(`${API_URL}?action=findUser&phone=${phone}`);
             if (data.status === 'found') {
                 openChat(data.userId, phone);
             } else {
@@ -546,76 +836,121 @@
         }
     }
 
+    /**
+     * Opens a chat screen with a specific peer.
+     * @param {string} pId - The peer's user ID.
+     * @param {string} pPhone - The peer's phone number or name.
+     */
     function openChat(pId, pPhone) {
-        peerId = pId;
+        appState.peerId = pId;
         
         // Stop refreshing the chat list while in a chat
-        if (chatListInterval) clearInterval(chatListInterval);
-        chatListInterval = null;
+        stopPolling('chatList');
 
         document.getElementById('peerStatus').innerText = ''; // Clear previous status
         document.getElementById('chatWith').innerText = `Chat with ${pPhone}`;
         showScreen('chatScreen');
         loadMessages();
-        if (messageInterval) clearInterval(messageInterval);
-        messageInterval = setInterval(loadMessages, 3000); // Auto-refresh messages
+        // Start polling for new messages
+        startPolling('messages', () => loadMessages(false), 3000);
+    }
+    
+    /**
+     * Scrolls the chat box to the bottom.
+     */
+    function scrollToBottom() {
+        document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
     }
 
+    /**
+     * Prompts the user to edit the name of the current peer.
+     */
     async function promptToEditPeerName() {
         const currentName = document.getElementById('chatWith').innerText.replace('Chat with ', '');
         const newName = prompt("Enter a new name for this contact:", currentName);
 
-        if (newName && newName.trim() !== "") {
-            const data = await jsonpRequest(`${api}?action=editPeerName&ownerId=${userId}&peerId=${peerId}&newName=${encodeURIComponent(newName.trim())}`);
-            if (data.status === 'success') {
-                document.getElementById('chatWith').innerText = `Chat with ${data.newName}`;
-                alert("Name updated successfully!");
-                // Refresh chat list to show new name there too
-                showHomeScreen();
-                openChat(peerId, data.newName);
-            } else {
-                alert("Error updating name: " + data.message);
+        if (newName && newName.trim() !== "" && appState.userId && appState.peerId) {
+            showToast("Saving name...", 'info', 2000);
+            try {
+                const data = await jsonpRequest(`${API_URL}?action=editPeerName&ownerId=${appState.userId}&peerId=${appState.peerId}&newName=${encodeURIComponent(newName.trim())}`);
+                if (data.status === 'success') {
+                    document.getElementById('chatWith').innerText = `Chat with ${newName.trim()}`;
+                    showToast("Name updated successfully!", 'success');
+                    refreshChatList(); // Refresh chat list to show new name there too
+                } else {
+                    showToast("Error updating name: " + data.message, 'error');
+                }
+            } catch (error) {
+                showToast("Could not save name. Check connection.", 'error');
             }
         }
     }
 
-    function showHomeScreen(isFirstLoad = false) {
-        if (messageInterval) clearInterval(messageInterval);
-        if (chatListInterval) clearInterval(chatListInterval);
-        
-        peerId = null;
+    /**
+     * Navigates to the home screen and starts polling for chat list updates.
+     */
+    function showHomeScreen() {
+        // Stop chat-specific polling
+        stopPolling('messages');
+        appState.peerId = null;
+
         showScreen('homeScreen');
 
-        // Immediately render chat list from localStorage for a fast UI response
-        const localChats = JSON.parse(localStorage.getItem('chatList'));
-        if (localChats) {
-            renderChatList(localChats, true); // Render with offline indicator
-        }
+        const doRefresh = async () => {
+            if (!appState.userId) return;
+            const userPhone = localStorage.getItem('userPhone');
+            if (!userPhone) return;
 
-        // Start auto-refreshing the chat list
-        chatListInterval = setInterval(async () => {
-            if (!userId) return;
-            const data = await jsonpRequest(`${api}?action=login&phone=${document.getElementById("phone").value}`);
+            const data = await jsonpRequest(`${API_URL}?action=login&phone=${userPhone}`);
             if (data.chats) {
                 // Update localStorage with fresh data from the server
                 localStorage.setItem('chatList', JSON.stringify(data.chats));
                 renderChatList(data.chats);
             } else if (data.status === 'error') {
                 console.error("Could not refresh chat list:", data.message);
+                // Agar server se error aaye to local data dikhayein
+                const localChats = JSON.parse(localStorage.getItem('chatList'));
+                if (localChats) {
+                    renderChatList(localChats, true); // Offline indicator ke saath render karein
+                }
             }
-        }, 5000); // Refresh chat list every 5 seconds
+        };
 
+        // Turant refresh karein aur phir har 5 second mein
+        doRefresh();
+        startPolling('chatList', doRefresh, 5000);
     }
 
+    /**
+     * Fetches the latest chat list from the server and re-renders it if on the home screen.
+     * Can be called from anywhere to force a refresh.
+     */
+    const refreshChatList = async () => {
+        if (!appState.userId) return;
+        const userPhone = localStorage.getItem('userPhone');
+        if (!userPhone) return;
+        const data = await jsonpRequest(`${API_URL}?action=login&phone=${userPhone}`);
+        if (data.chats) {
+            localStorage.setItem('chatList', JSON.stringify(data.chats));
+            // Only render if the user is on the home screen
+            if (document.getElementById('homeScreen').classList.contains('active')) {
+                renderChatList(data.chats);
+            }
+        }
+    };
+
+    /**
+     * Renders and displays the user's profile screen.
+     */
     function showProfileScreen() {
         const userPhone = document.getElementById("phone").value;
         const profileDetailsDiv = document.getElementById("profile-details");
 
         let content = `<p><strong>Phone Number:</strong> ${userPhone}</p>`;
 
-        if (userName) {
+        if (appState.userName) {
             content += `
-                <p><strong>Name:</strong> ${userName}</p>
+                <p><strong>Name:</strong> ${appState.userName}</p>
                 <button onclick="promptToEditUserName()">Edit Name</button>
             `;
         } else {
@@ -625,43 +960,71 @@
                 <button onclick="saveUserName()">Save Name</button>
             `;
         }
-        // Prepend content to keep logout button at the top
-        const profileActions = document.getElementById('profile-actions').outerHTML;
-        const header = document.querySelector('#profileScreen .chat-header').outerHTML;
+
+        // Rebuild the profile screen to ensure event listeners are correctly attached
         const profileScreen = document.getElementById('profileScreen');
-        profileScreen.innerHTML = ''; // Clear previous content to avoid duplicating event listeners
-        profileScreen.innerHTML = header + profileActions + `<div id="profile-details">${content}</div>`;
+        profileScreen.querySelector('#profile-details').innerHTML = content;
+
+        // Re-attach listeners for dynamically created buttons
+        const editBtn = profileScreen.querySelector('button[onclick="promptToEditUserName()"]');
+        if (editBtn) editBtn.onclick = promptToEditUserName;
+
+        const saveBtn = profileScreen.querySelector('button[onclick="saveUserName()"]');
+        if (saveBtn) saveBtn.onclick = () => saveUserName();
+
+        // Ensure back button and logout button listeners are also solid (using specific class)
+        profileScreen.querySelector('.chat-header .back-button').onclick = showHomeScreen;
+        profileScreen.querySelector('#profile-actions button').onclick = logout;
+
         showScreen('profileScreen');
     }
 
+    /**
+     * Prompts the user to edit their own name.
+     */
     function promptToEditUserName() {
-        const newName = prompt("Enter your new name:", userName);
+        const newName = prompt("Enter your new name:", appState.userName);
         if (newName && newName.trim() !== "") {
             saveUserName(newName.trim());
         }
     }
 
+    /**
+     * Saves the user's new name to the server.
+     * @param {string} [name] - The new name to save. If not provided, it's taken from the input field.
+     */
     async function saveUserName(name) {
-        const newName = name || document.getElementById("newUserName").value;
+        const newName = name || document.getElementById("newUserName")?.value;
         if (!newName || !newName.trim()) { alert("Name cannot be empty."); return; }
 
-        const data = await jsonpRequest(`${api}?action=setUserName&userId=${userId}&name=${encodeURIComponent(newName.trim())}`);
-        if (data.status === 'success') {
-            userName = newName.trim(); // Update local name
-            localStorage.setItem('userName', userName); // Update in localStorage as well
-            alert("Name updated successfully!");
-            showProfileScreen(); // Refresh profile screen
-        } else {
-            alert("Error: Could not save the name.");
+        showToast("Saving...", 'info', 2000);
+        try {
+            const data = await jsonpRequest(`${API_URL}?action=setUserName&userId=${appState.userId}&name=${encodeURIComponent(newName.trim())}`);
+            if (data.status === 'success') {
+                appState.userName = newName.trim();
+                localStorage.setItem('userName', appState.userName);
+                showToast("Name updated successfully!", 'success');
+                showProfileScreen(); // Refresh profile screen
+            } else {
+                showToast("Error: Could not save the name.", 'error');
+            }
+        } catch (error) {
+            showToast("Request failed. Check connection.", 'error');
         }
     }
 
-    // Helper to create a consistent key for chat history
-    function getChatHistoryKey(pId) {
-        const ids = [userId, pId].sort();
-        return `chatHistory_${ids[0]}_${ids[1]}`;
+    // =================================================================================
+    // Chat & Message Handling
+    // =================================================================================
+    function getChatId(userA, userB) {
+        // Get unique chatId (same for both users) by sorting IDs.
+        if (!userA || !userB) return null;
+        return [userA, userB].sort().join("_");
     }
 
+    /**
+     * Sends a message to the current peer.
+     */
     async function sendMsg() {
         const msgInput = document.getElementById("msg");
         if (!msgInput.value) return;
@@ -669,39 +1032,49 @@
 
         // Optimistically add to UI and save to localStorage
         const tempMsg = {
-            id: `temp_${Date.now()}`,
-            from: userId,
-            to: peerId,
+            from: appState.userId,
             msg: msgText,
-            seen: "false",
-            type: 'text'
         };
-        
-        // Get current history, add new message, and save back
-        const chatHistoryKey = getChatHistoryKey(peerId);
-        const localMessages = JSON.parse(localStorage.getItem(chatHistoryKey)) || [];
-        localMessages.push(tempMsg);
-        localStorage.setItem(chatHistoryKey, JSON.stringify(localMessages));
-        
-        // Render immediately from local data
-        renderMessages(localMessages);
-
-        await jsonpRequest(`${api}?action=sendMessage&fromId=${userId}&toId=${peerId}&msg=${encodeURIComponent(msgText)}`);
+        renderMessages([tempMsg], false); // Optimistically show the message
         msgInput.value = "";
-        loadMessages(false); // Refresh messages from server without scrolling
-    }
 
-    async function deleteMessage(messageId) {
-        if (!confirm("Are you sure you want to delete this message?")) return;
-        
-        const data = await jsonpRequest(`${api}?action=deleteMessage&messageId=${messageId}&userId=${userId}`);
-        if (data.status === 'deleted') {
+        try {
+            await jsonpRequest(`${API_URL}?action=sendMessage&fromId=${appState.userId}&toId=${appState.peerId}&msg=${encodeURIComponent(msgText)}`);
+            // After sending, refresh messages from server to get the final version
+            loadMessages(true);
+        } catch (error) {
+            console.error("Failed to send message:", error);
+            showToast("Message not sent. Check connection.", 'error');
+            // On failure, reload messages to remove the optimistic one
             loadMessages();
-        } else {
-            alert("Error: Could not delete the message.");
         }
     }
 
+    /**
+     * Deletes a specific message.
+     * @param {string} messageId - The ID of the message to delete.
+     */
+    async function deleteMessage(messageId) {
+        if (!confirm("Are you sure you want to delete this message?")) return;
+        showToast("Deleting...", 'info', 2000);
+        try {
+            const data = await jsonpRequest(`${API_URL}?action=deleteMessage&messageId=${messageId}&userId=${appState.userId}`);
+            if (data.status === 'deleted') {
+                showToast("Message deleted.", 'success');
+                loadMessages();
+            } else {
+                showToast("Error: Could not delete message.", 'error');
+            }
+        } catch (error) {
+            showToast("Request failed. Check connection.", 'error');
+        }
+    }
+
+    /**
+     * Replaces a message bubble with an input field for editing.
+     * @param {string} messageId - The ID of the message to edit.
+     * @param {string} currentMsg - The current text content of the message.
+     */
     function showEditInput(messageId, currentMsg) {
         const bubble = document.querySelector(`[data-message-id='${messageId}']`);
         if (!bubble) return;
@@ -715,6 +1088,10 @@
         `;
     }
 
+    /**
+     * Saves the edited message content to the server.
+     * @param {string} messageId - The ID of the message being saved.
+     */
     async function saveEdit(messageId) {
         const input = document.querySelector(`[data-message-id='${messageId}'] .edit-input`);
         if (!input) return;
@@ -722,89 +1099,251 @@
         const newMsg = input.value;
         if (!newMsg) { alert("Message cannot be empty."); return; }
 
-        const data = await jsonpRequest(`${api}?action=editMessage&messageId=${messageId}&newMsg=${encodeURIComponent(newMsg)}&userId=${userId}`);
-        if (data.status === 'edited') {
-            loadMessages();
-        } else {
-            alert("Error: Could not edit the message.");
+        showToast("Saving...", 'info', 2000);
+        try {
+            const data = await jsonpRequest(`${API_URL}?action=editMessage&messageId=${messageId}&newMsg=${encodeURIComponent(newMsg)}&userId=${appState.userId}`);
+            if (data.status === 'edited') {
+                showToast("Message edited.", 'success');
+                loadMessages();
+            } else {
+                showToast("Error: Could not edit message.", 'error');
+            }
+        } catch (error) {
+            showToast("Request failed. Check connection.", 'error');
         }
     }
 
+    /**
+     * Shows a context menu for a message bubble.
+     * @param {MouseEvent|TouchEvent} event - The event that triggered the menu.
+     * @param {string} messageId - The ID of the message.
+     * @param {string} messageContent - The text content of the message.
+     */
+    function showContextMenu(event, messageId, messageContent) {
+        const menu = document.getElementById('message-context-menu');
+        
+        // Set up actions for menu items
+        document.getElementById('context-edit').onclick = () => {
+            showEditInput(messageId, messageContent);
+            hideContextMenu();
+        };
+        document.getElementById('context-delete').onclick = () => {
+            deleteMessage(messageId);
+            hideContextMenu();
+        };
+
+        // Position and show the menu
+        const touch = event.touches ? event.touches[0] : event;
+        menu.style.top = `${touch.clientY}px`;
+        menu.style.left = `${touch.clientX}px`;
+        menu.style.display = 'block';
+
+        // Add a listener to hide the menu when clicking elsewhere
+        setTimeout(() => { // Use timeout to avoid immediate closing
+            window.addEventListener('click', hideContextMenu, { once: true });
+            window.addEventListener('contextmenu', hideContextMenu, { once: true });
+        }, 0);
+    }
+
+    /**
+     * Hides the message context menu.
+     */
+    function hideContextMenu() {
+        const menu = document.getElementById('message-context-menu');
+        if (menu) menu.style.display = 'none';
+        window.removeEventListener('click', hideContextMenu);
+        window.removeEventListener('contextmenu', hideContextMenu);
+    }
+
+    /**
+     * Shows a context menu for a chat item on the home screen.
+     * @param {MouseEvent|TouchEvent} event - The event that triggered the menu.
+     * @param {string} peerId - The peer ID of the chat.
+     */
+    function showChatContextMenu(event, peerId) {
+        const menu = document.getElementById('chat-context-menu');
+
+        // --- Action for Archive ---
+        document.getElementById('chat-context-archive').onclick = async () => {
+            hideChatContextMenu();
+            await jsonpRequest(`${API_URL}?action=archiveChat&ownerId=${appState.userId}&peerId=${peerId}`);
+            showToast("Chat archived.", 'success');
+            refreshChatList();
+        };
+
+        // --- Action for Delete ---
+        document.getElementById('chat-context-delete').onclick = async () => {
+            hideChatContextMenu();
+            if (confirm("Are you sure you want to delete this chat? This cannot be undone.")) {
+                showToast("Deleting chat...", 'info', 2000);
+                await jsonpRequest(`${API_URL}?action=deleteChat&ownerId=${appState.userId}&peerId=${peerId}`);
+                showToast("Chat deleted.", 'success');
+                refreshChatList();
+            }
+        };
+
+        // Position and show the menu
+        const touch = event.touches ? event.touches[0] : event;
+        menu.style.top = `${touch.clientY}px`;
+        menu.style.left = `${touch.clientX}px`;
+        menu.style.display = 'block';
+
+        // Add a listener to hide the menu when clicking elsewhere
+        setTimeout(() => { // Use timeout to avoid immediate closing
+            window.addEventListener('click', hideChatContextMenu, { once: true });
+            window.addEventListener('contextmenu', hideChatContextMenu, { once: true });
+        }, 0);
+    }
+
+    /**
+     * Hides the chat context menu.
+     */
+    function hideChatContextMenu() {
+        const menu = document.getElementById('chat-context-menu');
+        if (menu) menu.style.display = 'none';
+        window.removeEventListener('click', hideChatContextMenu);
+        window.removeEventListener('contextmenu', hideChatContextMenu);
+    }
+
+    /**
+     * Loads messages for the current chat from the server.
+     * @param {boolean} [shouldScroll=true] - Whether to scroll to the bottom after loading.
+     */
     async function loadMessages(shouldScroll = true) {
-        if (!userId || !peerId) return;
-        const chatHistoryKey = getChatHistoryKey(peerId);
+        if (!appState.userId || !appState.peerId) return;
 
-        // 1. Load and render messages from localStorage immediately
-        const localMessages = JSON.parse(localStorage.getItem(chatHistoryKey)) || [];
-        if (localMessages.length > 0) {
-            renderMessages(localMessages, shouldScroll);
+        try {
+            const data = await jsonpRequest(`${API_URL}?action=getMessages&userId=${appState.userId}&peerId=${appState.peerId}`);
+            
+            if (data.status === 'error') {
+                console.error("Error loading messages:", data.message);
+                // Don't show toast on regular polling errors to avoid spam
+                return;
+            }
+
+            // Handle typing indicator and online status from server data
+            document.getElementById("typingIndicator").style.display = data.isTyping ? 'block' : 'none';
+            document.getElementById('peerStatus').innerText = data.isOnline ? 'Online' : '';
+
+            // Render the UI using the fresh data from the server
+            renderMessages(data.messages, shouldScroll);
+
+        } catch (error) {
+            console.error("Network error loading messages:", error);
+            // Don't show toast on regular polling errors
         }
-
-        // 2. Fetch latest messages from the server
-        const data = await jsonpRequest(`${api}?action=getMessages&userId=${userId}&peerId=${peerId}`);
-        if (data.status === 'error') {
-            console.error("Error loading messages:", data.message);
-            // Stop trying if there's an error to avoid spamming
-            if (messageInterval) clearInterval(messageInterval);
-            // If server fails, we still have the local copy rendered.
-            // We can show an error to the user.
-            return;
-        }
-
-        // Handle typing indicator
-        const typingIndicator = document.getElementById("typingIndicator");
-        typingIndicator.style.display = data.isTyping ? 'block' : 'none';
-        // Adjust input area if typing indicator is shown
-
-        // Update peer's online status in chat header
-        document.getElementById('peerStatus').innerText = data.isOnline ? 'Online' : '';
-
-        document.querySelector('.chat-input-area input').style.width = data.isTyping ? 'calc(100% - 100px)' : 'calc(100% - 26px)';
-
-        // 3. Update localStorage with fresh data from the server
-        localStorage.setItem(chatHistoryKey, JSON.stringify(data.messages));
-
-        // 4. Re-render the UI with the definitive server data
-        renderMessages(data.messages, shouldScroll);
     }
 
+    /**
+     * Renders an array of message objects into the chat box.
+     * @param {Array<Object>} messages - The messages to render.
+     * @param {boolean} [shouldScroll=true] - Whether to scroll to the bottom.
+     */
     function renderMessages(messages, shouldScroll = true) {
         const box = document.getElementById("chatBox");
         const isScrolledToBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 1;
 
-        box.innerHTML = "";
-
+        // Clear previous messages before rendering new ones
+        if (messages.length > 0) {
+            box.innerHTML = "";
+        }
         messages.forEach(m => {
+            const isMe = m.from == appState.userId || m.fromId == appState.userId;
+            const isTemp = !m.id || m.id.toString().startsWith('temp_');
+            const isDeleted = m.msg.includes("[This message was deleted]");
+
             const messageContainer = document.createElement("div");
-            messageContainer.className = "message-container";
+            messageContainer.className = `message-container ${isMe ? 'me' : 'them'}`;
+            messageContainer.dataset.messageId = m.id;
+
             const bubble = document.createElement("div");
-            let hasContent = false;
+            bubble.className = `message-bubble ${isMe ? 'me' : 'them'}`;
 
-            if (m.type === 'text') {
-                bubble.dataset.messageId = m.id; // Set message ID as a data attribute
-                bubble.className = "message-bubble " + (m.from == userId ? "me" : "them");
-                // Add a seen checkmark (✔) for your own messages that have been seen
-                // Add a clock icon (🕒) for your own messages that are temporary (not yet confirmed by server)
-                const statusIcon = m.id.toString().startsWith('temp_') ? " 🕒" : (m.from == userId && m.seen === "true" ? " ✔" : "");
-                bubble.innerText = m.msg + statusIcon;
-                hasContent = true;
-            }
-
-            if (hasContent) {
-                messageContainer.appendChild(bubble);
-                box.appendChild(messageContainer);
-
-                // Add event listeners for own messages
-                if (m.from == userId && !m.msg.includes("[This message was deleted]") && !m.id.toString().startsWith('temp_')) {
-                    bubble.style.cursor = 'pointer';
-                    bubble.onclick = () => deleteMessage(m.id); // Single click to delete
-                    bubble.ondblclick = (e) => { e.preventDefault(); showEditInput(m.id, m.msg); }; // Double click to edit
+            let statusIconHtml = '';
+            if (isMe) {
+                if (isTemp) {
+                    statusIconHtml = '<span class="status-icon"> 🕒</span>'; // Clock for sending
+                } else if (m.seen === "true") {
+                    statusIconHtml = '<span class="status-icon seen"> ✔✔</span>'; // Double check for seen
+                } else {
+                    statusIconHtml = '<span class="status-icon"> ✓</span>'; // Single check for sent
                 }
+            }
+            const timestamp = m.ts ? new Date(m.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+            
+            // Display message, timestamp, and status icon
+            bubble.innerHTML = `<span class="message-text">${m.msg}</span><br><small style="opacity: 0.7;">${timestamp}</small>${statusIconHtml}`;
+
+            messageContainer.appendChild(bubble);
+            box.appendChild(messageContainer);
+
+            // Add event listeners for own, non-temporary, non-deleted messages
+            if (isMe && !isTemp && !isDeleted) {
+                let longPressTimer;
+
+                // For Desktop: Right-click
+                bubble.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    showContextMenu(e, m.id, m.msg);
+                });
+
+                // For Mobile: Long-press
+                bubble.addEventListener('touchstart', (e) => {
+                    longPressTimer = setTimeout(() => {
+                        showContextMenu(e, m.id, m.msg);
+                    }, 500); // 500ms for long press
+                });
+
+                bubble.addEventListener('touchend', () => clearTimeout(longPressTimer));
+                bubble.addEventListener('touchmove', () => clearTimeout(longPressTimer));
             }
         });
 
-        if(shouldScroll && isScrolledToBottom) box.scrollTop = box.scrollHeight;
+        // Always scroll to bottom if shouldScroll is true (e.g., after sending a message),
+        // or if the user was already at the bottom.
+        if (shouldScroll || isScrolledToBottom) {
+            box.scrollTop = box.scrollHeight;
+        }
     }
+
+    /**
+     * Toggles the visibility of the message search input in the chat header.
+     */
+    function toggleSearch() {
+        const searchInput = document.getElementById('chat-search-input');
+        const isVisible = searchInput.style.display === 'block';
+        searchInput.style.display = isVisible ? 'none' : 'block';
+        if (isVisible) {
+            searchInput.value = ''; // Clear search on hide
+            handleSearch({ target: searchInput }); // Trigger search to remove highlights
+        } else {
+            searchInput.focus();
+        }
+    }
+
+    /**
+     * Handles the search input, highlighting matching text in messages.
+     * @param {InputEvent} event - The input event from the search field.
+     */
+    function handleSearch(event) {
+        const searchTerm = event.target.value.toLowerCase();
+        const messages = document.querySelectorAll('#chatBox .message-text');
+
+        messages.forEach(msgElement => {
+            const originalText = msgElement.textContent;
+            if (searchTerm && originalText.toLowerCase().includes(searchTerm)) {
+                const regex = new RegExp(`(${searchTerm})`, 'gi');
+                msgElement.innerHTML = originalText.replace(regex, '<span class="highlight">$1</span>');
+            } else {
+                // Restore original text by removing highlight spans
+                msgElement.innerHTML = originalText;
+            }
+        });
+    }
+    // Add this style to your CSS to align the timestamp correctly
+    // .message-bubble small { display: block; text-align: right; margin-top: 4px; }
+    // But for simplicity, I've added it inline via JS.
+
     </script>
 </body>
 </html>
