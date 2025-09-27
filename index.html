@@ -438,7 +438,7 @@
     // =================================================================================
     // App State & Constants
     // =================================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbw08rDhS4X9n_73m8S6XrWzVMPLvxGhEH3E_dB-E_UySonS44v3C4dHlgfa-Af0Gro/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyu3z19L4qdGMEmuyai-KHNikFB9aqsQzuJKzh0SoRBBTmaBFqRQm8o1-iTCoFiGT9K/exec";
     const appState = {
         userId: null,
         userName: null,
@@ -1144,19 +1144,21 @@
         // Optimistically add to UI and save to localStorage
         const tempMsg = {
             from: appState.userId,
-            fromId: appState.userId, // fromId bhi add karein
+            fromId: appState.userId,
             msg: msgText,
             ts: new Date().toISOString(),
-            id: `temp_${Date.now()}` // Give it a temporary ID
+            id: `temp_${Date.now()}` // Ek unique temporary ID banayein
         };
         // Naye message ko UI mein jodein, poori screen ko refresh na karein
         renderSingleMessage(tempMsg, true); // 'true' batata hai ki yeh ek naya message hai
         scrollToBottom();
 
         try {
-            await jsonpRequest(`${API_URL}?action=sendMessage&fromId=${appState.userId}&toId=${appState.peerId}&msg=${encodeURIComponent(msgText)}`);
-            // Ab loadMessages() ko yahan call nahi karenge.
-            // Polling (jo har 3 second mein chalta hai) apne aap message ko update kar dega.
+            const data = await jsonpRequest(`${API_URL}?action=sendMessage&fromId=${appState.userId}&toId=${appState.peerId}&msg=${encodeURIComponent(msgText)}`);
+            // Server se message confirm hone ke baad, temporary message ko asli message se badlein
+            const tempElement = document.querySelector(`[data-temp-id='${tempMsg.id}']`);
+            const realMsg = { ...tempMsg, id: data.messageId, from: appState.userId }; // Server se mili ID ka istemal karein
+            if (tempElement) replaceTempMessage(tempElement, realMsg);
         } catch (error) {
             console.error("Failed to send message:", error);
             showToast("Message not sent. Check connection.", 'error');
@@ -1353,6 +1355,28 @@
     }
 
     /**
+     * Replaces a temporary message bubble with the real one from the server.
+     * @param {HTMLElement} tempElement - The temporary message container element.
+     * @param {Object} realMsg - The final message object from the server.
+     */
+    function replaceTempMessage(tempElement, realMsg) {
+        // Update the dataset to use the real message ID
+        tempElement.dataset.messageId = realMsg.id;
+        delete tempElement.dataset.tempId;
+
+        // Update the status icon from clock to single tick
+        const statusIcon = tempElement.querySelector('.status-icon');
+        if (statusIcon) {
+            statusIcon.innerHTML = ' ✓'; // Sent icon
+        }
+
+        // Re-attach event listeners for the now-permanent message
+        const bubble = tempElement.querySelector('.message-bubble');
+        if (bubble) {
+            addMessageEventListeners(bubble, realMsg);
+        }
+    }
+    /**
      * Renders a single message object and appends it to the chat box.
      * @param {Object} m - The message object to render.
      * @param {boolean} [isNew=false] - Is this a brand new message being added to the end?
@@ -1399,6 +1423,33 @@
 
         // Add event listeners for own, non-temporary, non-deleted messages
         if (isMe && !isTemp && !isDeleted) {
+            addMessageEventListeners(bubble, m);
+        }
+    }
+
+    /**
+     * Attaches context menu event listeners to a message bubble.
+     * @param {HTMLElement} bubble - The message bubble element.
+     * @param {Object} m - The message object.
+     */
+    function addMessageEventListeners(bubble, m) {
+        let longPressTimer;
+
+        // For Desktop: Right-click
+        bubble.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            showContextMenu(e, m.id, m.msg);
+        });
+
+        // For Mobile: Long-press
+        bubble.addEventListener('touchstart', (e) => {
+            longPressTimer = setTimeout(() => { showContextMenu(e, m.id, m.msg); }, 500);
+        });
+
+        bubble.addEventListener('touchend', () => clearTimeout(longPressTimer));
+        bubble.addEventListener('touchmove', () => clearTimeout(longPressTimer));
+        // Add event listeners for own, non-temporary, non-deleted messages
+        if (isMe && !isTemp && !isDeleted) {
             let longPressTimer;
 
             // For Desktop: Right-click
@@ -1425,55 +1476,38 @@
      * @param {boolean} [shouldScroll=true] - Whether to scroll to the bottom.
      */
     function renderMessages(messages, shouldScroll = true) {
-        const box = document.getElementById("chatBox");
-        const isScrolledToBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 5; // Thoda buffer rakhein
+        const box = document.getElementById('chatBox');
+        const isScrolledToBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 10;
 
-        // --- Smart Rendering Logic ---
-        // Pehle se screen par maujood sabhi messages ki ID store karein
+        // Jab chat pehli baar khule, to poora box saaf karke saare messages dikhayein
+        if (shouldScroll) {
+            box.innerHTML = "";
+            messages.forEach(m => renderSingleMessage(m, false));
+            scrollToBottom();
+            return;
+        }
+
+        // Polling ke dauran, sirf naye messages ko jodein
         const existingMessageIds = new Set([...box.querySelectorAll('[data-message-id]')].map(el => el.dataset.messageId));
-        let newMessagesAdded = false;
-
+        
         messages.forEach(msg => {
-            // Agar message pehle se screen par hai, to kuch na karein.
-            if (existingMessageIds.has(msg.id.toString())) {
-                // Sirf 'seen' status update kar sakte hain agar zaroori ho
-                const bubble = box.querySelector(`[data-message-id='${msg.id}'] .message-bubble`);
-                const statusIcon = bubble.querySelector('.status-icon');
+            const msgId = msg.id.toString();
+            const element = box.querySelector(`[data-message-id='${msgId}']`);
+
+            if (!element) { // Agar message screen par nahi hai
+                // Yeh saamne wale ka naya message hai
+                if (msg.from != appState.userId) {
+                    renderSingleMessage(msg, true); // Naya message jodein
+                    if (isScrolledToBottom) scrollToBottom();
+                }
+            } else { // Agar message pehle se hai, to 'seen' status update karein
+                const statusIcon = element.querySelector('.status-icon');
                 if (statusIcon && msg.seen === 'true' && !statusIcon.classList.contains('seen')) {
                     statusIcon.innerHTML = ' ✔✔';
                     statusIcon.classList.add('seen');
                 }
-                return; // Agle message par jaayein
-            }
-
-            // Agar server se aaya message kisi temporary message se match karta hai,
-            // to temporary message ko asli message se badal dein.
-            const tempElement = box.querySelector(`[data-temp-id^='temp_']`); // Koi bhi temp message dhoondhein
-            if (tempElement) {
-                // Is logic ko aur behtar banaya ja sakta hai, par abhi ke liye yeh kaam karega
-                // ki pehle temporary message ko replace karega.
-                tempElement.remove();
-                renderSingleMessage(msg, false); // Bina animation ke render karein
-                newMessagesAdded = true;
-            } 
-            // Agar yeh saamne wale ka naya message hai
-            else {
-                renderSingleMessage(msg, true); // Animation ke saath render karein
-                newMessagesAdded = true;
             }
         });
-
-        // Agar naye messages aaye hain aur user pehle se neeche tha, tabhi scroll karein
-        if (newMessagesAdded && isScrolledToBottom) {
-            scrollToBottom();
-        }
-
-        // Agar chat khulte hi pehli baar messages load ho rahe hain, to poora box saaf karke render karein
-        if (shouldScroll) { // shouldScroll=true ka matlab hai pehli baar load ho raha hai
-            box.innerHTML = "";
-            messages.forEach(m => renderSingleMessage(m, false));
-            scrollToBottom();
-        }
     }
 
     /**
