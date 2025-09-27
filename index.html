@@ -1139,28 +1139,32 @@
         const msgInput = document.getElementById("msg");
         if (!msgInput.value) return;
         const msgText = msgInput.value;
-        msgInput.value = ""; // Clear input immediately
+        msgInput.value = ""; // Input ko turant saaf karein
 
         // Optimistically add to UI and save to localStorage
         const tempMsg = {
             from: appState.userId,
+            fromId: appState.userId, // fromId bhi add karein
             msg: msgText,
             ts: new Date().toISOString(),
             id: `temp_${Date.now()}` // Give it a temporary ID
         };
-        // Append the new message instead of re-rendering everything
-        renderSingleMessage(tempMsg);
+        // Naye message ko UI mein jodein, poori screen ko refresh na karein
+        renderSingleMessage(tempMsg, true); // 'true' batata hai ki yeh ek naya message hai
         scrollToBottom();
 
         try {
-            const data = await jsonpRequest(`${API_URL}?action=sendMessage&fromId=${appState.userId}&toId=${appState.peerId}&msg=${encodeURIComponent(msgText)}`);
-            // After sending, refresh messages from server to get the final version
-            loadMessages(true);
+            await jsonpRequest(`${API_URL}?action=sendMessage&fromId=${appState.userId}&toId=${appState.peerId}&msg=${encodeURIComponent(msgText)}`);
+            // Ab loadMessages() ko yahan call nahi karenge.
+            // Polling (jo har 3 second mein chalta hai) apne aap message ko update kar dega.
         } catch (error) {
             console.error("Failed to send message:", error);
             showToast("Message not sent. Check connection.", 'error');
-            // On failure, reload messages to remove the optimistic one
-            loadMessages();
+            // Agar message fail hota hai, to UI mein use failed mark karein
+            const failedMsgElement = document.querySelector(`[data-temp-id='${tempMsg.id}']`);
+            if (failedMsgElement) {
+                failedMsgElement.querySelector('.status-icon').innerHTML = ' ❌'; // Failed icon
+            }
         }
     }
 
@@ -1351,8 +1355,9 @@
     /**
      * Renders a single message object and appends it to the chat box.
      * @param {Object} m - The message object to render.
+     * @param {boolean} [isNew=false] - Is this a brand new message being added to the end?
      */
-    function renderSingleMessage(m) {
+    function renderSingleMessage(m, isNew = false) {
         const box = document.getElementById("chatBox");
         const isMe = m.from == appState.userId || m.fromId == appState.userId;
         const isTemp = !m.id || m.id.toString().startsWith('temp_');
@@ -1365,6 +1370,11 @@
             messageContainer.dataset.tempId = m.id;
         } else {
             messageContainer.dataset.messageId = m.id;
+        }
+
+        // If it's a new message, add a fade-in animation class
+        if (isNew) {
+            messageContainer.classList.add('new-message-animation');
         }
 
         const bubble = document.createElement("div");
@@ -1416,17 +1426,53 @@
      */
     function renderMessages(messages, shouldScroll = true) {
         const box = document.getElementById("chatBox");
-        const isScrolledToBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 1;
+        const isScrolledToBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 5; // Thoda buffer rakhein
 
-        // Always clear the chat box before rendering new messages
-        box.innerHTML = "";
+        // --- Smart Rendering Logic ---
+        // Pehle se screen par maujood sabhi messages ki ID store karein
+        const existingMessageIds = new Set([...box.querySelectorAll('[data-message-id]')].map(el => el.dataset.messageId));
+        let newMessagesAdded = false;
 
-        messages.forEach(m => renderSingleMessage(m));
+        messages.forEach(msg => {
+            // Agar message pehle se screen par hai, to kuch na karein.
+            if (existingMessageIds.has(msg.id.toString())) {
+                // Sirf 'seen' status update kar sakte hain agar zaroori ho
+                const bubble = box.querySelector(`[data-message-id='${msg.id}'] .message-bubble`);
+                const statusIcon = bubble.querySelector('.status-icon');
+                if (statusIcon && msg.seen === 'true' && !statusIcon.classList.contains('seen')) {
+                    statusIcon.innerHTML = ' ✔✔';
+                    statusIcon.classList.add('seen');
+                }
+                return; // Agle message par jaayein
+            }
 
-        // Always scroll to bottom if shouldScroll is true (e.g., after sending a message),
-        // or if the user was already at the bottom.
-        if (shouldScroll || isScrolledToBottom) {
-            box.scrollTop = box.scrollHeight;
+            // Agar server se aaya message kisi temporary message se match karta hai,
+            // to temporary message ko asli message se badal dein.
+            const tempElement = box.querySelector(`[data-temp-id^='temp_']`); // Koi bhi temp message dhoondhein
+            if (tempElement) {
+                // Is logic ko aur behtar banaya ja sakta hai, par abhi ke liye yeh kaam karega
+                // ki pehle temporary message ko replace karega.
+                tempElement.remove();
+                renderSingleMessage(msg, false); // Bina animation ke render karein
+                newMessagesAdded = true;
+            } 
+            // Agar yeh saamne wale ka naya message hai
+            else {
+                renderSingleMessage(msg, true); // Animation ke saath render karein
+                newMessagesAdded = true;
+            }
+        });
+
+        // Agar naye messages aaye hain aur user pehle se neeche tha, tabhi scroll karein
+        if (newMessagesAdded && isScrolledToBottom) {
+            scrollToBottom();
+        }
+
+        // Agar chat khulte hi pehli baar messages load ho rahe hain, to poora box saaf karke render karein
+        if (shouldScroll) { // shouldScroll=true ka matlab hai pehli baar load ho raha hai
+            box.innerHTML = "";
+            messages.forEach(m => renderSingleMessage(m, false));
+            scrollToBottom();
         }
     }
 
