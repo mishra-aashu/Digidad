@@ -3,36 +3,121 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
-    <title>Spreadsheet Messenger</title>
+    <title>Digidad</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .container { background-color: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 450px; width: 100%; overflow: hidden; }
+        :root {
+            --body-bg: linear-gradient(to right top, #65dfc9, #6cdbeb);
+            --container-bg: rgba(255, 255, 255, 0.2);
+            --container-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            --container-border: 1px solid rgba(255, 255, 255, 0.3);
+            --text-color: #333; /* Changed for light theme readability */
+            --text-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --input-border: rgba(255, 255, 255, 0.4);
+            --input-bg: rgba(255, 255, 255, 0.2);
+            --input-placeholder-color: #666; /* Changed for light theme */
+            --button-bg: rgba(255, 255, 255, 0.3);
+            --button-hover-bg: rgba(255, 255, 255, 0.5);
+            --button-text-color: #212121; /* Dark text for buttons in light mode */
+            --button-disabled-bg: rgba(255, 255, 255, 0.1);
+            --chatbox-bg: rgba(0, 0, 0, 0.1);
+            --message-me-bg: rgba(102, 219, 235, 0.5);
+            --message-me-color: #111; /* Changed for light theme readability */
+            --message-them-bg: rgba(255, 255, 255, 0.4);
+            --message-them-color: #212121; /* Darker text for better readability */
+            --list-item-border: rgba(255, 255, 255, 0.2);
+            --list-item-hover-bg: rgba(255, 255, 255, 0.1);
+            --list-item-subtext-color: #555; /* Changed for light theme */
+            --header-button-color: #333; /* Changed for light theme */
+            --emoji-button-color: #555; /* Changed for light theme */
+        }
+
+        body.dark-mode {
+            --body-bg: linear-gradient(to right top, #1d2b64, #f8cdda);
+            --container-bg: rgba(0, 0, 0, 0.25);
+            --container-border: 1px solid rgba(255, 255, 255, 0.18);
+            --text-color: #fff;
+            --input-border: rgba(255, 255, 255, 0.2);
+            --input-bg: rgba(0, 0, 0, 0.2);
+            --button-bg: rgba(255, 255, 255, 0.15);
+            --button-hover-bg: rgba(255, 255, 255, 0.25);
+            --button-text-color: #fff; /* White text for buttons in dark mode */
+            --chatbox-bg: rgba(0, 0, 0, 0.2);
+            --message-me-bg: #7579e7;
+            --message-me-color: #fff;
+            --message-them-bg: rgba(255, 255, 255, 0.1);
+            --message-them-color: #fff;
+            --list-item-border: rgba(255, 255, 255, 0.1);
+            --list-item-hover-bg: rgba(255, 255, 255, 0.08);
+            --list-item-subtext-color: rgba(255, 255, 255, 0.7);
+        }
+
+        @keyframes fadeInScaleUp {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes hint-animation {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            10% { transform: scale(1.1); }
+            80% { transform: scale(1.1); opacity: 1; }
+            99% { transform: scale(1); opacity: 0; }
+        }
+
+        @keyframes text-focus-in {
+            0% { filter: blur(12px); opacity: 0; }
+            100% { filter: blur(0px); opacity: 1; }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background: var(--body-bg);
+            margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; 
+            transition: background 0.5s ease;
+        }
+        .container { 
+            background: var(--container-bg);
+            border-radius: 16px;
+            box-shadow: var(--container-shadow);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: var(--container-border);
+            max-width: 450px; width: 100%; overflow: hidden; 
+            transition: background 0.5s ease, border 0.5s ease;
+            animation: fadeInScaleUp 0.6s ease-out forwards;
+        }
         .screen { padding: 20px; }
-        h3, h4 { color: #333; }
-        input[type="text"] { padding: 12px; width: calc(100% - 26px); margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; }
-        button { padding: 12px 18px; cursor: pointer; border: none; border-radius: 6px; background-color: #007bff; color: white; font-size: 16px; transition: background-color 0.2s; }
-        button:hover { background-color: #0056b3; }
-        button:disabled { background-color: #a0c7ff; cursor: not-allowed; }
+        h3, h4 { color: var(--text-color); text-shadow: var(--text-shadow); transition: color 0.5s ease; }
+        input[type="text"] { padding: 12px; width: calc(100% - 26px); margin-bottom: 10px; border: 1px solid var(--input-border); background: var(--input-bg); border-radius: 8px; font-size: 16px; color: var(--text-color); transition: background 0.5s ease, border 0.5s ease, color 0.5s ease; }
+        input[type="text"]::placeholder { color: var(--input-placeholder-color); }
+        button { padding: 12px 18px; cursor: pointer; border: none; border-radius: 8px; background: var(--button-bg); color: var(--button-text-color); font-size: 16px; transition: background-color 0.3s, color 0.5s ease; backdrop-filter: blur(2px); }
+        button:hover { background: var(--button-hover-bg); }
+        button:disabled { background: var(--button-disabled-bg); cursor: not-allowed; }
         
-        #chatBox { background-color: #e5ddd5; height: 450px; overflow-y: scroll; padding: 10px; margin-bottom: 10px; display: flex; flex-direction: column; }
-        .message-bubble { padding: 8px 12px; border-radius: 18px; max-width: 75%; word-wrap: break-word; line-height: 1.4; }
-        .message-content { display: flex; flex-direction: column; }
-        .message-text { padding-right: 5px; }
-        .message-meta { font-size: 11px; color: #888; text-align: right; margin-top: 4px; }
-        .message-meta .tick { font-weight: bold; }
-        .message-meta .tick.seen { color: #ff0000; } /* Red color for seen tick */
-        .me { background-color: #dcf8c6; align-self: flex-end; }
-        .them { background-color: #ffffff; align-self: flex-start; }
-        .them .message-meta { text-align: left; }
+        #chatBox { background: var(--chatbox-bg); height: 450px; overflow-y: scroll; padding: 10px; margin-bottom: 10px; display: flex; flex-direction: column; border-radius: 8px; transition: background 0.5s ease; }
+        .message-bubble { padding: 8px 12px; border-radius: 18px; max-width: 75%; word-wrap: break-word; line-height: 1.4; transition: background-color 0.5s ease, color 0.5s ease; }
+        .me { background: var(--message-me-bg); align-self: flex-end; color: var(--message-me-color); }
+        .them { background: var(--message-them-bg); align-self: flex-start; color: var(--message-them-color); }
         .message-container { display: flex; flex-direction: column; margin: 2px 0; }
 
-        .chat-list-item { padding: 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background-color 0.2s; }
+        .chat-list-item { padding: 12px; border-bottom: 1px solid var(--list-item-border); cursor: pointer; transition: background-color 0.3s, border-color 0.5s ease; }
         .chat-list-item-content { display: flex; align-items: center; }
-        #chatList div:hover { background-color: #f9f9f9; }
+        #chatList div:hover { background-color: var(--list-item-hover-bg); }
         .screen { display: none; } #loginScreen { display: block; }
         
-        .chat-header { display: flex; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #eee; margin-bottom: 10px; }
-        .chat-header button { background: none; color: #007bff; padding: 0 10px 0 0; font-size: 24px; }
+        .chat-header { display: flex; align-items: center; padding-bottom: 10px; border-bottom: 1px solid var(--list-item-border); margin-bottom: 10px; transition: border-color 0.5s ease; }
+        .chat-header button { background: none; color: var(--header-button-color); padding: 0 10px 0 0; font-size: 24px; }
         .chat-input-area { display: flex; position: relative; }
         .chat-input-area input { flex-grow: 1; margin-right: 10px; margin-bottom: 0; }
         .edit-name-icon { cursor: pointer; font-size: 16px; margin-left: 8px; }
@@ -40,39 +125,105 @@
         /* Online Indicator Styles - Kept for user status */
         .online-indicator {
             width: 10px; height: 10px; border-radius: 50%;
-            background-color: #808080; /* Grey for offline */
+            background-color: #aaa; /* Grey for offline */
             border: 2px solid white;
             position: absolute; bottom: 0; right: 12px;
         }
         .online-indicator.online { background-color: #28a745; } /* Green for online */
 
-        .emoji-button { background: none; border: none; font-size: 24px; cursor: pointer; padding: 0 10px; color: #555; align-self: center; }
+        .emoji-button { background: none; border: none; font-size: 24px; cursor: pointer; padding: 0 10px; color: var(--emoji-button-color); align-self: center; }
         emoji-picker {
             position: absolute;
             bottom: 50px; /* Position it above the input area */
             right: 0;
             z-index: 100;
         }
+
+        .theme-toggle-hint {
+            position: relative;
+        }
+        .theme-toggle-hint::after {
+            content: 'Click to toggle theme!';
+            position: absolute;
+            top: -35px;
+            right: 0;
+            background-color: #333;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            white-space: nowrap;
+            animation: hint-animation 5s ease-in-out forwards;
+        }
+
+        #profile-details p {
+            background: var(--input-bg);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        #intro-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            overflow: hidden;
+        }
+        #intro-text {
+            font-size: 5rem;
+            color: white;
+            text-shadow: 0 0 15px rgba(0,0,0,0.3);
+            animation: text-focus-in 1.5s cubic-bezier(0.550, 0.085, 0.680, 0.530) 0.5s both;
+            z-index: 201;
+        }
+        .dummy-bubble {
+            position: absolute;
+            padding: 10px 15px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            filter: blur(8px);
+            animation: float 6s ease-in-out infinite;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div id="intro-screen">
+        <div class="dummy-bubble" style="top: 10%; left: 15%; animation-delay: -2s;">Hello there! 👋</div>
+        <div class="dummy-bubble" style="top: 25%; right: 10%; background: rgba(255,255,255,0.2);">How are you?</div>
+        <div class="dummy-bubble" style="bottom: 40%; left: 20%; animation-delay: -4s;">Welcome to digidad...</div>
+        <div class="dummy-bubble" style="bottom: 15%; right: 25%; background: rgba(255,255,255,0.2);">This is cool! ✨</div>
+        <h1 id="intro-text">Digidad</h1>
+    </div>
+    <div class="container" style="display: none;">
         <!-- Login Screen -->
         <div id="loginScreen" class="screen">
-            <h3>Welcome to Messenger</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3>Welcome to Digidad</h3>
+                <button id="theme-toggle" style="font-size: 18px; padding: 6px 10px;">🌙</button>
+            </div>
             <input type="text" id="phone" placeholder="Your phone number...">
             <button onclick="login()">Login / Register</button>
         </div>
 
         <!-- Home Screen (Chat List & New Chat) -->
         <div id="homeScreen" class="screen">
-            <h4>Start a New Chat</h4>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h4>Start a New Chat</h4>
+                <div>
+                    <button id="profile-btn" onclick="showProfileScreen()" style="font-size: 18px; padding: 6px 10px; margin-right: 5px;">👤</button>
+                    <button id="theme-toggle-home" style="font-size: 18px; padding: 6px 10px;">🌙</button>
+                </div>
+            </div>
             <input type="text" id="newPeerPhone" placeholder="Enter peer's phone...">
             <button onclick="startNewChat()">Chat</button>
             <hr style="margin: 20px 0;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3>Your Chats</h3>
-            </div>
+            <h3>Your Chats</h3>
             <div id="chatList"></div>
         </div>
 
@@ -80,8 +231,11 @@
         <div id="chatScreen" class="screen">
             <div class="chat-header">
                 <button onclick="showHomeScreen()">&#8592;</button>
-                <div id="peerStatus" style="font-size: 12px; color: #007bff; margin-left: -10px;"></div>
-                <h3 style="margin: 0;" id="chatWith"></h3><span class="edit-name-icon" onclick="promptToEditPeerName()">✏️</span>
+                <div id="peerStatus" style="font-size: 12px; color: var(--text-color); margin-left: -10px;"></div>
+                <div style="flex-grow: 1; display: flex; align-items: center;">
+                    <h3 style="margin: 0;" id="chatWith"></h3><span class="edit-name-icon" onclick="promptToEditPeerName()">✏️</span>
+                </div>
+                <button id="theme-toggle-chat" style="font-size: 18px; padding: 6px 10px;">🌙</button>
             </div>
             <div id="chatBox"></div>
             <div class="chat-input-area">
@@ -92,10 +246,60 @@
             </div>
             <emoji-picker style="display: none;"></emoji-picker>
         </div>
+
+        <!-- Profile Screen -->
+        <div id="profileScreen" class="screen">
+            <div class="chat-header">
+                <button onclick="showHomeScreen()">&#8592;</button>
+                <h3 style="margin: 0; flex-grow: 1;">Your Profile</h3>
+            </div>
+            <div id="profile-details"></div>
+        </div>
     </div>
 
     <script>
     // Add event listener for 'Enter' key on message input
+
+    // --- Theme Toggle ---
+    function applyTheme(theme) {
+        const body = document.body;
+        const toggles = document.querySelectorAll('#theme-toggle, #theme-toggle-home, #theme-toggle-chat');
+        if (theme === 'dark') {
+            body.classList.add('dark-mode');
+            toggles.forEach(toggle => toggle.textContent = '☀️');
+        } else {
+            body.classList.remove('dark-mode');
+            toggles.forEach(toggle => toggle.textContent = '🌙');
+        }
+    }
+
+    function toggleTheme() {
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        localStorage.setItem('theme', newTheme);
+        applyTheme(newTheme);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Intro Animation Logic ---
+        setTimeout(() => {
+            const introScreen = document.getElementById('intro-screen');
+            const container = document.querySelector('.container');
+            
+            introScreen.style.display = 'none';
+            container.style.display = 'block';
+
+            // Now that the container is visible, apply theme and hint
+            applyTheme(localStorage.getItem('theme') || 'light');
+            
+            if (!localStorage.getItem('themeHintShown')) {
+                const loginToggle = document.getElementById('theme-toggle');
+                loginToggle.classList.add('theme-toggle-hint');
+                localStorage.setItem('themeHintShown', 'true');
+            }
+        }, 3000); // Show intro for 3 seconds
+        document.querySelectorAll('#theme-toggle, #theme-toggle-home, #theme-toggle-chat').forEach(toggle => toggle.onclick = toggleTheme);
+    });
     
     const msgInput = document.getElementById("msg");
     msgInput.addEventListener("keyup", function(event) {
@@ -125,8 +329,8 @@
         toggleEmojiPicker(); // Hide picker after selection
     });
 
-    const api = "https://script.google.com/macros/s/AKfycbxrzIyEotEvfH3N6g4vNz7Pcti5u1hpZJayN_47ngk5A4dPDhhHly39Piz6TQIaGSAm/exec";
-    let userId = null, peerId = null;
+    const api = "https://script.google.com/macros/s/AKfycbxIARfvqJMw9zza2HFV3yQ1TRkwRP8fl87vKaTwWFpiH_z72ETko10IvXwKbATnapFR/exec";
+    let userId = null, peerId = null, userName = null;
     let messageInterval, chatListInterval, heartbeatInterval;
 
     // JSONP request function to bypass CORS issues
@@ -181,6 +385,7 @@
 
             // Login safal hone par userId set karein aur home screen dikhayein
             userId = data.userId;
+            userName = data.name; // Store the user's name
             showScreen('homeScreen'); // Turant home screen par switch karein
             showHomeScreen(true); // Chat list refresh setup karein
             renderChatList(data.chats);
@@ -221,7 +426,7 @@
                             </strong>
                             <small>${time}</small>
                         </div>
-                        <p style="margin: 4px 0 0; color: #555;">${chat.lastMessage.msg}</p>
+                        <p style="margin: 4px 0 0; color: var(--list-item-subtext-color);">${chat.lastMessage.msg}</p>
                     </div>
                 </div>
             `;
@@ -302,6 +507,49 @@
 
     }
 
+    function showProfileScreen() {
+        const userPhone = document.getElementById("phone").value;
+        const profileDetailsDiv = document.getElementById("profile-details");
+        
+        let content = `<p><strong>Phone Number:</strong> ${userPhone}</p>`;
+
+        if (userName) {
+            content += `
+                <p><strong>Name:</strong> ${userName}</p>
+                <button onclick="promptToEditUserName()">Edit Name</button>
+            `;
+        } else {
+            content += `
+                <p>You haven't set a name yet.</p>
+                <input type="text" id="newUserName" placeholder="Enter your name...">
+                <button onclick="saveUserName()">Save Name</button>
+            `;
+        }
+        profileDetailsDiv.innerHTML = content;
+        showScreen('profileScreen');
+    }
+
+    function promptToEditUserName() {
+        const newName = prompt("Enter your new name:", userName);
+        if (newName && newName.trim() !== "") {
+            saveUserName(newName.trim());
+        }
+    }
+
+    async function saveUserName(name) {
+        const newName = name || document.getElementById("newUserName").value;
+        if (!newName || !newName.trim()) { alert("Name cannot be empty."); return; }
+
+        const data = await jsonpRequest(`${api}?action=setUserName&userId=${userId}&name=${encodeURIComponent(newName.trim())}`);
+        if (data.status === 'success') {
+            userName = newName.trim(); // Update local name
+            alert("Name updated successfully!");
+            showProfileScreen(); // Refresh profile screen
+        } else {
+            alert("Error: Could not save the name.");
+        }
+    }
+
     async function sendMsg() {
         const msgInput = document.getElementById("msg");
         if (!msgInput.value) return;
@@ -369,36 +617,32 @@
 
         document.querySelector('.chat-input-area input').style.width = data.isTyping ? 'calc(100% - 100px)' : 'calc(100% - 26px)';
 
+        const box = document.getElementById("chatBox");
         const isScrolledToBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 1;
 
-        const box = document.getElementById("chatBox");
         box.innerHTML = "";
         data.messages.forEach(m => {
             const messageContainer = document.createElement("div");
             messageContainer.className = "message-container";
             const bubble = document.createElement("div");
+            let hasContent = false;
 
             if (m.type === 'text') {
                 bubble.dataset.messageId = m.id; // Set message ID as a data attribute
                 bubble.className = "message-bubble " + (m.from == userId ? "me" : "them");
-                
-                const time = new Date(m.ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                let ticks = '';
-                if (m.from == userId) {
-                    ticks = m.seen === 'true' ? '<span class="tick seen">✓✓</span>' : '<span class="tick">✓</span>';
-                }
-
-                bubble.innerHTML = `<div class="message-content"><span class="message-text">${m.msg}</span><span class="message-meta">${time} ${ticks}</span></div>`;
+                bubble.innerText = m.msg + (m.from == userId && m.seen === "true" ? " ✔" : "");
             }
 
-            messageContainer.appendChild(bubble);
-            box.appendChild(messageContainer);
+            if (hasContent) {
+                messageContainer.appendChild(bubble);
+                box.appendChild(messageContainer);
 
-            // Add event listeners for own messages
-            if (m.from == userId && !m.msg.includes("[This message was deleted]")) {
-                bubble.style.cursor = 'pointer';
-                bubble.onclick = () => deleteMessage(m.id); // Single click to delete
-                bubble.ondblclick = (e) => { e.preventDefault(); showEditInput(m.id, m.msg); }; // Double click to edit
+                // Add event listeners for own messages
+                if (m.from == userId && !m.msg.includes("[This message was deleted]")) {
+                    bubble.style.cursor = 'pointer';
+                    bubble.onclick = () => deleteMessage(m.id); // Single click to delete
+                    bubble.ondblclick = (e) => { e.preventDefault(); showEditInput(m.id, m.msg); }; // Double click to edit
+                }
             }
         });
         if(isScrolledToBottom) box.scrollTop = box.scrollHeight;
