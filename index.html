@@ -1168,10 +1168,18 @@
 
         try {
             const data = await jsonpRequest(`${API_URL}?action=sendMessage&fromId=${appState.userId}&toId=${appState.peerId}&msg=${encodeURIComponent(msgText)}`);
-            // Server se message confirm hone ke baad, temporary message ko asli message se badlein
-            const tempElement = document.querySelector(`[data-temp-id='${tempMsg.id}']`);
-            const realMsg = { ...tempMsg, id: data.messageId, from: appState.userId }; // Server se mili ID ka istemal karein
-            if (tempElement) replaceTempMessage(tempElement, realMsg);
+            
+            // Check karein ki server se response sahi hai ya nahi
+            if (data && data.status === 'sent' && data.messageId) {
+                // Server se message confirm hone ke baad, temporary message ko asli message se badlein
+                const tempElement = document.querySelector(`[data-temp-id='${tempMsg.id}']`);
+                const realMsg = { ...tempMsg, id: data.messageId, from: appState.userId }; // Server se mili ID ka istemal karein
+                if (tempElement) replaceTempMessage(tempElement, realMsg);
+            } else {
+                // Agar server se 'sent' status nahi mila, to error maniye
+                throw new Error(data.message || 'Invalid response from server.');
+            }
+
         } catch (error) {
             console.error("Failed to send message:", error);
             showToast("Message not sent. Check connection.", 'error');
