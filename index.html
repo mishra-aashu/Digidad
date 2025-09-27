@@ -16,10 +16,14 @@
         
         #chatBox { background-color: #e5ddd5; height: 450px; overflow-y: scroll; padding: 10px; margin-bottom: 10px; display: flex; flex-direction: column; }
         .message-bubble { padding: 8px 12px; border-radius: 18px; max-width: 75%; word-wrap: break-word; line-height: 1.4; }
+        .message-content { display: flex; flex-direction: column; }
+        .message-text { padding-right: 5px; }
+        .message-meta { font-size: 11px; color: #888; text-align: right; margin-top: 4px; }
+        .message-meta .tick { font-weight: bold; }
+        .message-meta .tick.seen { color: #ff0000; } /* Red color for seen tick */
         .me { background-color: #dcf8c6; align-self: flex-end; }
-        .me .media-bubble { background-color: #dcf8c6; }
-        .them .media-bubble { background-color: #ffffff; }
         .them { background-color: #ffffff; align-self: flex-start; }
+        .them .message-meta { text-align: left; }
         .message-container { display: flex; flex-direction: column; margin: 2px 0; }
 
         .chat-list-item { padding: 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background-color 0.2s; }
@@ -121,7 +125,7 @@
         toggleEmojiPicker(); // Hide picker after selection
     });
 
-    const api = "https://script.google.com/macros/s/AKfycby5e_C3h-139h6jTDYaLX-3B1D5BmrtQPjzmpVaeVgVwL7ItX8YaGxPlm5Ra9A54QQO/exec";
+    const api = "https://script.google.com/macros/s/AKfycbxD2mv8wtikO7skDAYBdqik5eDWWLPfF8zG0d-hCINCjEQKPiCI6FGzcH8kFcO5ho6Z/exec";
     let userId = null, peerId = null;
     let messageInterval, chatListInterval, heartbeatInterval;
 
@@ -377,7 +381,14 @@
             if (m.type === 'text') {
                 bubble.dataset.messageId = m.id; // Set message ID as a data attribute
                 bubble.className = "message-bubble " + (m.from == userId ? "me" : "them");
-                bubble.innerText = m.msg + (m.from == userId && m.seen === "true" ? " ✔" : "");
+                
+                const time = new Date(m.ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                let ticks = '';
+                if (m.from == userId) {
+                    ticks = m.seen === 'true' ? '<span class="tick seen">✓✓</span>' : '<span class="tick">✓</span>';
+                }
+
+                bubble.innerHTML = `<div class="message-content"><span class="message-text">${m.msg}</span><span class="message-meta">${time} ${ticks}</span></div>`;
             }
 
             messageContainer.appendChild(bubble);
