@@ -438,7 +438,7 @@
     // =================================================================================
     // App State & Constants
     // =================================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbyu3z19L4qdGMEmuyai-KHNikFB9aqsQzuJKzh0SoRBBTmaBFqRQm8o1-iTCoFiGT9K/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwGBe1R-OJN4csBQU4dbZhqiY7mUcof993eIIn65X8n1Ol1xC2WLRGWAn0KB_h6t2I/exec";
     const appState = {
         userId: null,
         userName: null,
@@ -891,9 +891,10 @@
         document.getElementById('peerStatus').innerText = ''; // Clear previous status
         document.getElementById('chatWith').innerText = `Chat with ${pPhone}`;
         showScreen('chatScreen');
-        loadMessages();
-        // Start polling for new messages
-        startPolling('messages', () => loadMessages(false), 3000);
+        // Pehle saare purane messages load karein
+        loadMessages(true); 
+        // Phir sirf naye messages ke liye polling shuru karein
+        startPollingForNewMessages();
     }
     
     /**
@@ -1347,6 +1348,33 @@
     }
 
     /**
+     * Starts polling for only new messages from the peer.
+     */
+    function startPollingForNewMessages() {
+        startPolling('newMessages', async () => {
+            if (!appState.userId || !appState.peerId) return;
+
+            // Get the timestamp of the very last message on screen
+            const allMsgElements = document.querySelectorAll('#chatBox [data-message-id]');
+            const lastMsgElement = allMsgElements[allMsgElements.length - 1];
+            const lastKnownTimestamp = lastMsgElement ? lastMsgElement.dataset.timestamp : new Date(0).toISOString();
+
+            try {
+                const data = await jsonpRequest(`${API_URL}?action=getNewMessages&userId=${appState.userId}&peerId=${appState.peerId}&lastKnownTimestamp=${lastKnownTimestamp}`);
+                if (data.status === 'ok' && data.messages.length > 0) {
+                    const box = document.getElementById('chatBox');
+                    const isScrolledToBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 10;
+                    data.messages.forEach(msg => renderSingleMessage(msg, true));
+                    if (isScrolledToBottom) scrollToBottom();
+                }
+            } catch (error) {
+                console.error("Polling for new messages failed:", error);
+            }
+
+        }, 3000); // Har 3 second mein check karein
+    }
+
+    /**
      * Loads messages for the current chat from the server.
      * @param {boolean} [shouldScroll=true] - Whether to scroll to the bottom after loading.
      */
@@ -1367,7 +1395,7 @@
             document.getElementById('peerStatus').innerText = data.isOnline ? 'Online' : '';
 
             // Render the UI using the fresh data from the server
-            renderMessages(data.messages, shouldScroll);
+            renderMessages(data.messages, true); // Hamesha poori list render karein
 
         } catch (error) {
             console.error("Network error loading messages:", error);
@@ -1415,6 +1443,7 @@
             messageContainer.dataset.tempId = m.id;
         } else {
             messageContainer.dataset.messageId = m.id;
+            messageContainer.dataset.timestamp = m.ts; // Timestamp ko store karein
         }
 
         // If it's a new message, add a fade-in animation class
@@ -1497,38 +1526,11 @@
      * @param {boolean} [shouldScroll=true] - Whether to scroll to the bottom.
      */
     function renderMessages(messages, shouldScroll = true) {
-        const box = document.getElementById('chatBox');
-        const isScrolledToBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 10;
-
         // Jab chat pehli baar khule, to poora box saaf karke saare messages dikhayein
-        if (shouldScroll) {
-            box.innerHTML = "";
-            messages.forEach(m => renderSingleMessage(m, false));
-            scrollToBottom();
-            return;
-        }
-
-        // Polling ke dauran, sirf naye messages ko jodein
-        const existingMessageIds = new Set([...box.querySelectorAll('[data-message-id]')].map(el => el.dataset.messageId));
-        
-        messages.forEach(msg => {
-            const msgId = msg.id.toString();
-            const element = box.querySelector(`[data-message-id='${msgId}']`);
-
-            if (!element) { // Agar message screen par nahi hai
-                // Yeh saamne wale ka naya message hai
-                if (msg.from != appState.userId) {
-                    renderSingleMessage(msg, true); // Naya message jodein
-                    if (isScrolledToBottom) scrollToBottom();
-                }
-            } else { // Agar message pehle se hai, to 'seen' status update karein
-                const statusIcon = element.querySelector('.status-icon');
-                if (statusIcon && msg.seen === 'true' && !statusIcon.classList.contains('seen')) {
-                    statusIcon.innerHTML = ' ✔✔';
-                    statusIcon.classList.add('seen');
-                }
-            }
-        });
+        const box = document.getElementById("chatBox");
+        box.innerHTML = ""; // Hamesha saaf karein
+        messages.forEach(m => renderSingleMessage(m, false)); // Bina animation ke render karein
+        if (shouldScroll) scrollToBottom();
     }
 
     /**
