@@ -279,6 +279,11 @@
                 <button onclick="showHomeScreen()">&#8592;</button>
                 <h3 style="margin: 0; flex-grow: 1;">Your Profile</h3>
             </div>
+            <div id="profile-actions" style="margin-top: 20px;">
+                <button onclick="logout()" style="background-color: #ff5c5c; color: white; width: 100%;">
+                    Logout
+                </button>
+            </div>
             <div id="profile-details"></div>
         </div>
     </div>
@@ -307,23 +312,30 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        // --- Intro Animation Logic ---
-        setTimeout(() => {
-            const introScreen = document.getElementById('intro-screen');
-            const container = document.querySelector('.container');
-            
-            introScreen.style.display = 'none';
-            container.style.display = 'block';
-
-            // Now that the container is visible, apply theme and hint
-            applyTheme(localStorage.getItem('theme') || 'light');
-            
+        function showThemeHint() {
             if (!localStorage.getItem('themeHintShown')) {
                 const loginToggle = document.getElementById('theme-toggle');
                 loginToggle.classList.add('theme-toggle-hint');
                 localStorage.setItem('themeHintShown', 'true');
             }
-        }, 3000); // Show intro for 3 seconds
+        }
+
+        // --- Session and Intro Logic ---
+        const storedUserId = localStorage.getItem('userId');
+        if (storedUserId) {
+            // If user is already logged in, skip intro and go to home screen
+            initializeSession(storedUserId);
+        } else {
+            // If not logged in, show intro animation
+            setTimeout(() => {
+                document.getElementById('intro-screen').style.display = 'none';
+                document.querySelector('.container').style.display = 'block';
+                showThemeHint();
+            }, 3000); // Show intro for 3 seconds
+        }
+
+        // Apply theme regardless of login state
+        applyTheme(localStorage.getItem('theme') || 'light');
         document.querySelectorAll('#theme-toggle, #theme-toggle-home, #theme-toggle-chat').forEach(toggle => toggle.onclick = toggleTheme);
     });
     
@@ -355,7 +367,7 @@
         toggleEmojiPicker(); // Hide picker after selection
     });
 
-    const api = "https://script.google.com/macros/s/AKfycbxIARfvqJMw9zza2HFV3yQ1TRkwRP8fl87vKaTwWFpiH_z72ETko10IvXwKbATnapFR/exec";
+    const api = "https://script.google.com/macros/s/AKfycbxjbDqkqfoJIjnAkPYHyvSFZ_X-7sOhvo__2l8wfakac0Qk9NRvlEbbM_MnsWYJQk29/exec";
     let userId = null, peerId = null, userName = null;
     let messageInterval, chatListInterval, heartbeatInterval;
 
@@ -396,6 +408,19 @@
         if (screen) screen.classList.add('active');
     }
 
+    function initializeSession(storedUserId) {
+        // If user is already logged in, skip intro and login screen
+        userId = storedUserId;
+        userName = localStorage.getItem('userName');
+        document.getElementById('phone').value = localStorage.getItem('userPhone') || ''; // Keep phone number in input for context
+        
+        document.querySelector('.container').style.display = 'block';
+        document.getElementById('intro-screen').style.display = 'none';
+        
+        showHomeScreen(true);
+        startHeartbeat();
+    }
+
     async function login() {
         const phoneInput = document.getElementById("phone");
         const phone = phoneInput.value;
@@ -414,15 +439,24 @@
 
             // Login safal hone par userId set karein aur home screen dikhayein
             userId = data.userId;
-            userName = data.name; // Store the user's name
+            userName = data.name || ''; // Store the user's name
+
+            // Save session to localStorage
+            localStorage.setItem('userId', userId);
+            localStorage.setItem('userPhone', phone);
+            localStorage.setItem('userName', userName);
+
+            // Save the initial chat list to localStorage
+            if (data.chats) {
+                localStorage.setItem('chatList', JSON.stringify(data.chats));
+                renderChatList(data.chats);
+            }
+
             showScreen('homeScreen'); // Turant home screen par switch karein
             showHomeScreen(true); // Chat list refresh setup karein
             renderChatList(data.chats);
 
-            // Start sending heartbeats to mark user as online
-            if (heartbeatInterval) clearInterval(heartbeatInterval);
-            heartbeatInterval = setInterval(() => jsonpRequest(`${api}?action=heartbeat&userId=${userId}`), 15000); // every 15 seconds
-
+            startHeartbeat();
         } catch (error) { // Network ya JSONP error hone par
             console.error("Login failed:", error);
             alert("Login request failed. Please check your connection and try again.");
@@ -431,12 +465,39 @@
         }
     }
 
-    function renderChatList(chats) {
+    function startHeartbeat() {
+        if (heartbeatInterval) clearInterval(heartbeatInterval);
+        heartbeatInterval = setInterval(() => {
+            if (userId) jsonpRequest(`${api}?action=heartbeat&userId=${userId}`);
+        }, 15000); // every 15 seconds
+    }
+
+    function logout() {
+        // Clear session from localStorage
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userPhone');
+        localStorage.removeItem('userName');
+
+        // Stop all background processes and reset state
+        if (heartbeatInterval) clearInterval(heartbeatInterval);
+        userId = null;
+        window.location.reload(); // Reload the page to go back to login screen
+    }
+
+    function renderChatList(chats, isOffline = false) {
         const chatListDiv = document.getElementById("chatList");
         chatListDiv.innerHTML = "";
         if (chats.length === 0) {
-            chatListDiv.innerHTML = "<p>No active chats. Start a new one!</p>";
+            chatListDiv.innerHTML = "<p>No active chats. Start a new one!</p>" + (isOffline ? "<p><small>(Showing offline data)</small></p>" : "");
             return;
+        }
+
+        // Add an offline indicator if showing data from localStorage
+        if (isOffline) {
+            const offlineNote = document.createElement('p');
+            offlineNote.innerHTML = '<small>Offline mode. Data might be outdated.</small>';
+            offlineNote.style.textAlign = 'center';
+            chatListDiv.appendChild(offlineNote);
         }
         chats.forEach(chat => {
             const div = document.createElement("div");
@@ -500,21 +561,21 @@
         messageInterval = setInterval(loadMessages, 3000); // Auto-refresh messages
     }
 
-    function promptToEditPeerName() {
+    async function promptToEditPeerName() {
         const currentName = document.getElementById('chatWith').innerText.replace('Chat with ', '');
         const newName = prompt("Enter a new name for this contact:", currentName);
 
         if (newName && newName.trim() !== "") {
-            google.script.run
-                .withSuccessHandler(response => {
-                    if (response.status === 'success') {
-                        document.getElementById('chatWith').innerText = `Chat with ${response.newName}`;
-                        alert("Name updated successfully!");
-                    } else {
-                        alert("Error updating name: " + response.message);
-                    }
-                })
-                .editPeerName(userId, peerId, newName.trim());
+            const data = await jsonpRequest(`${api}?action=editPeerName&ownerId=${userId}&peerId=${peerId}&newName=${encodeURIComponent(newName.trim())}`);
+            if (data.status === 'success') {
+                document.getElementById('chatWith').innerText = `Chat with ${data.newName}`;
+                alert("Name updated successfully!");
+                // Refresh chat list to show new name there too
+                showHomeScreen();
+                openChat(peerId, data.newName);
+            } else {
+                alert("Error updating name: " + data.message);
+            }
         }
     }
 
@@ -525,12 +586,22 @@
         peerId = null;
         showScreen('homeScreen');
 
+        // Immediately render chat list from localStorage for a fast UI response
+        const localChats = JSON.parse(localStorage.getItem('chatList'));
+        if (localChats) {
+            renderChatList(localChats, true); // Render with offline indicator
+        }
+
         // Start auto-refreshing the chat list
         chatListInterval = setInterval(async () => {
             if (!userId) return;
             const data = await jsonpRequest(`${api}?action=login&phone=${document.getElementById("phone").value}`);
             if (data.chats) {
+                // Update localStorage with fresh data from the server
+                localStorage.setItem('chatList', JSON.stringify(data.chats));
                 renderChatList(data.chats);
+            } else if (data.status === 'error') {
+                console.error("Could not refresh chat list:", data.message);
             }
         }, 5000); // Refresh chat list every 5 seconds
 
@@ -539,7 +610,7 @@
     function showProfileScreen() {
         const userPhone = document.getElementById("phone").value;
         const profileDetailsDiv = document.getElementById("profile-details");
-        
+
         let content = `<p><strong>Phone Number:</strong> ${userPhone}</p>`;
 
         if (userName) {
@@ -554,7 +625,12 @@
                 <button onclick="saveUserName()">Save Name</button>
             `;
         }
-        profileDetailsDiv.innerHTML = content;
+        // Prepend content to keep logout button at the top
+        const profileActions = document.getElementById('profile-actions').outerHTML;
+        const header = document.querySelector('#profileScreen .chat-header').outerHTML;
+        const profileScreen = document.getElementById('profileScreen');
+        profileScreen.innerHTML = ''; // Clear previous content to avoid duplicating event listeners
+        profileScreen.innerHTML = header + profileActions + `<div id="profile-details">${content}</div>`;
         showScreen('profileScreen');
     }
 
@@ -572,6 +648,7 @@
         const data = await jsonpRequest(`${api}?action=setUserName&userId=${userId}&name=${encodeURIComponent(newName.trim())}`);
         if (data.status === 'success') {
             userName = newName.trim(); // Update local name
+            localStorage.setItem('userName', userName); // Update in localStorage as well
             alert("Name updated successfully!");
             showProfileScreen(); // Refresh profile screen
         } else {
@@ -579,12 +656,39 @@
         }
     }
 
+    // Helper to create a consistent key for chat history
+    function getChatHistoryKey(pId) {
+        const ids = [userId, pId].sort();
+        return `chatHistory_${ids[0]}_${ids[1]}`;
+    }
+
     async function sendMsg() {
         const msgInput = document.getElementById("msg");
         if (!msgInput.value) return;
-        await jsonpRequest(`${api}?action=sendMessage&fromId=${userId}&toId=${peerId}&msg=${encodeURIComponent(msgInput.value)}`);
+        const msgText = msgInput.value;
+
+        // Optimistically add to UI and save to localStorage
+        const tempMsg = {
+            id: `temp_${Date.now()}`,
+            from: userId,
+            to: peerId,
+            msg: msgText,
+            seen: "false",
+            type: 'text'
+        };
+        
+        // Get current history, add new message, and save back
+        const chatHistoryKey = getChatHistoryKey(peerId);
+        const localMessages = JSON.parse(localStorage.getItem(chatHistoryKey)) || [];
+        localMessages.push(tempMsg);
+        localStorage.setItem(chatHistoryKey, JSON.stringify(localMessages));
+        
+        // Render immediately from local data
+        renderMessages(localMessages);
+
+        await jsonpRequest(`${api}?action=sendMessage&fromId=${userId}&toId=${peerId}&msg=${encodeURIComponent(msgText)}`);
         msgInput.value = "";
-        loadMessages(); // Refresh messages after sending
+        loadMessages(false); // Refresh messages from server without scrolling
     }
 
     async function deleteMessage(messageId) {
@@ -626,13 +730,24 @@
         }
     }
 
-    async function loadMessages() {
+    async function loadMessages(shouldScroll = true) {
         if (!userId || !peerId) return;
+        const chatHistoryKey = getChatHistoryKey(peerId);
+
+        // 1. Load and render messages from localStorage immediately
+        const localMessages = JSON.parse(localStorage.getItem(chatHistoryKey)) || [];
+        if (localMessages.length > 0) {
+            renderMessages(localMessages, shouldScroll);
+        }
+
+        // 2. Fetch latest messages from the server
         const data = await jsonpRequest(`${api}?action=getMessages&userId=${userId}&peerId=${peerId}`);
         if (data.status === 'error') {
             console.error("Error loading messages:", data.message);
             // Stop trying if there's an error to avoid spamming
             if (messageInterval) clearInterval(messageInterval);
+            // If server fails, we still have the local copy rendered.
+            // We can show an error to the user.
             return;
         }
 
@@ -646,11 +761,20 @@
 
         document.querySelector('.chat-input-area input').style.width = data.isTyping ? 'calc(100% - 100px)' : 'calc(100% - 26px)';
 
+        // 3. Update localStorage with fresh data from the server
+        localStorage.setItem(chatHistoryKey, JSON.stringify(data.messages));
+
+        // 4. Re-render the UI with the definitive server data
+        renderMessages(data.messages, shouldScroll);
+    }
+
+    function renderMessages(messages, shouldScroll = true) {
         const box = document.getElementById("chatBox");
         const isScrolledToBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 1;
 
         box.innerHTML = "";
-        data.messages.forEach(m => {
+
+        messages.forEach(m => {
             const messageContainer = document.createElement("div");
             messageContainer.className = "message-container";
             const bubble = document.createElement("div");
@@ -659,7 +783,11 @@
             if (m.type === 'text') {
                 bubble.dataset.messageId = m.id; // Set message ID as a data attribute
                 bubble.className = "message-bubble " + (m.from == userId ? "me" : "them");
-                bubble.innerText = m.msg + (m.from == userId && m.seen === "true" ? " ✔" : "");
+                // Add a seen checkmark (✔) for your own messages that have been seen
+                // Add a clock icon (🕒) for your own messages that are temporary (not yet confirmed by server)
+                const statusIcon = m.id.toString().startsWith('temp_') ? " 🕒" : (m.from == userId && m.seen === "true" ? " ✔" : "");
+                bubble.innerText = m.msg + statusIcon;
+                hasContent = true;
             }
 
             if (hasContent) {
@@ -667,14 +795,15 @@
                 box.appendChild(messageContainer);
 
                 // Add event listeners for own messages
-                if (m.from == userId && !m.msg.includes("[This message was deleted]")) {
+                if (m.from == userId && !m.msg.includes("[This message was deleted]") && !m.id.toString().startsWith('temp_')) {
                     bubble.style.cursor = 'pointer';
                     bubble.onclick = () => deleteMessage(m.id); // Single click to delete
                     bubble.ondblclick = (e) => { e.preventDefault(); showEditInput(m.id, m.msg); }; // Double click to edit
                 }
             }
         });
-        if(isScrolledToBottom) box.scrollTop = box.scrollHeight;
+
+        if(shouldScroll && isScrolledToBottom) box.scrollTop = box.scrollHeight;
     }
     </script>
 </body>
