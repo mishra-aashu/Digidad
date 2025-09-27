@@ -438,7 +438,7 @@
     // =================================================================================
     // App State & Constants
     // =================================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbwGBe1R-OJN4csBQU4dbZhqiY7mUcof993eIIn65X8n1Ol1xC2WLRGWAn0KB_h6t2I/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxGakqJV0RSlwjpL1vONv610wjlnvyNP8l7vzm9268AyIJ3MAZP3fRnLGhJgfkXDQfC/exec";
     const appState = {
         userId: null,
         userName: null,
@@ -1526,11 +1526,31 @@
      * @param {boolean} [shouldScroll=true] - Whether to scroll to the bottom.
      */
     function renderMessages(messages, shouldScroll = true) {
-        // Jab chat pehli baar khule, to poora box saaf karke saare messages dikhayein
         const box = document.getElementById("chatBox");
-        box.innerHTML = ""; // Hamesha saaf karein
-        messages.forEach(m => renderSingleMessage(m, false)); // Bina animation ke render karein
-        if (shouldScroll) scrollToBottom();
+
+        // `shouldScroll` ka matlab hai ki chat pehli baar khul rahi hai.
+        // Is case mein, poora box saaf karke saare purane messages dikhayein.
+        if (shouldScroll) {
+            box.innerHTML = "";
+            messages.forEach(m => renderSingleMessage(m, false));
+            scrollToBottom();
+        } else {
+            // Yeh case polling ke dauran chalega, jab sirf naye messages check karne hain.
+            // Lekin humara naya `startPollingForNewMessages` function iska dhyan khud rakhta hai.
+            // To is block ko ab hum istemal nahi kar rahe hain.
+            // Hum ise yahan chhod rahe hain taaki भविष्य mein koi confusion na ho.
+            // Naye messages `startPollingForNewMessages` function ke zariye `renderSingleMessage` se seedhe jode jaate hain.
+            
+            // Sirf 'seen' status update karne ke liye iska istemal kar sakte hain.
+            messages.forEach(msg => {
+                const element = box.querySelector(`[data-message-id='${msg.id}']`);
+                const statusIcon = element?.querySelector('.status-icon');
+                if (statusIcon && msg.seen === 'true' && !statusIcon.classList.contains('seen')) {
+                    statusIcon.innerHTML = ' ✔✔';
+                    statusIcon.classList.add('seen');
+                }
+            });
+        }
     }
 
     /**
