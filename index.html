@@ -644,7 +644,7 @@
     // =================================================================================
     // App State & Constants
     // =================================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbxSKv1YQig5SO8WU2VQA2Ug6i--E9lKmm4buwbA8kqkTHO14cHatIx0mNSrNurB3Xp6/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxB21QgY1KXmJYep3LeuNK-ms-CkMLFccQass3sdB8bYxo_w_VvwxlfKfLOz68V5IY0/exec";
     const appState = {
         userId: null,
         userName: null,
@@ -1795,7 +1795,7 @@
             if (data.status === 'cleared') {
                 // Handle the case where the chat history was cleared on the server
                 const chatBox = document.getElementById('chatBox');
-                chatBox.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-color); opacity: 0.7;">Previous chats were cleared.</p>';
+                chatBox.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-color); opacity: 0.7;">No messages in this chat yet.</p>';
                 return;
             }
 
