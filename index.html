@@ -138,11 +138,11 @@
         #chatScreen {
             display: flex;
             flex-direction: column;
-            height: 100%;
+            height: 100%; /* This makes the screen take full height of the container */
             padding: 0; /* Remove padding to allow full control */
         }
         .screen { 
-            padding: 20px; 
+            padding: 20px;
             opacity: 0;
             transition: opacity 0.4s ease-in-out;
             position: absolute;
@@ -171,8 +171,7 @@
         #chatBox::-webkit-scrollbar-track { background: transparent; }
         #chatBox::-webkit-scrollbar-thumb { background-color: var(--button-bg); border-radius: 6px; }
         #chatBox::-webkit-scrollbar-thumb:hover { background-color: var(--button-hover-bg); }
-
-        #chatBox { flex-grow: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; transition: background 0.5s ease; scroll-behavior: smooth; gap: 4px; }
+        #chatBox { flex-grow: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column-reverse; /* This is the key change */ transition: background 0.5s ease; scroll-behavior: smooth; gap: 4px; }
         .message-bubble { padding: 8px 12px; border-radius: 18px; max-width: 75%; word-wrap: break-word; line-height: 1.4; transition: background-color 0.5s ease, color 0.5s ease; }
         .me { background: var(--message-me-bg); align-self: flex-end; color: var(--message-me-color); }
         .them { background: var(--message-them-bg); align-self: flex-start; color: var(--message-them-color); }
@@ -206,11 +205,9 @@
         .chat-header { display: flex; align-items: center; gap: 10px; padding: 10px 20px; border-bottom: 1px solid var(--list-item-border); transition: border-color 0.5s ease; flex-shrink: 0; }
         .chat-header .back-button { background: none; color: var(--header-button-color); padding: 0; font-size: 24px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; margin-right: 5px; }
         .back-button .chevron { border: solid var(--header-button-color); border-width: 0 3px 3px 0; display: inline-block; padding: 4px; transform: rotate(135deg); transition: border-color 0.5s ease; }
-        .chat-input-area { display: flex; position: relative; padding: 10px 20px; flex-shrink: 0; flex-direction: column; background: var(--container-bg); border-top: 1px solid var(--list-item-border); transition: background 0.5s ease, border-color 0.5s ease; }
+        .chat-input-area { display: flex; position: relative; padding: 10px 20px; flex-shrink: 0; flex-direction: column; background: var(--container-bg); border-top: 1px solid var(--list-item-border); transition: background 0.5s ease, border-color 0.5s ease; z-index: 10; }
         .chat-input-area input { flex-grow: 1; margin-right: 10px; margin-bottom: 0; padding-right: 40px; }
         .edit-name-icon { cursor: pointer; font-size: 16px; margin-left: 8px; }
-        
-        #chatBox { padding-bottom: 10px; /* Add padding to the bottom to avoid the last message being hidden by the input area */ }
 
         /* Online Indicator Styles - Kept for user status */
         .online-indicator-small {
@@ -1991,7 +1988,7 @@
         }
 
         if (prepend) {
-            box.prepend(messageContainer);
+            box.appendChild(messageContainer); // With column-reverse, append acts like prepend
         } else {
             box.appendChild(messageContainer);
         }
@@ -2125,7 +2122,7 @@
             const oldScrollHeight = box.scrollHeight;
     
             messages.reverse().forEach(m => {
-                renderSingleMessage(m, false, true); // `true` to prepend
+                renderSingleMessage(m, false, false); // `false` to append (which is now at the top)
             });
     
             // Maintain scroll position so the user doesn't jump
