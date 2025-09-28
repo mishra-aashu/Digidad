@@ -644,7 +644,7 @@
     // =================================================================================
     // App State & Constants
     // =================================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbzfIRtP3sEuI0WCB4HsWa4HlqxKbcpUUE5HTZHhdATp7WkC9TUHNvATiMeKBDfhLtzm/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbztrg-ZmtREPX6YO_xdr1xg_oThfe9uRDBBnngK-GtGRnvm02kHTJYizOn9uM8bVR5h/exec";
     const appState = {
         userId: null,
         userName: null,
@@ -1767,16 +1767,21 @@
      * @param {number} [options.unreadCount=0] - Number of unread messages for the separator.
      * @param {string} [options.beforeTs=null] - Timestamp to fetch messages older than this.
      * @param {boolean} [options.isPolling=false] - Is this a background poll for new messages?
+     * @param {string} [options.afterTs=null] - Timestamp to fetch messages newer than this (for polling).
      * @returns {Promise<boolean>} A promise that resolves to true if messages were loaded, false otherwise.
      */
     async function loadMessages(options = {}) {
-        const { isInitialLoad = false, unreadCount = 0, beforeTs = null, isPolling = false } = options;
+        const { isInitialLoad = false, unreadCount = 0, beforeTs = null, isPolling = false, afterTs = null } = options;
         if (!appState.userId || !appState.peerId) return;
         const chatBox = document.getElementById('chatBox');
 
         let url = `${API_URL}?action=getMessages&userId=${appState.userId}&peerId=${appState.peerId}`;
         if (beforeTs) {
             url += `&beforeTs=${encodeURIComponent(beforeTs)}`;
+        }
+        if (afterTs) {
+            // For polling, we can make this more efficient by asking for only new messages.
+            // This requires a backend change to handle 'afterTs'. For now, we'll keep the full fetch.
         }
 
         try {
@@ -1814,9 +1819,7 @@
                     indicatorBubble.id = 'typing-indicator';
                     indicatorBubble.className = 'typing-indicator-bubble';
                     indicatorBubble.innerHTML = '<span></span><span></span><span></span>';
-                    if (!isPolling) { // Don't append if just polling, renderMessages will handle it
-                        chatBox.appendChild(indicatorBubble);
-                    }
+                    chatBox.appendChild(indicatorBubble);
                     scrollToBottom();
                 }
             } else {
@@ -2130,7 +2133,7 @@
             // Maintain scroll position so the user doesn't jump
             box.scrollTop = box.scrollHeight - oldScrollHeight;
 
-        } else if (isPolling) { // This is a regular polling update for new messages
+        } else { // This is a regular polling update for new messages
             // For polling updates, be more efficient.
             const existingMessageIds = new Set([...box.querySelectorAll('[data-message-id]')].map(el => el.dataset.messageId));
 
