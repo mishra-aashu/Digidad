@@ -644,7 +644,7 @@
     // =================================================================================
     // App State & Constants
     // =================================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbxB21QgY1KXmJYep3LeuNK-ms-CkMLFccQass3sdB8bYxo_w_VvwxlfKfLOz68V5IY0/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbzfIRtP3sEuI0WCB4HsWa4HlqxKbcpUUE5HTZHhdATp7WkC9TUHNvATiMeKBDfhLtzm/exec";
     const appState = {
         userId: null,
         userName: null,
@@ -1133,19 +1133,13 @@
         document.getElementById('chatWith').innerText = `Chat with ${pPhone}`;
         showScreen('chatScreen');
         
-        // --- Caching and Loading Logic ---
-        // 1. Instantly render messages from cache if available.
-        const cachedMessages = JSON.parse(localStorage.getItem(cachedChatId) || '[]');
-        if (cachedMessages.length > 0) {
-            renderMessages(cachedMessages, true); // Render and clear the box.
-        }
-
-        // 2. Always scroll to the bottom when opening a chat.
-        scrollToBottom();
-
-        // 3. Fetch latest messages from server and start polling for new ones.
-        loadMessages({ isInitialLoad: true, unreadCount: initialUnreadCount });
-        startPolling('messages', () => loadMessages(false, 0), 3000); // Subsequent polls won't have unread messages
+        // Fetch the initial set of latest messages.
+        // The loadMessages function will handle showing the "Loading..." state
+        // and then rendering the messages or the "No messages" state.
+        loadMessages({ isInitialLoad: true, unreadCount: initialUnreadCount }).then(() => {
+            // Start polling for new messages only after the initial load is complete.
+            startPolling('messages', () => loadMessages({ isPolling: true }), 3000);
+        });
     }
     
     /**
@@ -1772,11 +1766,13 @@
      * @param {boolean} [options.isInitialLoad=false] - Is this the first page of messages?
      * @param {number} [options.unreadCount=0] - Number of unread messages for the separator.
      * @param {string} [options.beforeTs=null] - Timestamp to fetch messages older than this.
+     * @param {boolean} [options.isPolling=false] - Is this a background poll for new messages?
      * @returns {Promise<boolean>} A promise that resolves to true if messages were loaded, false otherwise.
      */
     async function loadMessages(options = {}) {
-        const { isInitialLoad = false, unreadCount = 0, beforeTs = null } = options;
+        const { isInitialLoad = false, unreadCount = 0, beforeTs = null, isPolling = false } = options;
         if (!appState.userId || !appState.peerId) return;
+        const chatBox = document.getElementById('chatBox');
 
         let url = `${API_URL}?action=getMessages&userId=${appState.userId}&peerId=${appState.peerId}`;
         if (beforeTs) {
@@ -1784,6 +1780,11 @@
         }
 
         try {
+            // Only show the main "Loading..." indicator on the very first load.
+            if (isInitialLoad) {
+                chatBox.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-color);">Loading chats...</p>';
+            }
+
             const data = await jsonpRequest(url);
             
             if (data.status === 'error') {
@@ -1794,7 +1795,6 @@
             }
             if (data.status === 'cleared') {
                 // Handle the case where the chat history was cleared on the server
-                const chatBox = document.getElementById('chatBox');
                 chatBox.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-color); opacity: 0.7;">No messages in this chat yet.</p>';
                 return;
             }
@@ -1807,7 +1807,6 @@
             }
             
             // --- New Typing Indicator Logic ---
-            const chatBox = document.getElementById('chatBox');
             const existingIndicator = document.getElementById('typing-indicator');
             if (data.isTyping) {
                 if (!existingIndicator) {
@@ -1815,7 +1814,9 @@
                     indicatorBubble.id = 'typing-indicator';
                     indicatorBubble.className = 'typing-indicator-bubble';
                     indicatorBubble.innerHTML = '<span></span><span></span><span></span>';
-                    chatBox.appendChild(indicatorBubble);
+                    if (!isPolling) { // Don't append if just polling, renderMessages will handle it
+                        chatBox.appendChild(indicatorBubble);
+                    }
                     scrollToBottom();
                 }
             } else {
@@ -1828,7 +1829,7 @@
             document.getElementById('peerStatus').innerText = data.isOnline ? 'Online' : '';
 
             // Render the UI using the fresh data from the server
-            renderMessages(data.messages, isInitialLoad, unreadCount, beforeTs);
+            renderMessages(data.messages, { isInitialLoad, unreadCount, beforeTs, isPolling });
 
             // Mark that the initial load is done so we can use the instant check next time
             if (isInitialLoad) {
@@ -2097,12 +2098,13 @@
      * @param {boolean} [shouldScroll=true] - Whether to scroll to the bottom.
      * @param {number} [unreadCount=0] - The number of unread messages, used to place the separator.
      */
-    function renderMessages(messages, isInitialLoad = true, unreadCount = 0, beforeTs = null) {
+    function renderMessages(messages, options = {}) {
+        const { isInitialLoad = false, unreadCount = 0, beforeTs = null, isPolling = false } = options;
         const box = document.getElementById("chatBox");
         const isScrolledToBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 10;
 
         // If it's the initial load, clear everything and render all messages.
-        if (shouldScroll) {
+        if (isInitialLoad) {
             box.innerHTML = "";
             const firstUnreadIndex = unreadCount > 0 ? Math.max(0, messages.length - unreadCount) : -1;
 
@@ -2128,7 +2130,7 @@
             // Maintain scroll position so the user doesn't jump
             box.scrollTop = box.scrollHeight - oldScrollHeight;
 
-        } else { // This is a regular polling update for new messages
+        } else if (isPolling) { // This is a regular polling update for new messages
             // For polling updates, be more efficient.
             const existingMessageIds = new Set([...box.querySelectorAll('[data-message-id]')].map(el => el.dataset.messageId));
 
