@@ -644,7 +644,7 @@
     // =================================================================================
     // App State & Constants
     // =================================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbxBD_SJjJyMFeO7SR_yjFui8TLnOd8IfeBOJhhXqLc3MTDjxPJ5NkF8rqO8jPEZZb8k/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxSKv1YQig5SO8WU2VQA2Ug6i--E9lKmm4buwbA8kqkTHO14cHatIx0mNSrNurB3Xp6/exec";
     const appState = {
         userId: null,
         userName: null,
@@ -1790,6 +1790,12 @@
                 console.error("Error loading messages:", data.message);
                 if (beforeTs) return false; // Indicate no messages were loaded
                 // Don't show toast on regular polling errors to avoid spam
+                return;
+            }
+            if (data.status === 'cleared') {
+                // Handle the case where the chat history was cleared on the server
+                const chatBox = document.getElementById('chatBox');
+                chatBox.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-color); opacity: 0.7;">Previous chats were cleared.</p>';
                 return;
             }
 
