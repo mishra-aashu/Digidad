@@ -645,7 +645,7 @@
     // =================================================================================
     // App State & Constants
     // =================================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbxfyPGDRAWx1GbznnU40DjZ7dkjxYeGdud-gXbKuBm3RnIUl5t8YewNgRLSrJZQ7ajp/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbygdn2eXjX7dQd8MubWKys-wnbRlEDGMXJfOdKNOxErIXxahDYnVDAiE3nwAyC14aQ/exec";
     const appState = {
         userId: null,
         userName: null,
@@ -1437,7 +1437,7 @@
         scrollToBottom();
 
         try {
-            const data = await jsonpRequest(`${API_URL}?action=sendMessage&fromId=${appState.userId}&toId=${appState.peerId}&msg=${encodeURIComponent(msgText)}&replyTo=${replyToId || ''}&tempId=${tempMsg.id}`);
+            const data = await jsonpRequest(`${API_URL}?action=sendMessage&fromId=${appState.userId}&toId=${appState.peerId}&msg=${encodeURIComponent(msgText)}&replyTo=${replyToId || ''}&tempId=${tempMsg.id}`);            
             if (data?.status !== 'sent') {
                 // The server responded, but with an error
                 throw new Error(data?.message || 'Invalid response from server.');
@@ -1814,7 +1814,7 @@
             // --- New Caching Logic ---
             // Save the latest full message list to localStorage
             const chatId = getChatId(appState.userId, appState.peerId);
-            if (chatId && data.messages && data.messages.length > 0) {
+            if (chatId) {
                 localStorage.setItem(chatId, JSON.stringify(data.messages));
             }
             
@@ -1878,7 +1878,7 @@
             return;
         }
 
-        const oldestMessage = chatBox.querySelector('.message-container[data-timestamp]:not([data-temp-id])');
+        const oldestMessage = chatBox.querySelector('.message-container[data-timestamp]');
         if (!oldestMessage || chatBox.dataset.loading === 'true') return;
 
         chatBox.dataset.loading = 'true'; // Prevent multiple loads
@@ -1886,18 +1886,12 @@
 
         // Show a subtle loading indicator
         const loader = document.createElement('div');
-        loader.id = 'history-loader'; // Use an ID to easily find and remove it
+        loader.id = 'history-loader';
         loader.textContent = 'Loading...';
         loader.style.textAlign = 'center';
         loader.style.padding = '10px';
         loader.style.opacity = '0.7';
         chatBox.prepend(loader);
-
-        // Remove the "scroll up for more" indicator if it exists
-        const scrollUpIndicator = document.getElementById('scroll-up-indicator');
-        if (scrollUpIndicator) {
-            scrollUpIndicator.remove();
-        }
 
         const moreMessagesLoaded = await loadMessages({ beforeTs: beforeTs });
         loader.remove(); // Hide loader
@@ -2155,7 +2149,7 @@
                 const isMe = msg.from == appState.userId || msg.fromId == appState.userId;
     
                 // Check if this server message corresponds to a temporary "sending" message on screen.
-                const tempMatch = isMe ? tempMessagesOnScreen.find(el => el.dataset.tempId === msg.tempId) : null;
+                const tempMatch = isMe ? tempMessagesOnScreen.find(el => el.querySelector('.message-text').textContent === msg.msg) : null;
     
                 if (tempMatch) {
                     // It's a sent message that was previously optimistic. Replace it.
@@ -2180,20 +2174,6 @@
                 }
             });
 
-            // If this was the initial load after a cache render, we might need to add the unread separator.
-            // This logic is now simplified and handled by the server providing separate lists.
-            // However, for polling new messages that arrive while the chat is open, we need to handle them.
-            if (unreadMessages.length > 0 && !isInitialLoad) {
-                // This case handles new messages arriving via polling.
-                // The smart rendering loop above already adds them.
-                // We just need to ensure the separator exists if it doesn't.
-                if (!box.querySelector('.unread-separator')) {
-                    const separator = document.createElement('div');
-                    separator.className = 'unread-separator';
-                    separator.textContent = 'Unread Messages';
-                    box.appendChild(separator); // Add it before appending the new messages
-                }
-            }
             // Auto-scroll only if the user was already at the bottom.
             if (isScrolledToBottom) {
                 scrollToBottom();
