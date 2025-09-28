@@ -391,6 +391,65 @@
             z-index: 5;
         }
 
+        /* --- Chat Theme Styles --- */
+        #chatBox.theme-doodles {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><g fill="%239C92AC" fill-opacity="0.1"><path d="M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-4c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63-28c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm-46 42c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 98c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29-53c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zM11 78c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm62-53c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zM90 7c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zM4 41c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"/></g></svg>');
+        }
+        #chatBox.theme-whatsapp {
+            background-color: #e5ddd5;
+            background-image: url('https://i.imgur.com/R4J562V.png'); /* A classic WhatsApp background */
+        }
+        #chatBox.theme-solid-dark { background-color: #0d1418; }
+        #chatBox.theme-solid-blue { background-color: #a8c5d4; }
+        #chatBox.theme-solid-peach { background-color: #f8cdda; }
+
+        /* Complementary message bubble colors for each theme */
+        #chatBox.theme-whatsapp .me, #chatBox.theme-doodles .me { background-color: #dcf8c6; color: #111; }
+        #chatBox.theme-whatsapp .them, #chatBox.theme-doodles .them { background-color: #ffffff; color: #111; }
+
+        #chatBox.theme-solid-dark .me { background-color: #056162; color: #e9edef; }
+        #chatBox.theme-solid-dark .them { background-color: #262d31; color: #e9edef; }
+
+        #chatBox.theme-solid-blue .me { background-color: #c5e1a5; color: #111; }
+        #chatBox.theme-solid-blue .them { background-color: #e1eaf0; color: #111; }
+
+        #chatBox.theme-solid-peach .me { background-color: #e6f5c9; color: #111; }
+        #chatBox.theme-solid-peach .them { background-color: #fdebf2; color: #111; }
+
+
+
+        /* Theme Picker Menu */
+        #theme-picker {
+            position: absolute;
+            top: 55px; /* Below the header */
+            right: 15px;
+            background: var(--container-bg);
+            border: 1px solid var(--container-border);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+            z-index: 1001;
+            overflow: hidden;
+            padding: 5px 0;
+            display: none; /* Hidden by default */
+        }
+        .theme-option {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            cursor: pointer;
+            color: var(--text-color);
+            transition: background-color 0.2s;
+        }
+        .theme-option:hover { background-color: var(--button-hover-bg); }
+        .theme-swatch {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+            border: 1px solid rgba(0,0,0,0.2);
+        }
+
         /* Styles for the new animated typing indicator bubble */
         .typing-indicator-bubble {
             display: flex;
@@ -507,6 +566,7 @@
                 </div>
                 <input type="text" id="chat-search-input" placeholder="Search messages...">
                 <button class="search-icon" onclick="toggleSearch()"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
+                <button id="chat-theme-btn" onclick="toggleThemePicker()" style="font-size: 18px; padding: 6px 10px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><path d="M12 22V12"/></svg></button>
                 <button id="theme-toggle-chat" style="font-size: 18px; padding: 6px 10px;">🌙</button>
             </div>
             <div id="chatBox"></div>
@@ -519,6 +579,15 @@
                 </div>
             </div>
             <emoji-picker style="display: none;"></emoji-picker>
+            <!-- Theme Picker Menu -->
+            <div id="theme-picker">
+                <div class="theme-option" onclick="setChatTheme('default')"><div class="theme-swatch" style="background: var(--chatbox-bg);"></div>Default</div>
+                <div class="theme-option" onclick="setChatTheme('theme-doodles')"><div class="theme-swatch" style="background-color: #f0f2f5; background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\' viewBox=\'0 0 100 100\'><g fill=\'%239C92AC\' fill-opacity=\'0.1\'><path d=\'M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-4c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63-28c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm-46 42c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 98c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29-53c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zM11 78c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm62-53c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zM90 7c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zM4 41c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z\'/></g></svg>');"></div>Doodles</div>
+                <div class="theme-option" onclick="setChatTheme('theme-whatsapp')"><div class="theme-swatch" style="background-color: #e5ddd5;"></div>Classic</div>
+                <div class="theme-option" onclick="setChatTheme('theme-solid-dark')"><div class="theme-swatch" style="background-color: #0d1418;"></div>Solid Dark</div>
+                <div class="theme-option" onclick="setChatTheme('theme-solid-blue')"><div class="theme-swatch" style="background-color: #a8c5d4;"></div>Solid Blue</div>
+                <div class="theme-option" onclick="setChatTheme('theme-solid-peach')"><div class="theme-swatch" style="background-color: #f8cdda;"></div>Solid Peach</div>
+            </div>
         </div>
 
         <!-- Profile Screen -->
@@ -575,7 +644,7 @@
     // =================================================================================
     // App State & Constants
     // =================================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycby_Na-OSn5jJaanZ32kjoAF_ARqkWMDoSchoTthiGEu4DDaaFC-tb5Cpvy6PNoUmoUj/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxBD_SJjJyMFeO7SR_yjFui8TLnOd8IfeBOJhhXqLc3MTDjxPJ5NkF8rqO8jPEZZb8k/exec";
     const appState = {
         userId: null,
         userName: null,
@@ -663,12 +732,18 @@
         // Scroll to bottom button visibility
         const chatBox = document.getElementById("chatBox");
         chatBox.addEventListener('scroll', () => {
+            // Logic for "Scroll to Bottom" button
             const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
-            // Show button if scrolled up more than one screen height
             if (chatBox.scrollHeight - chatBox.scrollTop > chatBox.clientHeight * 2) {
                 scrollToBottomBtn.style.display = 'flex';
             } else {
                 scrollToBottomBtn.style.display = 'none';
+            }
+
+            // --- New: Logic for Infinite Scroll ---
+            if (chatBox.scrollTop === 0 && chatBox.dataset.loading !== 'true') {
+                // User has scrolled to the top, load more messages
+                loadMoreMessages();
             }
         });
 
@@ -1000,25 +1075,29 @@
      * Finds a user by phone number and starts a new chat.
      */
     async function startNewChat() {
-        const phoneInput = document.getElementById("newPeerPhone");
-        const phone = phoneInput.value;
-        const chatButton = phoneInput.nextElementSibling;
-        if (!phone) { alert("Please enter a number to search."); return; }
-
-        setButtonLoadingState(chatButton, true);
-        try {
-            const data = await jsonpRequest(`${API_URL}?action=findUser&phone=${phone}`);
-            if (data.status === 'found') {
-                openChat(data.userId, phone);
-            } else {
-                alert("User not found.");
-            }
-        } catch (error) {
-            console.error("Find user failed:", error);
-            alert("Could not search for the user. Please try again.");
-        } finally {
-            setButtonLoadingState(chatButton, false);
-        }
+         const phoneInput = document.getElementById("newPeerPhone");
+         const phone = phoneInput.value.trim();
+         const chatButton = phoneInput.nextElementSibling;
+         if (!phone) {
+             showToast("Please enter a number to search.", 'info');
+             return;
+         }
+ 
+         setButtonLoadingState(chatButton, true);
+ 
+         const data = await jsonpRequest(`${API_URL}?action=findUser&phone=${phone}`);
+ 
+         setButtonLoadingState(chatButton, false);
+ 
+         if (data && data.status === 'found') {
+             phoneInput.value = ''; // Clear input on success
+             openChat(data.userId, data.phone);
+         } else if (data && data.status === 'not_found') {
+             showToast("User not found. Please check the number.", 'error');
+         } else {
+             console.error("Find user failed:", data);
+             showToast("Could not search for the user. Please try again.", 'error');
+         }
     }
 
     /**
@@ -1032,6 +1111,14 @@
         // Get the unread count for this specific chat before we open it
         const localChats = JSON.parse(localStorage.getItem('chatList') || '[]');
         const currentChatData = localChats.find(c => c.peerId === pId);
+        const chatSettings = currentChatData ? currentChatData.settings : {};
+
+        // Apply saved theme
+        const chatBox = document.getElementById('chatBox');
+        chatBox.className = 'chatBox'; // Reset classes
+        if (chatSettings && chatSettings.theme && chatSettings.theme !== 'default') {
+            chatBox.classList.add(chatSettings.theme);
+        }
         const initialUnreadCount = currentChatData ? currentChatData.unreadCount : 0;
 
         // Stop refreshing the chat list while in a chat
@@ -1040,7 +1127,6 @@
         // Clear any active reply state when opening a new chat
         cancelReply();
 
-        const chatBox = document.getElementById('chatBox');
         chatBox.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-color);">Loading chats...</p>'; // Show loading indicator
 
         document.getElementById('peerStatus').innerText = ''; // Clear previous status
@@ -1049,7 +1135,6 @@
         
         // --- Caching and Loading Logic ---
         // 1. Instantly render messages from cache if available.
-        const cachedChatId = getChatId(appState.userId, pId);
         const cachedMessages = JSON.parse(localStorage.getItem(cachedChatId) || '[]');
         if (cachedMessages.length > 0) {
             renderMessages(cachedMessages, true); // Render and clear the box.
@@ -1059,7 +1144,7 @@
         scrollToBottom();
 
         // 3. Fetch latest messages from server and start polling for new ones.
-        loadMessages(false, initialUnreadCount); // Pass the unread count to show the separator
+        loadMessages({ isInitialLoad: true, unreadCount: initialUnreadCount });
         startPolling('messages', () => loadMessages(false, 0), 3000); // Subsequent polls won't have unread messages
     }
     
@@ -1101,6 +1186,10 @@
         // Stop chat-specific polling
         stopPolling('messages');
         appState.peerId = null;
+        
+        // Reset chatbox theme when going home
+        const chatBox = document.getElementById('chatBox');
+        chatBox.className = 'chatBox';
 
         showScreen('homeScreen');
 
@@ -1679,21 +1768,27 @@
 
     /**
      * Loads messages for the current chat from the server.
-     * @param {boolean} [shouldScroll=true] - Whether to scroll to the bottom after loading.
-     * @param {number} [unreadCount=0] - The number of unread messages to expect.
+     * @param {object} options - Configuration for loading messages.
+     * @param {boolean} [options.isInitialLoad=false] - Is this the first page of messages?
+     * @param {number} [options.unreadCount=0] - Number of unread messages for the separator.
+     * @param {string} [options.beforeTs=null] - Timestamp to fetch messages older than this.
+     * @returns {Promise<boolean>} A promise that resolves to true if messages were loaded, false otherwise.
      */
-    async function loadMessages(shouldScroll = true, unreadCount = 0) {
+    async function loadMessages(options = {}) {
+        const { isInitialLoad = false, unreadCount = 0, beforeTs = null } = options;
         if (!appState.userId || !appState.peerId) return;
 
-        // Get all message IDs currently displayed to help the server resolve replies
-        const existingMessageIds = [...document.querySelectorAll('#chatBox [data-message-id]')].map(el => el.dataset.messageId);
-        const idPayload = encodeURIComponent(JSON.stringify(existingMessageIds));
+        let url = `${API_URL}?action=getMessages&userId=${appState.userId}&peerId=${appState.peerId}`;
+        if (beforeTs) {
+            url += `&beforeTs=${encodeURIComponent(beforeTs)}`;
+        }
 
         try {
-            const data = await jsonpRequest(`${API_URL}?action=getMessages&userId=${appState.userId}&peerId=${appState.peerId}&clientIds=${idPayload}`);
+            const data = await jsonpRequest(url);
             
             if (data.status === 'error') {
                 console.error("Error loading messages:", data.message);
+                if (beforeTs) return false; // Indicate no messages were loaded
                 // Don't show toast on regular polling errors to avoid spam
                 return;
             }
@@ -1727,15 +1822,70 @@
             document.getElementById('peerStatus').innerText = data.isOnline ? 'Online' : '';
 
             // Render the UI using the fresh data from the server
-            renderMessages(data.messages, shouldScroll, unreadCount);
+            renderMessages(data.messages, isInitialLoad, unreadCount, beforeTs);
 
-            if (shouldScroll) {
+            // Mark that the initial load is done so we can use the instant check next time
+            if (isInitialLoad) {
+                document.getElementById('chatBox').dataset.initialLoadComplete = 'true';
+            }
+            if (isInitialLoad) {
                 scrollToBottom();
             }
 
+            // Return true if messages were loaded, or if there are more to load
+            return data.messages.length > 0 || data.hasMore;
+
         } catch (error) {
             console.error("Network error loading messages:", error);
-            // Don't show toast on regular polling errors
+            return false; // Indicate failure
+        }
+    }
+
+    /**
+     * Loads older messages when the user scrolls to the top.
+     */
+    async function loadMoreMessages() {
+        const chatBox = document.getElementById('chatBox');
+        const messageCount = chatBox.querySelectorAll('.message-container').length;
+
+        // --- NEW: Instant check to avoid unnecessary server requests ---
+        // If we have fewer than 50 messages, we know we have them all.
+        if (messageCount < 50 && chatBox.dataset.initialLoadComplete === 'true') {
+            if (chatBox.dataset.allLoaded !== 'true') {
+                chatBox.dataset.allLoaded = 'true';
+                const noMoreMsg = document.createElement('div');
+                noMoreMsg.textContent = 'No older messages';
+                noMoreMsg.style.cssText = 'text-align: center; padding: 10px; opacity: 0.5; font-size: 0.9em;';
+                chatBox.prepend(noMoreMsg);
+            }
+            return;
+        }
+
+        const oldestMessage = chatBox.querySelector('.message-container[data-timestamp]');
+        if (!oldestMessage || chatBox.dataset.loading === 'true') return;
+
+        chatBox.dataset.loading = 'true'; // Prevent multiple loads
+        const beforeTs = oldestMessage.dataset.timestamp;
+
+        // Show a subtle loading indicator
+        const loader = document.createElement('div');
+        loader.id = 'history-loader';
+        loader.textContent = 'Loading...';
+        loader.style.textAlign = 'center';
+        loader.style.padding = '10px';
+        loader.style.opacity = '0.7';
+        chatBox.prepend(loader);
+
+        const moreMessagesLoaded = await loadMessages({ beforeTs: beforeTs });
+        loader.remove(); // Hide loader
+        delete chatBox.dataset.loading;
+
+        if (!moreMessagesLoaded) {
+            chatBox.dataset.allLoaded = 'true'; // Mark that we've reached the end
+            const noMoreMsg = document.createElement('div');
+            noMoreMsg.textContent = 'No older messages';
+            noMoreMsg.style.cssText = 'text-align: center; padding: 10px; opacity: 0.5; font-size: 0.9em;';
+            chatBox.prepend(noMoreMsg);
         }
     }
 
@@ -1764,9 +1914,10 @@
     /**
      * Renders a single message object and appends it to the chat box.
      * @param {Object} m - The message object to render.
-     * @param {boolean} [isNew=false] - Is this a brand new message being added to the end?
+     * @param {boolean} [isNew=false] - Is this a new message (for animation)?
+     * @param {boolean} [prepend=false] - Should the message be added to the top?
      */
-    function renderSingleMessage(m, isNew = false) {
+    function renderSingleMessage(m, isNew = false, prepend = false) {
         const box = document.getElementById("chatBox");
         const isMe = m.from == appState.userId || m.fromId == appState.userId;
         const isTemp = !m.id || m.id.toString().startsWith('temp_');
@@ -1830,7 +1981,12 @@
         if (isNew) {
             setTimeout(() => messageContainer.classList.add('new-message-animation'), 10);
         }
-        box.appendChild(messageContainer);
+
+        if (prepend) {
+            box.prepend(messageContainer);
+        } else {
+            box.appendChild(messageContainer);
+        }
 
         // Add event listeners for own, non-temporary, non-deleted messages
         if (!isTemp && !isDeleted) {
@@ -1935,7 +2091,7 @@
      * @param {boolean} [shouldScroll=true] - Whether to scroll to the bottom.
      * @param {number} [unreadCount=0] - The number of unread messages, used to place the separator.
      */
-    function renderMessages(messages, shouldScroll = true, unreadCount = 0) {
+    function renderMessages(messages, isInitialLoad = true, unreadCount = 0, beforeTs = null) {
         const box = document.getElementById("chatBox");
         const isScrolledToBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 10;
 
@@ -1953,7 +2109,20 @@
                 }
                 renderSingleMessage(m, false);
             });
-        } else {
+        } else if (beforeTs) {
+            // This is a pagination load (older messages)
+            const firstMessage = box.querySelector('.message-container');
+            const oldScrollHeight = box.scrollHeight;
+
+            // Prepend older messages
+            messages.reverse().forEach(m => {
+                renderSingleMessage(m, false, true); // `true` to prepend
+            });
+
+            // Maintain scroll position so the user doesn't jump
+            box.scrollTop = box.scrollHeight - oldScrollHeight;
+
+        } else { // This is a regular polling update for new messages
             // For polling updates, be more efficient.
             const existingMessageIds = new Set([...box.querySelectorAll('[data-message-id]')].map(el => el.dataset.messageId));
 
@@ -2029,6 +2198,46 @@
         if (picker.style.display === 'block') picker.style.right = (msgInput.nextElementSibling.clientWidth + 20) + 'px';
     }
     // Add this style to your CSS to align the timestamp correctly
+
+    /**
+     * Toggles the visibility of the chat theme picker menu.
+     */
+    function toggleThemePicker() {
+        const picker = document.getElementById('theme-picker');
+        const isVisible = picker.style.display === 'block';
+        picker.style.display = isVisible ? 'none' : 'block';
+
+        if (!isVisible) {
+            // Add a one-time listener to close the picker if user clicks away
+            setTimeout(() => window.addEventListener('click', hideThemePicker, { once: true }), 0);
+        }
+    }
+
+    /**
+     * Hides the theme picker if the click was outside of it.
+     */
+    function hideThemePicker(event) {
+        const picker = document.getElementById('theme-picker');
+        const button = document.getElementById('chat-theme-btn');
+        if (picker && !picker.contains(event.target) && !button.contains(event.target)) {
+            picker.style.display = 'none';
+        }
+    }
+
+    /**
+     * Sets the theme for the current chat and saves the preference.
+     * @param {string} themeClass - The CSS class for the theme.
+     */
+    async function setChatTheme(themeClass) {
+        const chatBox = document.getElementById('chatBox');
+        chatBox.className = 'chatBox'; // Reset classes first
+        if (themeClass !== 'default') chatBox.classList.add(themeClass);
+        showToast('Theme updated!', 'success');
+        toggleThemePicker(); // Close the picker
+        // Save setting to the server
+        await jsonpRequest(`${API_URL}?action=setChatSetting&ownerId=${appState.userId}&peerId=${appState.peerId}&settingKey=theme&settingValue=${themeClass}`);
+        refreshChatList(); // Refresh list to get latest settings
+    }
     // .message-bubble small { display: block; text-align: right; margin-top: 4px; }
     // But for simplicity, I've added it inline via JS.
 
