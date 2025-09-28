@@ -132,16 +132,10 @@
             position: relative; /* Needed for absolute positioning of screens */
             overflow: hidden;
         }
-        #homeScreen, #loginScreen, #profileScreen {
+        #homeScreen, #loginScreen, #profileScreen, #contactsScreen {
             display: flex;
             flex-direction: column;
             height: 100%;
-        }
-        #chatScreen {
-            display: flex;
-            flex-direction: column;
-            height: 100%; /* This makes the screen take full height of the container */
-            padding: 0; /* Remove padding to allow full control */
         }
         .screen { 
             padding: 20px;
@@ -155,6 +149,18 @@
             opacity: 1;
             pointer-events: auto;
             position: static; /* Take up space in the flow */
+        }
+        #chatScreen {
+            padding: 0; /* Remove padding to allow full control */
+            position: relative; /* Establish a positioning context for the input area */
+        }
+        /* --- Fix for Profile and Contacts Screen --- */
+        .screen-content {
+            flex-grow: 1; /* Take up all available space */
+            overflow-y: auto; /* Make it scrollable if content overflows */
+        }
+        #profile-details {
+            display: flex; flex-direction: column; gap: 10px;
         }
         h3, h4 { color: var(--text-color); text-shadow: var(--text-shadow); transition: color 0.5s ease; }
         input[type="text"] { padding: 12px; width: calc(100% - 26px); margin-bottom: 10px; border: 1px solid var(--input-border); background: var(--input-bg); border-radius: 8px; font-size: 16px; color: var(--text-color); transition: background 0.5s ease, border 0.5s ease, color 0.5s ease; }
@@ -173,7 +179,11 @@
         #chatBox::-webkit-scrollbar-track { background: transparent; }
         #chatBox::-webkit-scrollbar-thumb { background-color: var(--button-bg); border-radius: 6px; }
         #chatBox::-webkit-scrollbar-thumb:hover { background-color: var(--button-hover-bg); }
-        #chatBox { flex-grow: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; /* Standard top-to-bottom flow */ transition: background 0.5s ease; scroll-behavior: smooth; gap: 4px; }
+        #chatBox { flex-grow: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; /* Standard top-to-bottom flow */ transition: background 0.5s ease; scroll-behavior: smooth; gap: 4px; 
+            /* Add padding to the bottom to prevent the last message from being hidden by the fixed input area */
+            padding-bottom: 90px; /* Adjust this value based on the input area's height */
+            box-sizing: border-box;
+        }
         .message-bubble { padding: 8px 12px; border-radius: 18px; max-width: 75%; word-wrap: break-word; line-height: 1.4; transition: background-color 0.5s ease, color 0.5s ease; }
         .me { background: var(--message-me-bg); align-self: flex-end; color: var(--message-me-color); }
         .them { background: var(--message-them-bg); align-self: flex-start; color: var(--message-them-color); }
@@ -207,7 +217,14 @@
         .chat-header { display: flex; align-items: center; gap: 10px; padding: 10px 20px; border-bottom: 1px solid var(--list-item-border); transition: border-color 0.5s ease; flex-shrink: 0; }
         .chat-header .back-button { background: none; color: var(--header-button-color); padding: 0; font-size: 24px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; margin-right: 5px; }
         .back-button .chevron { border: solid var(--header-button-color); border-width: 0 3px 3px 0; display: inline-block; padding: 4px; transform: rotate(135deg); transition: border-color 0.5s ease; }
-        .chat-input-area { display: flex; position: relative; padding: 10px 20px; flex-shrink: 0; flex-direction: column; background: var(--container-bg); border-top: 1px solid var(--list-item-border); transition: background 0.5s ease, border-color 0.5s ease; z-index: 10; }
+        .chat-input-area { 
+            position: absolute; /* Fix the input area to the bottom */
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 10px 20px; flex-shrink: 0; flex-direction: column; background: var(--container-bg); border-top: 1px solid var(--list-item-border); transition: background 0.5s ease, border-color 0.5s ease; z-index: 10; 
+            padding-bottom: calc(10px + env(safe-area-inset-bottom)); /* Add safe area padding for mobile notches */
+        }
         .chat-input-area input { flex-grow: 1; margin-right: 10px; margin-bottom: 0; padding-right: 40px; }
         .edit-name-icon { cursor: pointer; font-size: 16px; margin-left: 8px; }
 
@@ -229,7 +246,7 @@
         .emoji-button { background: none; border: none; font-size: 24px; cursor: pointer; padding: 0 10px; color: var(--emoji-button-color); align-self: center; }
         emoji-picker {
             position: absolute;
-            bottom: 70px; /* Position it above the input area */
+            bottom: calc(70px + env(safe-area-inset-bottom)); /* Adjust for safe area */
             right: 20px; /* Align with new padding */
             z-index: 100;
         }
@@ -291,6 +308,21 @@
         #scrollToBottomBtn { position: absolute; bottom: 85px; right: 20px; background: var(--button-bg); border-radius: 50%; width: 40px; height: 40px; font-size: 20px; display: none; align-items: center; justify-content: center; z-index: 50; animation: pop-in 0.3s ease; }
         #chat-search-input { display: none; flex-grow: 1; }
         .highlight { background-color: yellow; color: black; }
+        #new-messages-indicator {
+            position: absolute;
+            bottom: 100px; /* Position above the input area */
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--button-bg);
+            color: var(--button-text-color);
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            z-index: 50;
+            display: none; /* Hidden by default */
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
         .chat-header .search-icon { background: none; color: var(--header-button-color); padding: 0 5px; font-size: 18px; }
         .message-bubble .status-icon { font-size: 16px; opacity: 0.8; }
         .message-bubble .status-icon.seen { color: #34b7f1; } /* Blue ticks for seen */
@@ -343,6 +375,11 @@
             animation: toast-in 0.4s ease forwards;
             opacity: 0;
         }
+        @keyframes pop-in {
+            from { transform: translateX(-50%) scale(0.8); opacity: 0; }
+            to { transform: translateX(-50%) scale(1); opacity: 1; }
+        }
+
         .toast.success { background-color: rgba(40, 167, 69, 0.8); }
         .toast.error { background-color: rgba(229, 57, 53, 0.8); }
         .toast.info { background-color: rgba(52, 152, 219, 0.8); }
@@ -478,7 +515,6 @@
         .typing-indicator-bubble span:nth-child(2) { animation-delay: -0.16s; }
         @keyframes typing-bounce {
             0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1.0); }
         }
     </style>
     <style>
@@ -572,6 +608,7 @@
             </div>
             <div id="chatBox"></div>
             <button id="scrollToBottomBtn" onclick="scrollToBottom()">&#8595;</button>
+            <button id="new-messages-indicator" onclick="scrollToBottom()">New Messages &#8595;</button>
             <div class="chat-input-area" id="chat-input-container">
                 <div id="reply-preview-container" style="display: none;"></div>
                 <div style="display: flex; width: 100%;">
@@ -597,12 +634,12 @@
                 <button class="back-button" onclick="showHomeScreen()"><i class="chevron"></i></button>
                 <h3 style="margin: 0; flex-grow: 1;">Your Profile</h3>
             </div>
-            <div id="profile-actions" style="margin-top: 20px;">
-                <button onclick="logout()" style="background-color: #ff5c5c; color: white; width: 100%;">
-                    Logout
-                </button>
+            <div class="screen-content">
+                <div id="profile-details"></div>
+                <div id="profile-actions" style="margin-top: 20px;">
+                    <button onclick="logout()" style="background-color: #ff5c5c; color: white; width: 100%;">Logout</button>
+                </div>
             </div>
-            <div id="profile-details"></div>
         </div>
 
         <!-- Contacts Screen -->
@@ -611,7 +648,7 @@
                 <button class="back-button" onclick="showHomeScreen()"><i class="chevron"></i></button>
                 <h3 style="margin: 0; flex-grow: 1;">Your Contacts</h3>
             </div>
-            <div style="padding: 20px; height: 100%; overflow-y: auto;">
+            <div class="screen-content">
                 <h4>Add New Contact</h4>
                 <input type="text" id="newContactName" placeholder="Contact Name...">
                 <input type="text" id="newContactPhone" placeholder="Contact Phone...">
@@ -645,7 +682,7 @@
     // =================================================================================
     // App State & Constants
     // =================================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbygdn2eXjX7dQd8MubWKys-wnbRlEDGMXJfOdKNOxErIXxahDYnVDAiE3nwAyC14aQ/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyd8Gb_UqqLj3V6qsTxBHlphpPar-w3-L1MzqItNxpcryjH4mH_47RgPXzF1PiOokE2/exec";
     const appState = {
         userId: null,
         userName: null,
@@ -741,6 +778,14 @@
                 scrollToBottomBtn.style.display = 'none';
             }
 
+            // --- New: Hide "New Messages" indicator if user scrolls to bottom ---
+            const newMessagesIndicator = document.getElementById('new-messages-indicator');
+            const distanceFromBottom = chatBox.scrollHeight - (chatBox.scrollTop + chatBox.clientHeight);
+            if (distanceFromBottom < 10 && newMessagesIndicator.style.display === 'block') {
+                newMessagesIndicator.style.display = 'none';
+            }
+
+
             // --- New: Logic for Infinite Scroll ---
             if (chatBox.scrollTop === 0 && chatBox.dataset.loading !== 'true') {
                 // User has scrolled to the top, load more messages
@@ -765,6 +810,51 @@
                 jsonpRequest(`${API_URL}?action=setTypingStatus&fromId=${appState.userId}&toId=${appState.peerId}`);
             }
         });
+
+        // --- New: Mobile Keyboard Handling ---
+        handleKeyboardLayout();
+    }
+
+    /**
+     * Handles layout adjustments for the mobile soft keyboard.
+     * It uses the visualViewport API to position the input area above the keyboard.
+     */
+    function handleKeyboardLayout() {
+        const chatInputContainer = document.getElementById('chat-input-container');
+        const chatBox = document.getElementById('chatBox');
+        const msgInput = document.getElementById('msg');
+        const originalChatBoxPadding = chatBox.style.paddingBottom || '90px';
+
+        if ('visualViewport' in window) {
+            const viewport = window.visualViewport;
+
+            const viewportResizeHandler = () => {
+                const inputAreaHeight = chatInputContainer.offsetHeight;
+                // The keyboard height is the difference between the layout viewport and the visual viewport.
+                const keyboardHeight = window.innerHeight - viewport.height;
+
+                if (keyboardHeight > 0) {
+                    // Keyboard is open
+                    chatInputContainer.style.bottom = `${keyboardHeight}px`;
+                    chatBox.style.paddingBottom = `${inputAreaHeight}px`;
+                } else {
+                    // Keyboard is closed
+                    chatInputContainer.style.bottom = '0px';
+                    chatBox.style.paddingBottom = originalChatBoxPadding;
+                }
+                // Scroll to bottom to ensure the input is visible
+                setTimeout(scrollToBottom, 100);
+            };
+
+            viewport.addEventListener('resize', viewportResizeHandler);
+
+        } else {
+            // Fallback for older browsers without visualViewport
+            msgInput.addEventListener('focus', () => {
+                // On focus, scroll to bottom after a short delay to account for keyboard animation
+                setTimeout(scrollToBottom, 150);
+            });
+        }
     }
 
     /**
@@ -1148,8 +1238,8 @@
         // The loadMessages function will handle showing the "Loading..." state
         // and then rendering the messages or the "No messages" state.
         loadMessages({ isInitialLoad: true, unreadCount: initialUnreadCount, isFromCache: !!cachedMessages }).then(() => {
-            // Start polling for new messages only after the initial load is complete.
-            startPolling('messages', () => loadMessages({ isPolling: true }), 3000);
+            // Start polling for new messages more frequently (every 1.5 seconds).
+            startPolling('messages', () => loadMessages({ isPolling: true }), 1500);
         });
     }
     
@@ -1157,7 +1247,16 @@
      * Scrolls the chat box to the bottom.
      */
     function scrollToBottom() {
-        document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
+        const chatBox = document.getElementById("chatBox");
+        // Hide the "New Messages" indicator when scrolling to bottom
+        const newMessagesIndicator = document.getElementById('new-messages-indicator');
+        if (newMessagesIndicator) newMessagesIndicator.style.display = 'none';
+
+        const lastMessage = chatBox.lastElementChild;
+        if (lastMessage) {
+            // Using scrollIntoView is more reliable than setting scrollTop directly
+            lastMessage.scrollIntoView({ behavior: "smooth", block: "end" });
+        }
     }
 
     /**
@@ -1429,7 +1528,8 @@
         };
 
         // Render the temporary message immediately
-        renderSingleMessage(tempMsg, true);
+        const tempElement = renderSingleMessage(tempMsg, true);
+        document.getElementById('chatBox').appendChild(tempElement);
 
         // Clear the reply state after rendering
         if (replyToId) cancelReply();
@@ -1781,14 +1881,17 @@
         const { isInitialLoad = false, unreadCount = 0, beforeTs = null, isPolling = false, afterTs = null, isFromCache = false } = options;
         if (!appState.userId || !appState.peerId) return;
         const chatBox = document.getElementById('chatBox');
-
+        
         let url = `${API_URL}?action=getMessages&userId=${appState.userId}&peerId=${appState.peerId}`;
         if (beforeTs) {
             url += `&beforeTs=${encodeURIComponent(beforeTs)}`;
         }
-        if (afterTs) {
-            // For polling, we can make this more efficient by asking for only new messages.
-            // This requires a backend change to handle 'afterTs'. For now, we'll keep the full fetch.
+        // --- MODIFICATION: Make polling more efficient ---
+        // If this is a polling request, find the last message's timestamp and only ask for newer messages.
+        if (isPolling) {
+            const lastMessage = chatBox.querySelector('.message-container[data-timestamp]:last-child');
+            const lastTs = lastMessage ? lastMessage.dataset.timestamp : null;
+            if (lastTs) url += `&afterTs=${encodeURIComponent(lastTs)}`;
         }
 
         try {
@@ -1939,6 +2042,10 @@
         const isMe = m.from == appState.userId || m.fromId == appState.userId;
         const isTemp = !m.id || m.id.toString().startsWith('temp_');
         const isDeleted = m.msg.includes("[This message was deleted]");
+        const isImage = /\.(jpeg|jpg|gif|png|webp)$/i.test(m.msg);
+
+        // If the box is empty and we are prepending, it means it's the first batch of history.
+        if (prepend && box.children.length === 0) prepend = false;
 
         const messageContainer = document.createElement("div");
         messageContainer.className = `message-container`;
@@ -1983,7 +2090,16 @@
             <div class="message-meta">
                 <small style="font-size: 0.75em; opacity: 0.7;">${timestamp}</small>${statusIconHtml}
             </div>`;
-        bubble.innerHTML = `${replyHtml}<span class="message-text">${m.msg}</span>${metaHtml}`;
+
+        // --- New: Handle Image Messages ---
+        if (isImage) {
+            bubble.innerHTML = `
+                ${replyHtml}
+                <div class="image-wrapper"><img src="${m.msg}" alt="Image from chat" loading="lazy"></div>
+                ${metaHtml}`;
+        } else {
+            bubble.innerHTML = `${replyHtml}<span class="message-text">${m.msg}</span>${metaHtml}`;
+        }
 
         // --- Add Reply Icon for Hover/Swipe ---
         const replyIcon = document.createElement('div');
@@ -1994,21 +2110,13 @@
         messageContainer.appendChild(bubble);
         messageContainer.appendChild(replyIcon);
 
-        // If it's a new message, add a fade-in animation class after appending
-        if (isNew) {
-            setTimeout(() => messageContainer.classList.add('new-message-animation'), 10);
-        }
-
-        if (prepend) {
-            box.prepend(messageContainer); // Prepend for older messages
-        } else {
-            box.appendChild(messageContainer);
-        }
 
         // Add event listeners for own, non-temporary, non-deleted messages
         if (!isTemp && !isDeleted) {
             addMessageEventListeners(bubble, m);
         }
+
+        return messageContainer; // Return the element instead of appending it directly
     }
 
     /**
@@ -2109,13 +2217,13 @@
      * @param {number} [unreadCount=0] - The number of unread messages, used to place the separator.
      */
     function renderMessages(messages, options = {}) {
-        const { isInitialLoad = false, unreadCount = 0, beforeTs = null, isFromCache = false } = options;
+        const { isInitialLoad = false, unreadCount = 0, beforeTs = null, isFromCache = false, isPolling = false } = options;
         const box = document.getElementById("chatBox");
-        const isScrolledToBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 10;
     
         // If it's the initial load, clear the box and render everything from scratch.
         if (isInitialLoad && !isFromCache) {
             box.innerHTML = ""; // Only clear if we didn't render from cache
+            const fragment = document.createDocumentFragment();
             const firstUnreadIndex = unreadCount > 0 ? Math.max(0, messages.length - unreadCount) : -1;
     
             messages.forEach((m, index) => {
@@ -2123,25 +2231,35 @@
                     const separator = document.createElement('div');
                     separator.className = 'unread-separator';
                     separator.textContent = 'Unread Messages';
-                    box.appendChild(separator);
+                    fragment.appendChild(separator);
                 }
-                renderSingleMessage(m, false);
+                const msgElement = renderSingleMessage(m, false);
+                if (isInitialLoad) {
+                    msgElement.classList.add('new-message-animation');
+                }
+                fragment.appendChild(msgElement);
             });
+            box.appendChild(fragment);
     
         // If loading older messages (history), prepend them.
         } else if (beforeTs) {
             const firstMessage = box.querySelector('.message-container');
             const oldScrollHeight = box.scrollHeight;
-    
+            const fragment = document.createDocumentFragment();
+
             messages.reverse().forEach(m => {
-                renderSingleMessage(m, false, true); // Prepend older messages to the top
+                // Prepending older messages, no animation needed
+                fragment.appendChild(renderSingleMessage(m, false));
             });
-    
+            box.prepend(fragment);
+
             // Maintain scroll position so the user doesn't jump
             box.scrollTop = box.scrollHeight - oldScrollHeight;
     
         // This is a regular polling update. Be smart about rendering.
         } else { // This block now handles both polling and the initial fetch after a cache render
+            const fragment = document.createDocumentFragment();
+            let newMessagesAdded = false;
             const existingMessageIds = new Set([...box.querySelectorAll('[data-message-id]')].map(el => el.dataset.messageId));
             const tempMessagesOnScreen = Array.from(document.querySelectorAll('.message-container[data-temp-id]'));
     
@@ -2149,34 +2267,46 @@
                 const isMe = msg.from == appState.userId || msg.fromId == appState.userId;
     
                 // Check if this server message corresponds to a temporary "sending" message on screen.
-                const tempMatch = isMe ? tempMessagesOnScreen.find(el => el.querySelector('.message-text').textContent === msg.msg) : null;
+                const tempMatch = isMe ? tempMessagesOnScreen.find(el => el.querySelector('.message-text')?.textContent === msg.msg) : null;
     
                 if (tempMatch) {
                     // It's a sent message that was previously optimistic. Replace it.
                     replaceTempMessage(tempMatch, msg);
                 } else if (!existingMessageIds.has(msg.id)) {
                     // It's a genuinely new message (e.g., from the other user). Render it.
-                    renderSingleMessage(msg, !isInitialLoad); // Animate only if it's not part of the initial load
+                    const newElement = renderSingleMessage(msg, true); // Animate new incoming messages
+                    newElement.classList.add('new-message-animation');
+                    fragment.appendChild(newElement);
+                    newMessagesAdded = true;
                     if (!isMe) {
                         playNotificationSound();
                     }
                 } else {
                     // The message already exists. Just update its 'seen' status if needed.
                     const element = box.querySelector(`[data-message-id='${msg.id}']`);
-                    const statusIcon = element?.querySelector('.status-icon.seen');
-                    if (element && msg.seen === 'true' && !statusIcon) {
-                        const icon = element.querySelector('.status-icon');
-                        if (icon) {
-                            icon.innerHTML = ' ✓✓';
-                            icon.classList.add('seen');
-                        }
+                    const statusIcon = element?.querySelector('.status-icon');
+                    if (statusIcon && msg.seen === 'true' && !statusIcon.classList.contains('seen')) {
+                        statusIcon.innerHTML = ' ✓✓';
+                        statusIcon.classList.add('seen');
                     }
                 }
             });
 
-            // Auto-scroll only if the user was already at the bottom.
-            if (isScrolledToBottom) {
+            if (newMessagesAdded) {
+                box.appendChild(fragment);
+            }
+
+            // --- New Conditional Auto-Scroll Logic ---
+            const newMessagesIndicator = document.getElementById('new-messages-indicator');
+            const distanceFromBottom = box.scrollHeight - (box.scrollTop + box.clientHeight);
+            const shouldAutoScroll = distanceFromBottom < 80;
+
+            if (shouldAutoScroll) {
                 scrollToBottom();
+                newMessagesIndicator.style.display = 'none'; // Ensure it's hidden
+            } else if (newMessagesAdded) {
+                // If new messages were added and user is scrolled up, show the indicator.
+                newMessagesIndicator.style.display = 'block';
             }
         }
     }
