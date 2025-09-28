@@ -178,15 +178,36 @@
         .them { background: var(--message-them-bg); align-self: flex-start; color: var(--message-them-color); }
         .message-container { display: flex; flex-direction: column; }
 
+        /* Styles for the WhatsApp-like timestamp in the corner */
+        .message-meta {
+            float: right;
+            clear: both;
+            margin-left: 10px; /* Space between text and timestamp */
+            margin-top: 4px; /* Space above the timestamp */
+            display: flex;
+            align-items: center;
+        }
+
+        /* Styles for message replies */
+        .reply-preview {
+            background: var(--message-them-bg);
+            padding: 5px 12px;
+            border-radius: 12px 12px 0 0;
+            border-left: 4px solid var(--message-me-bg);
+            margin: 0 10px 0 10px;
+            font-size: 0.9em;
+        }
+        .reply-preview p { margin: 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
         .chat-list-item { padding: 12px; border-bottom: 1px solid var(--list-item-border); cursor: pointer; transition: background-color 0.3s, border-color 0.5s ease; }
-        .chat-list-item-content { display: flex; align-items: center; }
+        .chat-list-item-content { display: flex; align-items: center; position: relative; }
         #chatList div:hover { background-color: var(--list-item-hover-bg); border-radius: 8px; }
         
-        .chat-header { display: flex; align-items: center; padding: 20px 20px 10px 20px; border-bottom: 1px solid var(--list-item-border); transition: border-color 0.5s ease; flex-shrink: 0; }
+        .chat-header { display: flex; align-items: center; gap: 10px; padding: 10px 20px; border-bottom: 1px solid var(--list-item-border); transition: border-color 0.5s ease; flex-shrink: 0; }
         .chat-header .back-button { background: none; color: var(--header-button-color); padding: 0; font-size: 24px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; margin-right: 5px; }
         .back-button .chevron { border: solid var(--header-button-color); border-width: 0 3px 3px 0; display: inline-block; padding: 4px; transform: rotate(135deg); transition: border-color 0.5s ease; }
-        .chat-input-area { display: flex; position: relative; padding: 10px 20px; flex-shrink: 0; }
-        .chat-input-area input { flex-grow: 1; margin-right: 10px; margin-bottom: 0; }
+        .chat-input-area { display: flex; position: relative; padding: 10px 20px; flex-shrink: 0; flex-direction: column; }
+        .chat-input-area input { flex-grow: 1; margin-right: 10px; margin-bottom: 0; padding-right: 40px; }
         .edit-name-icon { cursor: pointer; font-size: 16px; margin-left: 8px; }
         
         /* Online Indicator Styles - Kept for user status */
@@ -203,7 +224,7 @@
             background-color: #aaa; margin-right: 8px; flex-shrink: 0;
         }
         .online-indicator-list.online { background-color: #28a745; }
-
+ 
         .emoji-button { background: none; border: none; font-size: 24px; cursor: pointer; padding: 0 10px; color: var(--emoji-button-color); align-self: center; }
         emoji-picker {
             position: absolute;
@@ -267,10 +288,10 @@
     <style>
         /* Added styles for new features */
         #scrollToBottomBtn { position: absolute; bottom: 60px; right: 20px; background: var(--button-bg); border-radius: 50%; width: 40px; height: 40px; font-size: 20px; display: none; align-items: center; justify-content: center; z-index: 50; animation: pop-in 0.3s ease; }
-        #chat-search-input { display: none; flex-grow: 1; margin-left: 10px; }
+        #chat-search-input { display: none; flex-grow: 1; }
         .highlight { background-color: yellow; color: black; }
         .chat-header .search-icon { background: none; color: var(--header-button-color); padding: 0 5px; font-size: 18px; }
-        .message-bubble .status-icon { font-size: 14px; opacity: 0.8; }
+        .message-bubble .status-icon { font-size: 16px; opacity: 0.8; }
         .message-bubble .status-icon.seen { color: #34b7f1; } /* Blue ticks for seen */
     </style>
     <style>
@@ -326,17 +347,64 @@
         .toast.info { background-color: rgba(52, 152, 219, 0.8); }
         @keyframes toast-in { to { opacity: 1; transform: translateY(0); } }
         @keyframes toast-out { from { opacity: 1; } to { opacity: 0; } }
+
+        /* Styles for the "Unread Messages" separator */
+        .unread-separator {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 10px 0;
+            color: var(--text-color);
+        }
+        .unread-separator::before, .unread-separator::after {
+            content: ''; flex: 1; border-bottom: 1px solid var(--list-item-border);
+        }
+        .unread-separator:not(:empty)::before { margin-right: .5em; }
+        .unread-separator:not(:empty)::after { margin-left: .5em; }
+
+        /* Style for the unread message dot indicator on the home screen */
+        .unread-dot-indicator {
+            background-color: #25d366; /* A vibrant green */
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        /* Styles for the new hover/swipe reply feature */
+        .message-container { position: relative; } /* Needed for absolute positioning of reply icon */
+        .reply-icon {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--button-bg);
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            pointer-events: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 5;
+        }
     </style>
     <style>
         /* --- Responsive Styles for Mobile Phones --- */
         @media screen and (max-width: 480px) {
             body {
                 padding: 0; /* Remove padding to go edge-to-edge */
+                min-height: -webkit-fill-available; /* Fix for 100vh on mobile */
+            }
+            html {
+                height: -webkit-fill-available;
             }
             .container {
-                height: 100vh; /* Full screen height */
+                height: 100%; /* Use 100% instead of 100vh */
                 max-width: 100%; /* Full screen width */
-                border-radius: 0; /* No rounded corners on mobile */
+                border-radius: 0;
                 border: none; /* Remove border on mobile */
             }
             .screen, .chat-header, .chat-input-area {
@@ -345,6 +413,10 @@
             }
             #intro-text {
                 font-size: 3.5rem; /* Adjust intro text size for smaller screens */
+            }
+            .chat-list-item {
+                padding: 10px;
+                font-size: 0.9rem;
             }
         }
     </style>
@@ -373,8 +445,12 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <h4>Digidad</h4>
                 <div>
-                    <button id="contacts-btn" onclick="showContactsScreen()" style="font-size: 18px; padding: 6px 10px; margin-right: 5px;">👥</button>
-                    <button id="profile-btn" onclick="showProfileScreen()" style="font-size: 18px; padding: 6px 10px; margin-right: 5px;">👤</button>
+                    <button id="contacts-btn" onclick="showContactsScreen()" style="font-size: 18px; padding: 6px 10px; margin-right: 5px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </button>
+                    <button id="profile-btn" onclick="showProfileScreen()" style="font-size: 18px; padding: 6px 10px; margin-right: 5px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </button>
                     <button id="theme-toggle-home" style="font-size: 18px; padding: 6px 10px;">🌙</button>
                 </div>
             </div>
@@ -390,21 +466,28 @@
         <div id="chatScreen" class="screen" style="padding: 0;">
             <div class="chat-header">
                 <button class="back-button" onclick="showHomeScreen()"><i class="chevron"></i></button>
-                <div id="peerStatus" style="font-size: 12px; color: var(--text-color); margin-left: -10px;"></div>
-                <div style="flex-grow: 1; display: flex; align-items: center;">
-                    <h3 style="margin: 0;" id="chatWith"></h3><span class="edit-name-icon" onclick="promptToEditPeerName()">✏️</span>
+                <div style="flex-grow: 1;">
+                    <div style="display: flex; align-items: center;">
+                        <h3 style="margin: 0;" id="chatWith"></h3>
+                        <span class="edit-name-icon" onclick="promptToEditPeerName()">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                        </span>
+                    </div>
+                    <div id="peerStatus" style="font-size: 12px; color: var(--text-color);"></div>
                 </div>
                 <input type="text" id="chat-search-input" placeholder="Search messages...">
-                <button class="search-icon" onclick="toggleSearch()">🔍</button>
+                <button class="search-icon" onclick="toggleSearch()"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
                 <button id="theme-toggle-chat" style="font-size: 18px; padding: 6px 10px;">🌙</button>
             </div>
             <div id="chatBox"></div>
             <button id="scrollToBottomBtn" onclick="scrollToBottom()">&#8595;</button>
-            <div class="chat-input-area">
-                <button class="emoji-button" onclick="toggleEmojiPicker()">😊</button>
-                <input type="text" id="msg" placeholder="Type a message...">
-                <div id="typingIndicator" style="display: none; align-self: center; margin-left: 10px; color: #888;">typing...</div>
-                <button onclick="sendMsg()">Send</button>
+            <div class="chat-input-area" id="chat-input-container">
+                <div id="reply-preview-container" style="display: none;"></div>
+                <div style="display: flex; width: 100%;">
+                    <input type="text" id="msg" placeholder="Type a message...">
+                    <div id="typingIndicator" style="display: none; align-self: center; margin-left: 10px; color: #888;">typing...</div>
+                    <button onclick="sendMsg()">Send</button>
+                </div>
             </div>
             <emoji-picker style="display: none;"></emoji-picker>
         </div>
@@ -442,6 +525,7 @@
 
     <!-- Context Menu for Messages -->
     <div id="message-context-menu" class="context-menu">
+        <div class="context-menu-item" id="context-reply">Reply</div>
         <div class="context-menu-item" id="context-edit">Edit</div>
         <div class="context-menu-item" id="context-delete">Delete</div>
     </div>
@@ -462,12 +546,13 @@
     // =================================================================================
     // App State & Constants
     // =================================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbwnxN4zeBriClmEu96yTY3WjZeGtcc19IIioU6gf_RAtFKNoQSpFWvPot1dgCufmuQb/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycby_Na-OSn5jJaanZ32kjoAF_ARqkWMDoSchoTthiGEu4DDaaFC-tb5Cpvy6PNoUmoUj/exec";
     const appState = {
         userId: null,
         userName: null,
         peerId: null,
-        intervals: {} // To manage all setInterval calls
+        intervals: {}, // To manage all setInterval calls
+        replyingTo: null // To store info about the message being replied to
     };
     // Add event listener for 'Enter' key on message input
 
@@ -546,22 +631,6 @@
         const emojiPicker = document.querySelector('emoji-picker');
         emojiPicker.addEventListener('emoji-click', handleEmojiSelection);
 
-        // Message input 'Enter' key and typing detection
-        const msgInput = document.getElementById("msg");
-        msgInput.addEventListener("keyup", (event) => {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            sendMsg();
-        }
-    });
-
-    // Add event listener to detect typing
-        msgInput.addEventListener("input", () => {
-            if (appState.userId && appState.peerId) {
-                jsonpRequest(`${API_URL}?action=setTypingStatus&fromId=${appState.userId}&toId=${appState.peerId}`);
-            }
-        });
-
         // Scroll to bottom button visibility
         const chatBox = document.getElementById("chatBox");
         chatBox.addEventListener('scroll', () => {
@@ -575,6 +644,22 @@
         });
 
         document.getElementById('chat-search-input').addEventListener('input', handleSearch);
+
+        // Message input 'Enter' key and typing detection
+        const msgInput = document.getElementById("msg");
+        msgInput.addEventListener("keyup", (event) => {
+            if (event.key === "Enter") {
+                event.preventDefault(); // Prevent any default action
+                sendMsg();
+            }
+        });
+
+        // Add event listener to detect typing
+        msgInput.addEventListener("input", () => {
+            if (appState.userId && appState.peerId) {
+                jsonpRequest(`${API_URL}?action=setTypingStatus&fromId=${appState.userId}&toId=${appState.peerId}`);
+            }
+        });
     }
 
     /**
@@ -857,6 +942,7 @@
             div.addEventListener('touchmove', () => clearTimeout(longPressTimer));
 
             const time = chat.lastMessage.ts ? new Date(chat.lastMessage.ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
+            const unreadIndicator = chat.unreadCount > 0 ? `<div class="unread-dot-indicator"></div>` : '';
             div.innerHTML = `
                 <div class="chat-list-item-content">
                     <div style="flex-grow: 1;">
@@ -867,7 +953,12 @@
                             </strong>
                             <small>${time}</small>
                         </div>
-                        <p style="margin: 4px 0 0; color: var(--list-item-subtext-color);">${chat.lastMessage.msg}</p>
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                            <p style="margin: 4px 0 0; color: var(--list-item-subtext-color); flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${chat.lastMessage.msg}</p>
+                            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 10px;">
+                                ${unreadIndicator}
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -909,8 +1000,16 @@
     function openChat(pId, pPhone) {
         appState.peerId = pId;
         
+        // Get the unread count for this specific chat before we open it
+        const localChats = JSON.parse(localStorage.getItem('chatList') || '[]');
+        const currentChatData = localChats.find(c => c.peerId === pId);
+        const initialUnreadCount = currentChatData ? currentChatData.unreadCount : 0;
+
         // Stop refreshing the chat list while in a chat
         stopPolling('chatList');
+
+        // Clear any active reply state when opening a new chat
+        cancelReply();
 
         const chatBox = document.getElementById('chatBox');
         chatBox.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-color);">Loading chats...</p>'; // Show loading indicator
@@ -919,17 +1018,20 @@
         document.getElementById('chatWith').innerText = `Chat with ${pPhone}`;
         showScreen('chatScreen');
         
-        // --- New Caching Logic ---
-        // 1. Try to load messages from localStorage for an instant UI
+        // --- Caching and Loading Logic ---
+        // 1. Instantly render messages from cache if available.
         const cachedChatId = getChatId(appState.userId, pId);
         const cachedMessages = JSON.parse(localStorage.getItem(cachedChatId) || '[]');
         if (cachedMessages.length > 0) {
-            renderMessages(cachedMessages, true); // Render cached data instantly
+            renderMessages(cachedMessages, true); // Render and clear the box.
         }
 
-        // 2. Fetch latest messages from server in the background and start polling
-        loadMessages(cachedMessages.length === 0); // Only do a "full" scroll if cache was empty
-        startPolling('messages', () => loadMessages(false), 3000);
+        // 2. Always scroll to the bottom when opening a chat.
+        scrollToBottom();
+
+        // 3. Fetch latest messages from server and start polling for new ones.
+        loadMessages(false, initialUnreadCount); // Pass the unread count to show the separator
+        startPolling('messages', () => loadMessages(false, 0), 3000); // Subsequent polls won't have unread messages
     }
     
     /**
@@ -976,7 +1078,7 @@
         const doRefresh = async () => {
             if (!appState.userId) return;
             const userPhone = localStorage.getItem('userPhone');
-            if (!userPhone) return;
+            if (!userPhone || !document.getElementById('homeScreen').classList.contains('active')) return;
 
             const data = await jsonpRequest(`${API_URL}?action=login&phone=${userPhone}`);
             if (data.chats) {
@@ -994,7 +1096,7 @@
             }
         };
 
-        // Turant refresh karein aur phir har 5 second mein
+        // Immediately refresh and then continue polling every 5 seconds.
         doRefresh();
         startPolling('chatList', doRefresh, 5000);
     }
@@ -1192,20 +1294,27 @@
         const msgText = msgInput.value;
         msgInput.value = ""; // Input ko turant saaf karein
 
+        const replyToId = appState.replyingTo ? appState.replyingTo.id : null;
+        const replyContext = appState.replyingTo ? { ...appState.replyingTo } : null;
         // Optimistically create a temporary message object
         const tempMsg = {
             from: appState.userId,
             msg: msgText,
             ts: new Date().toISOString(),
-            id: `temp_${Date.now()}` // A unique temporary ID
+            id: `temp_${Date.now()}`, // A unique temporary ID
+            replyTo: replyContext // Include reply context for instant rendering
         };
 
         // Render the temporary message immediately
         renderSingleMessage(tempMsg, true);
+
+        // Clear the reply state after rendering
+        if (replyToId) cancelReply();
+
         scrollToBottom();
 
         try {
-            const data = await jsonpRequest(`${API_URL}?action=sendMessage&fromId=${appState.userId}&toId=${appState.peerId}&msg=${encodeURIComponent(msgText)}`);            
+            const data = await jsonpRequest(`${API_URL}?action=sendMessage&fromId=${appState.userId}&toId=${appState.peerId}&msg=${encodeURIComponent(msgText)}&replyTo=${replyToId || ''}`);            
             if (data?.status === 'sent' && data.messageId) {
                 // Message sent successfully, replace the temporary message with the confirmed one
                 const tempElement = document.querySelector(`[data-temp-id='${tempMsg.id}']`);
@@ -1390,7 +1499,11 @@
      * @param {string} messageContent - The text content of the message.
      */
     function showContextMenu(event, messageId, messageContent) {
+        const bubble = event.target.closest('.message-bubble');
+        if (!bubble || messageContent.includes("[This message was deleted]")) return;
+
         const menu = document.getElementById('message-context-menu');
+        const isMe = bubble.classList.contains('me');
         
         // Set up actions for menu items
         document.getElementById('context-edit').onclick = () => {
@@ -1401,6 +1514,14 @@
             deleteMessage(messageId);
             hideContextMenu();
         };
+        document.getElementById('context-reply').onclick = () => {
+            initiateReply(messageId, messageContent);
+            hideContextMenu();
+        };
+
+        // Conditionally show/hide Edit and Delete options
+        document.getElementById('context-edit').style.display = isMe ? 'block' : 'none';
+        document.getElementById('context-delete').style.display = isMe ? 'block' : 'none';
 
         // Position and show the menu
         const touch = event.touches ? event.touches[0] : event;
@@ -1490,16 +1611,57 @@
         }
     }
 
+    /**
+     * Initiates the reply UI.
+     * @param {string} messageId - The ID of the message to reply to.
+     * @param {string} messageContent - The text of the message to reply to.
+     */
+    function initiateReply(messageId, messageContent) {
+        const originalBubble = document.querySelector(`[data-message-id='${messageId}']`);
+        const author = originalBubble.classList.contains('me') ? 'You' : document.getElementById('chatWith').innerText.replace('Chat with ', '');
+
+        appState.replyingTo = { id: messageId, text: messageContent, author: author };
+
+        const container = document.getElementById('reply-preview-container');
+        container.innerHTML = `
+            <div class="reply-preview">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong style="color: var(--message-me-color);">${author}</strong>
+                    <button onclick="cancelReply()" style="background: none; border: none; font-size: 20px; color: var(--text-color); padding: 0 5px; cursor: pointer;">&times;</button>
+                </div>
+                <p style="color: var(--text-color);">${messageContent}</p>
+            </div>
+        `;
+        container.style.display = 'block';
+        document.getElementById('msg').focus();
+    }
+
+    /**
+     * Cancels the current reply action and hides the preview.
+     */
+    function cancelReply() {
+        appState.replyingTo = null;
+        const container = document.getElementById('reply-preview-container');
+        if (container) {
+            container.style.display = 'none';
+            container.innerHTML = '';
+        }
+    }
 
     /**
      * Loads messages for the current chat from the server.
      * @param {boolean} [shouldScroll=true] - Whether to scroll to the bottom after loading.
+     * @param {number} [unreadCount=0] - The number of unread messages to expect.
      */
-    async function loadMessages(shouldScroll = true) {
+    async function loadMessages(shouldScroll = true, unreadCount = 0) {
         if (!appState.userId || !appState.peerId) return;
 
+        // Get all message IDs currently displayed to help the server resolve replies
+        const existingMessageIds = [...document.querySelectorAll('#chatBox [data-message-id]')].map(el => el.dataset.messageId);
+        const idPayload = encodeURIComponent(JSON.stringify(existingMessageIds));
+
         try {
-            const data = await jsonpRequest(`${API_URL}?action=getMessages&userId=${appState.userId}&peerId=${appState.peerId}`);
+            const data = await jsonpRequest(`${API_URL}?action=getMessages&userId=${appState.userId}&peerId=${appState.peerId}&clientIds=${idPayload}`);
             
             if (data.status === 'error') {
                 console.error("Error loading messages:", data.message);
@@ -1518,7 +1680,7 @@
             document.getElementById('peerStatus').innerText = data.isOnline ? 'Online' : '';
 
             // Render the UI using the fresh data from the server
-            renderMessages(data.messages, shouldScroll);
+            renderMessages(data.messages, shouldScroll, unreadCount);
 
             if (shouldScroll) {
                 scrollToBottom();
@@ -1564,7 +1726,7 @@
         const isDeleted = m.msg.includes("[This message was deleted]");
 
         const messageContainer = document.createElement("div");
-        messageContainer.className = `message-container ${isMe ? 'me' : 'them'}`;
+        messageContainer.className = `message-container`;
         // Use a data attribute to easily find and replace the temp message later
         if (isTemp) {
             messageContainer.dataset.tempId = m.id;
@@ -1574,23 +1736,48 @@
         }
 
         const bubble = document.createElement("div");
-        bubble.className = `message-bubble ${isMe ? 'me' : 'them'}`;
+        bubble.className = `message-bubble ${isMe ? 'me' : 'them'}`
+
+        // --- Handle Replies ---
+        let replyHtml = '';
+        if (m.replyTo) {
+            replyHtml = `
+                <div style="background: rgba(0,0,0,0.1); padding: 6px 10px; border-radius: 8px; margin-bottom: 5px; border-left: 3px solid var(--message-me-bg);">
+                    <strong style="font-size: 0.9em; color: var(--message-me-color);">${m.replyTo.author}</strong>
+                    <p style="font-size: 0.9em; margin: 2px 0; opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        ${m.replyTo.text}
+                    </p>
+                </div>
+            `;
+        }
 
         let statusIconHtml = '';
         if (isMe) {
             if (isTemp) {
                 statusIconHtml = '<span class="status-icon"> 🕒</span>'; // Clock for sending
             } else if (m.seen === "true") {
-                statusIconHtml = '<span class="status-icon seen"> ✔✔</span>'; // Double check for seen
+                statusIconHtml = '<span class="status-icon seen"> ✓✓</span>'; // Double check for seen
             } else {
                 statusIconHtml = '<span class="status-icon"> ✓</span>'; // Single check for sent
             }
         }
         const timestamp = m.ts ? new Date(m.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
         
-        bubble.innerHTML = `<span class="message-text">${m.msg}</span><br><small style="opacity: 0.7;">${timestamp}</small>${statusIconHtml}`;
+        // New structure for WhatsApp-like timestamp
+        const metaHtml = `
+            <div class="message-meta">
+                <small style="font-size: 0.75em; opacity: 0.7;">${timestamp}</small>${statusIconHtml}
+            </div>`;
+        bubble.innerHTML = `${replyHtml}<span class="message-text">${m.msg}</span>${metaHtml}`;
+
+        // --- Add Reply Icon for Hover/Swipe ---
+        const replyIcon = document.createElement('div');
+        replyIcon.className = 'reply-icon';
+        replyIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>`;
+        replyIcon.style[isMe ? 'left' : 'right'] = '-15px'; // Position based on who sent it
 
         messageContainer.appendChild(bubble);
+        messageContainer.appendChild(replyIcon);
 
         // If it's a new message, add a fade-in animation class after appending
         if (isNew) {
@@ -1599,7 +1786,7 @@
         box.appendChild(messageContainer);
 
         // Add event listeners for own, non-temporary, non-deleted messages
-        if (isMe && !isTemp && !isDeleted) {
+        if (!isTemp && !isDeleted) {
             addMessageEventListeners(bubble, m);
         }
     }
@@ -1610,19 +1797,87 @@
      * @param {Object} m - The message object.
      */
     function addMessageEventListeners(bubble, m) {
-        let longPressTimer;
+        const container = bubble.parentElement; // The .message-container
+        const replyIcon = container.querySelector('.reply-icon');
 
-        // For Desktop: Right-click
+        // --- Desktop Feature 1: Hover to show reply icon ---
+        container.addEventListener('mouseenter', () => {
+            if (window.innerWidth > 768) { // Only on larger screens
+                replyIcon.style.opacity = '1';
+                replyIcon.style.pointerEvents = 'auto';
+            }
+        });
+        container.addEventListener('mouseleave', () => {
+            if (window.innerWidth > 768) {
+                replyIcon.style.opacity = '0';
+                replyIcon.style.pointerEvents = 'none';
+            }
+        });
+        replyIcon.addEventListener('click', () => initiateReply(m.id, m.msg));
+
+        // --- Desktop Feature 2: Right-click for context menu ---
         bubble.addEventListener('contextmenu', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             showContextMenu(e, m.id, m.msg);
         });
 
-        // For Mobile: Long-press
-        bubble.addEventListener('touchstart', (e) => {
-            longPressTimer = setTimeout(() => { showContextMenu(e, m.id, m.msg); }, 500);
+        // --- Mobile Feature 1: Swipe to reply ---
+        let startX = 0;
+        let dist = 0;
+        const swipeThreshold = 60; // How far to swipe to trigger reply
+
+        container.addEventListener('touchstart', (e) => {
+            // Don't interfere if it's a multi-touch gesture
+            if (e.touches.length > 1) return;
+            const touch = e.touches[0];
+            startX = touch.clientX;
+            dist = 0;
+            container.style.transition = 'none'; // Disable transition during swipe
         });
 
+        container.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 1) return;
+            const touch = e.touches[0];
+            dist = touch.clientX - startX;
+            if (dist > 0) { // Only allow right-swipe
+                container.style.transform = `translateX(${dist}px)`;
+                // Show reply icon during swipe
+                const iconOpacity = Math.min(dist / swipeThreshold, 1);
+                replyIcon.style.opacity = iconOpacity;
+                replyIcon.style.transform = `translateY(-50%) scale(${iconOpacity})`;
+            }
+        });
+
+        container.addEventListener('touchend', () => {
+            if (dist === 0) return; // This was a tap, not a swipe
+            container.style.transition = 'transform 0.3s ease'; // Re-enable transition
+            if (dist > swipeThreshold) {
+                // Swiped far enough, trigger reply
+                initiateReply(m.id, m.msg);
+                // Animate back smoothly
+                container.style.transform = 'translateX(0)';
+            } else {
+                // Didn't swipe far enough, just snap back
+                container.style.transform = 'translateX(0)';
+            }
+            replyIcon.style.opacity = '0'; // Hide icon after swipe ends
+        });
+
+        // --- Mobile Feature 2: Long-press for context menu ---
+        let longPressTimer;
+        bubble.addEventListener('touchstart', (e) => {
+            // Don't start the timer if it's a multi-touch gesture
+            if (e.touches.length > 1) {
+                clearTimeout(longPressTimer);
+                return;
+            }
+            longPressTimer = setTimeout(() => {
+                e.preventDefault(); // Prevent other events like click from firing
+                showContextMenu(e, m.id, m.msg);
+            }, 500);
+        });
+        // Clear the timer if the touch ends or moves, to prevent it from firing
         bubble.addEventListener('touchend', () => clearTimeout(longPressTimer));
         bubble.addEventListener('touchmove', () => clearTimeout(longPressTimer));
     }
@@ -1631,15 +1886,26 @@
      * Renders an array of message objects into the chat box.
      * @param {Array<Object>} messages - The messages to render.
      * @param {boolean} [shouldScroll=true] - Whether to scroll to the bottom.
+     * @param {number} [unreadCount=0] - The number of unread messages, used to place the separator.
      */
-    function renderMessages(messages, shouldScroll = true) {
+    function renderMessages(messages, shouldScroll = true, unreadCount = 0) {
         const box = document.getElementById("chatBox");
         const isScrolledToBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 10;
 
         // If it's the initial load, clear everything and render all messages.
         if (shouldScroll) {
             box.innerHTML = "";
-            messages.forEach(m => renderSingleMessage(m, false));
+            const firstUnreadIndex = unreadCount > 0 ? Math.max(0, messages.length - unreadCount) : -1;
+
+            messages.forEach((m, index) => {
+                if (index === firstUnreadIndex) {
+                    const separator = document.createElement('div');
+                    separator.className = 'unread-separator';
+                    separator.textContent = 'Unread Messages';
+                    box.appendChild(separator);
+                }
+                renderSingleMessage(m, false);
+            });
         } else {
             // For polling updates, be more efficient.
             const existingMessageIds = new Set([...box.querySelectorAll('[data-message-id]')].map(el => el.dataset.messageId));
@@ -1660,7 +1926,7 @@
                     if (element && msg.seen === 'true' && !statusIcon) {
                         const icon = element.querySelector('.status-icon');
                         if (icon) {
-                            icon.innerHTML = ' ✔✔';
+                            icon.innerHTML = ' ✓✓';
                             icon.classList.add('seen');
                         }
                     }
@@ -1678,7 +1944,7 @@
      * Toggles the visibility of the message search input in the chat header.
      */
     function toggleSearch() {
-        const searchInput = document.getElementById('chat-search-input');
+        const searchInput = document.getElementById('chat-search-input'); 
         const isVisible = searchInput.style.display === 'block';
         searchInput.style.display = isVisible ? 'none' : 'block';
         if (isVisible) {
@@ -1707,6 +1973,13 @@
                 msgElement.innerHTML = originalText;
             }
         });
+    }
+
+    function toggleEmojiPicker() {
+        const picker = document.querySelector('emoji-picker');
+        const msgInput = document.getElementById('msg');
+        picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+        if (picker.style.display === 'block') picker.style.right = (msgInput.nextElementSibling.clientWidth + 20) + 'px';
     }
     // Add this style to your CSS to align the timestamp correctly
     // .message-bubble small { display: block; text-align: right; margin-top: 4px; }
