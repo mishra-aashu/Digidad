@@ -206,10 +206,12 @@
         .chat-header { display: flex; align-items: center; gap: 10px; padding: 10px 20px; border-bottom: 1px solid var(--list-item-border); transition: border-color 0.5s ease; flex-shrink: 0; }
         .chat-header .back-button { background: none; color: var(--header-button-color); padding: 0; font-size: 24px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; margin-right: 5px; }
         .back-button .chevron { border: solid var(--header-button-color); border-width: 0 3px 3px 0; display: inline-block; padding: 4px; transform: rotate(135deg); transition: border-color 0.5s ease; }
-        .chat-input-area { display: flex; position: relative; padding: 10px 20px; flex-shrink: 0; flex-direction: column; }
+        .chat-input-area { display: flex; position: relative; padding: 10px 20px; flex-shrink: 0; flex-direction: column; background: var(--container-bg); border-top: 1px solid var(--list-item-border); transition: background 0.5s ease, border-color 0.5s ease; }
         .chat-input-area input { flex-grow: 1; margin-right: 10px; margin-bottom: 0; padding-right: 40px; }
         .edit-name-icon { cursor: pointer; font-size: 16px; margin-left: 8px; }
         
+        #chatBox { padding-bottom: 10px; /* Add padding to the bottom to avoid the last message being hidden by the input area */ }
+
         /* Online Indicator Styles - Kept for user status */
         .online-indicator-small {
             width: 10px; height: 10px; border-radius: 50%;
@@ -228,7 +230,7 @@
         .emoji-button { background: none; border: none; font-size: 24px; cursor: pointer; padding: 0 10px; color: var(--emoji-button-color); align-self: center; }
         emoji-picker {
             position: absolute;
-            bottom: 50px; /* Position it above the input area */
+            bottom: 70px; /* Position it above the input area */
             right: 20px; /* Align with new padding */
             z-index: 100;
         }
@@ -287,7 +289,7 @@
     </style>
     <style>
         /* Added styles for new features */
-        #scrollToBottomBtn { position: absolute; bottom: 60px; right: 20px; background: var(--button-bg); border-radius: 50%; width: 40px; height: 40px; font-size: 20px; display: none; align-items: center; justify-content: center; z-index: 50; animation: pop-in 0.3s ease; }
+        #scrollToBottomBtn { position: absolute; bottom: 85px; right: 20px; background: var(--button-bg); border-radius: 50%; width: 40px; height: 40px; font-size: 20px; display: none; align-items: center; justify-content: center; z-index: 50; animation: pop-in 0.3s ease; }
         #chat-search-input { display: none; flex-grow: 1; }
         .highlight { background-color: yellow; color: black; }
         .chat-header .search-icon { background: none; color: var(--header-button-color); padding: 0 5px; font-size: 18px; }
@@ -1426,29 +1428,25 @@
         scrollToBottom();
 
         try {
-            const data = await jsonpRequest(`${API_URL}?action=sendMessage&fromId=${appState.userId}&toId=${appState.peerId}&msg=${encodeURIComponent(msgText)}&replyTo=${replyToId || ''}`);            
-            if (data?.status === 'sent' && data.messageId) {
-                // Message sent successfully, replace the temporary message with the confirmed one
-                const tempElement = document.querySelector(`[data-temp-id='${tempMsg.id}']`);
-                const confirmedMsg = { ...tempMsg, id: data.messageId };
-                if (tempElement) replaceTempMessage(tempElement, confirmedMsg);
-
-                // Manually update the chat list in localStorage to reflect the new last message instantly
-                const localChats = JSON.parse(localStorage.getItem('chatList') || '[]');
-                const chatIndex = localChats.findIndex(c => c.peerId == appState.peerId);
-                if (chatIndex > -1) {
-                    localChats[chatIndex].lastMessage = { msg: msgText, ts: tempMsg.ts };
-                    localStorage.setItem('chatList', JSON.stringify(localChats));
-                }
-            } else {
+            const data = await jsonpRequest(`${API_URL}?action=sendMessage&fromId=${appState.userId}&toId=${appState.peerId}&msg=${encodeURIComponent(msgText)}&replyTo=${replyToId || ''}&tempId=${tempMsg.id}`);            
+            if (data?.status !== 'sent') {
+                // The server responded, but with an error
                 throw new Error(data?.message || 'Invalid response from server.');
             }
 
         } catch (error) {
             console.error("Failed to send message:", error);
             // Agar message fail hota hai, to UI mein use failed mark karein
-            const failedMsgContainer = document.querySelector(`[data-temp-id='${tempMsg.id}']`);
-            addRetryOption(failedMsgContainer, tempMsg.id, msgText);
+            // We only add the retry option if the message isn't already being processed for replacement by the polling mechanism.
+            // Don't mark as failed immediately. Wait for the poller to check.
+            // After a delay, if the message is still in a 'sending' state, mark it as failed.
+            setTimeout(() => {
+                const failedMsgContainer = document.querySelector(`[data-temp-id='${tempMsg.id}']`);
+                // Check if the element still exists and hasn't been replaced by the poller
+                if (failedMsgContainer) {
+                    addRetryOption(failedMsgContainer, tempMsg.id, msgText, replyToId);
+                }
+            }, 5000); // Wait 5 seconds before showing the retry option
         }
     }
 
@@ -1500,7 +1498,7 @@
      * @param {string} tempId - The temporary ID of the message to retry.
      * @param {string} msgText - The text content of the message.
      */
-    async function retrySendMsg(tempId, msgText) {
+    async function retrySendMsg(tempId, msgText, replyToId) {
         const failedMsgContainer = document.querySelector(`[data-temp-id='${tempId}']`);
         if (!failedMsgContainer) return;
 
@@ -1513,7 +1511,7 @@
         if (retryLink) retryLink.remove();
 
         try {
-            const data = await jsonpRequest(`${API_URL}?action=sendMessage&fromId=${appState.userId}&toId=${appState.peerId}&msg=${encodeURIComponent(msgText)}`);
+            const data = await jsonpRequest(`${API_URL}?action=sendMessage&fromId=${appState.userId}&toId=${appState.peerId}&msg=${encodeURIComponent(msgText)}&replyTo=${replyToId || ''}&tempId=${tempId}`);
 
             if (data && data.status === 'sent' && data.messageId) {
                 // On success, replace the temp message with the confirmed one
@@ -1531,7 +1529,7 @@
             console.error("Retry failed:", error);
             showToast("Still couldn't send. Please check connection.", 'error');
             // Bring back the failure icon and retry link
-            addRetryOption(failedMsgContainer, tempId, msgText);
+            addRetryOption(failedMsgContainer, tempId, msgText, replyToId);
         }
     }
 
@@ -1541,7 +1539,7 @@
      * @param {string} tempId - The temporary ID of the message.
      * @param {string} msgText - The text content of the message.
      */
-    function addRetryOption(msgContainer, tempId, msgText) {
+    function addRetryOption(msgContainer, tempId, msgText, replyToId) {
         if (!msgContainer) return;
 
         const statusIcon = msgContainer.querySelector('.status-icon');
@@ -1556,7 +1554,7 @@
         retryLink.textContent = 'Retry';
         retryLink.className = 'retry-link';
         retryLink.style.cssText = 'margin-left: 10px; color: var(--message-me-color); text-decoration: underline;';
-        retryLink.onclick = (e) => { e.preventDefault(); retrySendMsg(tempId, msgText); };
+        retryLink.onclick = (e) => { e.preventDefault(); retrySendMsg(tempId, msgText, replyToId); };
 
         msgContainer.querySelector('.message-bubble')?.appendChild(retryLink);
     }
@@ -2102,15 +2100,15 @@
      * @param {number} [unreadCount=0] - The number of unread messages, used to place the separator.
      */
     function renderMessages(messages, options = {}) {
-        const { isInitialLoad = false, unreadCount = 0, beforeTs = null, isPolling = false } = options;
+        const { isInitialLoad = false, unreadCount = 0, beforeTs = null } = options;
         const box = document.getElementById("chatBox");
         const isScrolledToBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 10;
-
-        // If it's the initial load, clear everything and render all messages.
+    
+        // If it's the initial load, clear the box and render everything from scratch.
         if (isInitialLoad) {
             box.innerHTML = "";
             const firstUnreadIndex = unreadCount > 0 ? Math.max(0, messages.length - unreadCount) : -1;
-
+    
             messages.forEach((m, index) => {
                 if (index === firstUnreadIndex) {
                     const separator = document.createElement('div');
@@ -2120,34 +2118,41 @@
                 }
                 renderSingleMessage(m, false);
             });
+    
+        // If loading older messages (history), prepend them.
         } else if (beforeTs) {
-            // This is a pagination load (older messages)
             const firstMessage = box.querySelector('.message-container');
             const oldScrollHeight = box.scrollHeight;
-
-            // Prepend older messages
+    
             messages.reverse().forEach(m => {
                 renderSingleMessage(m, false, true); // `true` to prepend
             });
-
+    
             // Maintain scroll position so the user doesn't jump
             box.scrollTop = box.scrollHeight - oldScrollHeight;
-
-        } else { // This is a regular polling update for new messages
-            // For polling updates, be more efficient.
+    
+        // This is a regular polling update. Be smart about rendering.
+        } else {
             const existingMessageIds = new Set([...box.querySelectorAll('[data-message-id]')].map(el => el.dataset.messageId));
-
+            const tempMessagesOnScreen = Array.from(document.querySelectorAll('.message-container[data-temp-id]'));
+    
             messages.forEach(msg => {
-                if (!existingMessageIds.has(msg.id)) {
-                    // This is a new message, render it.
+                const isMe = msg.from == appState.userId || msg.fromId == appState.userId;
+    
+                // Check if this server message corresponds to a temporary "sending" message on screen.
+                const tempMatch = isMe ? tempMessagesOnScreen.find(el => el.querySelector('.message-text').textContent === msg.msg) : null;
+    
+                if (tempMatch) {
+                    // It's a sent message that was previously optimistic. Replace it.
+                    replaceTempMessage(tempMatch, msg);
+                } else if (!existingMessageIds.has(msg.id)) {
+                    // It's a genuinely new message (e.g., from the other user). Render it.
                     renderSingleMessage(msg, true);
-                    // Play sound only for incoming messages
-                    const isMe = msg.from == appState.userId || msg.fromId == appState.userId;
                     if (!isMe) {
                         playNotificationSound();
                     }
                 } else {
-                    // This message already exists, just update its 'seen' status if needed.
+                    // The message already exists. Just update its 'seen' status if needed.
                     const element = box.querySelector(`[data-message-id='${msg.id}']`);
                     const statusIcon = element?.querySelector('.status-icon.seen');
                     if (element && msg.seen === 'true' && !statusIcon) {
@@ -2201,14 +2206,6 @@
             }
         });
     }
-
-    function toggleEmojiPicker() {
-        const picker = document.querySelector('emoji-picker');
-        const msgInput = document.getElementById('msg');
-        picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
-        if (picker.style.display === 'block') picker.style.right = (msgInput.nextElementSibling.clientWidth + 20) + 'px';
-    }
-    // Add this style to your CSS to align the timestamp correctly
 
     /**
      * Toggles the visibility of the chat theme picker menu.
