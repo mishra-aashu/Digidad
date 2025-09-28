@@ -173,7 +173,7 @@
         #chatBox::-webkit-scrollbar-track { background: transparent; }
         #chatBox::-webkit-scrollbar-thumb { background-color: var(--button-bg); border-radius: 6px; }
         #chatBox::-webkit-scrollbar-thumb:hover { background-color: var(--button-hover-bg); }
-        #chatBox { flex-grow: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column-reverse; /* This is the key change */ transition: background 0.5s ease; scroll-behavior: smooth; gap: 4px; }
+        #chatBox { flex-grow: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; /* Standard top-to-bottom flow */ transition: background 0.5s ease; scroll-behavior: smooth; gap: 4px; }
         .message-bubble { padding: 8px 12px; border-radius: 18px; max-width: 75%; word-wrap: break-word; line-height: 1.4; transition: background-color 0.5s ease, color 0.5s ease; }
         .me { background: var(--message-me-bg); align-self: flex-end; color: var(--message-me-color); }
         .them { background: var(--message-them-bg); align-self: flex-start; color: var(--message-them-color); }
@@ -645,7 +645,7 @@
     // =================================================================================
     // App State & Constants
     // =================================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbwSLBn2OK77xUPw81DdB03ChItbgBZbkFMLAa_Le3TFfWE8hmJoiUGP4iyIl3ghtVD3/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbx8VmIfFGiLEvt_8gsgccWtF1LfUw6_8RgWOCLJamj1SwGBprrM195gHSo-cxgi7NFQ/exec";
     const appState = {
         userId: null,
         userName: null,
@@ -1107,28 +1107,38 @@
      * @param {string} pPhone - The peer's phone number or name.
      */
     function openChat(pId, pPhone) {
-        appState.peerId = pId;
-        
-        // Get the unread count for this specific chat before we open it
-        const localChats = JSON.parse(localStorage.getItem('chatList') || '[]');
-        const currentChatData = localChats.find(c => c.peerId === pId);
-        const chatSettings = currentChatData ? currentChatData.settings : {};
-
-        // Apply saved theme
-        const chatBox = document.getElementById('chatBox');
-        chatBox.className = 'chatBox'; // Reset classes
-        if (chatSettings && chatSettings.theme && chatSettings.theme !== 'default') {
-            chatBox.classList.add(chatSettings.theme);
-        }
-        const initialUnreadCount = currentChatData ? currentChatData.unreadCount : 0;
-
-        // Stop refreshing the chat list while in a chat
-        stopPolling('chatList');
-
-        // Clear any active reply state when opening a new chat
-        cancelReply();
-
-        chatBox.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-color);">Loading chats...</p>'; // Show loading indicator
+         appState.peerId = pId;
+         const chatBox = document.getElementById('chatBox');
+         const chatId = getChatId(appState.userId, pId);
+ 
+         // Get the unread count for this specific chat before we open it
+         const localChats = JSON.parse(localStorage.getItem('chatList') || '[]');
+         const currentChatData = localChats.find(c => c.peerId === pId);
+         const chatSettings = currentChatData ? currentChatData.settings : {};
+ 
+         // Apply saved theme
+         chatBox.className = 'chatBox'; // Reset classes
+         if (chatSettings && chatSettings.theme && chatSettings.theme !== 'default') {
+             chatBox.classList.add(chatSettings.theme);
+         }
+         const initialUnreadCount = currentChatData ? currentChatData.unreadCount : 0;
+ 
+         // Stop refreshing the chat list while in a chat
+         stopPolling('chatList');
+ 
+         // Clear any active reply state when opening a new chat
+         cancelReply();
+ 
+         // --- New Instant Load Logic ---
+         // 1. Immediately render messages from localStorage cache, if available.
+         const cachedMessages = JSON.parse(localStorage.getItem(chatId) || 'null');
+         if (cachedMessages && cachedMessages.length > 0) {
+             renderMessages(cachedMessages, { isInitialLoad: true, unreadCount: 0 }); // Render without unread separator for now
+             scrollToBottom();
+         } else {
+             // If no cache, show the loading indicator.
+             chatBox.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-color);">Loading chats...</p>';
+         }
 
         document.getElementById('peerStatus').innerText = ''; // Clear previous status
         document.getElementById('chatWith').innerText = `Chat with ${pPhone}`;
@@ -1137,7 +1147,7 @@
         // Fetch the initial set of latest messages.
         // The loadMessages function will handle showing the "Loading..." state
         // and then rendering the messages or the "No messages" state.
-        loadMessages({ isInitialLoad: true, unreadCount: initialUnreadCount }).then(() => {
+        loadMessages({ isInitialLoad: true, unreadCount: initialUnreadCount, isFromCache: !!cachedMessages }).then(() => {
             // Start polling for new messages only after the initial load is complete.
             startPolling('messages', () => loadMessages({ isPolling: true }), 3000);
         });
@@ -1768,7 +1778,7 @@
      * @returns {Promise<boolean>} A promise that resolves to true if messages were loaded, false otherwise.
      */
     async function loadMessages(options = {}) {
-        const { isInitialLoad = false, unreadCount = 0, beforeTs = null, isPolling = false, afterTs = null } = options;
+        const { isInitialLoad = false, unreadCount = 0, beforeTs = null, isPolling = false, afterTs = null, isFromCache = false } = options;
         if (!appState.userId || !appState.peerId) return;
         const chatBox = document.getElementById('chatBox');
 
@@ -1783,7 +1793,7 @@
 
         try {
             // Only show the main "Loading..." indicator on the very first load.
-            if (isInitialLoad) {
+            if (isInitialLoad && !isFromCache) {
                 chatBox.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-color);">Loading chats...</p>';
             }
 
@@ -1829,7 +1839,7 @@
             document.getElementById('peerStatus').innerText = data.isOnline ? 'Online' : '';
 
             // Render the UI using the fresh data from the server
-            renderMessages(data.messages, { isInitialLoad, unreadCount, beforeTs, isPolling });
+            renderMessages(data.messages, { isInitialLoad, unreadCount, beforeTs, isPolling, isFromCache });
 
             // Mark that the initial load is done so we can use the instant check next time
             if (isInitialLoad) {
@@ -1990,7 +2000,7 @@
         }
 
         if (prepend) {
-            box.appendChild(messageContainer); // With column-reverse, append acts like prepend
+            box.prepend(messageContainer); // Prepend for older messages
         } else {
             box.appendChild(messageContainer);
         }
@@ -2099,13 +2109,13 @@
      * @param {number} [unreadCount=0] - The number of unread messages, used to place the separator.
      */
     function renderMessages(messages, options = {}) {
-        const { isInitialLoad = false, unreadCount = 0, beforeTs = null } = options;
+        const { isInitialLoad = false, unreadCount = 0, beforeTs = null, isFromCache = false } = options;
         const box = document.getElementById("chatBox");
         const isScrolledToBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 10;
     
         // If it's the initial load, clear the box and render everything from scratch.
-        if (isInitialLoad) {
-            box.innerHTML = "";
+        if (isInitialLoad && !isFromCache) {
+            box.innerHTML = ""; // Only clear if we didn't render from cache
             const firstUnreadIndex = unreadCount > 0 ? Math.max(0, messages.length - unreadCount) : -1;
     
             messages.forEach((m, index) => {
@@ -2124,14 +2134,14 @@
             const oldScrollHeight = box.scrollHeight;
     
             messages.reverse().forEach(m => {
-                renderSingleMessage(m, false, false); // `false` to append (which is now at the top)
+                renderSingleMessage(m, false, true); // Prepend older messages to the top
             });
     
             // Maintain scroll position so the user doesn't jump
             box.scrollTop = box.scrollHeight - oldScrollHeight;
     
         // This is a regular polling update. Be smart about rendering.
-        } else {
+        } else { // This block now handles both polling and the initial fetch after a cache render
             const existingMessageIds = new Set([...box.querySelectorAll('[data-message-id]')].map(el => el.dataset.messageId));
             const tempMessagesOnScreen = Array.from(document.querySelectorAll('.message-container[data-temp-id]'));
     
@@ -2146,7 +2156,7 @@
                     replaceTempMessage(tempMatch, msg);
                 } else if (!existingMessageIds.has(msg.id)) {
                     // It's a genuinely new message (e.g., from the other user). Render it.
-                    renderSingleMessage(msg, true);
+                    renderSingleMessage(msg, !isInitialLoad); // Animate only if it's not part of the initial load
                     if (!isMe) {
                         playNotificationSound();
                     }
@@ -2164,6 +2174,20 @@
                 }
             });
 
+            // If this was the initial load after a cache render, we might need to add the unread separator.
+            if (isInitialLoad && isFromCache && unreadCount > 0) {
+                const firstUnreadIndex = Math.max(0, messages.length - unreadCount);
+                const firstUnreadMessage = messages[firstUnreadIndex];
+                if (firstUnreadMessage) {
+                    const messageElement = box.querySelector(`[data-message-id='${firstUnreadMessage.id}']`);
+                    if (messageElement && !box.querySelector('.unread-separator')) {
+                        const separator = document.createElement('div');
+                        separator.className = 'unread-separator';
+                        separator.textContent = 'Unread Messages';
+                        box.insertBefore(separator, messageElement);
+                    }
+                }
+            }
             // Auto-scroll only if the user was already at the bottom.
             if (isScrolledToBottom) {
                 scrollToBottom();
