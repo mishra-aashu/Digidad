@@ -98,8 +98,10 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            background: #000; /* Set the main background to black */
+            background: #000; /* Fallback background */
             margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; box-sizing: border-box;
+            /* Use dynamic viewport height for better mobile experience, with a fallback */
+            min-height: 100dvh;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             position: relative; /* Needed for the pseudo-element */
