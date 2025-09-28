@@ -327,6 +327,27 @@
         @keyframes toast-in { to { opacity: 1; transform: translateY(0); } }
         @keyframes toast-out { from { opacity: 1; } to { opacity: 0; } }
     </style>
+    <style>
+        /* --- Responsive Styles for Mobile Phones --- */
+        @media screen and (max-width: 480px) {
+            body {
+                padding: 0; /* Remove padding to go edge-to-edge */
+            }
+            .container {
+                height: 100vh; /* Full screen height */
+                max-width: 100%; /* Full screen width */
+                border-radius: 0; /* No rounded corners on mobile */
+                border: none; /* Remove border on mobile */
+            }
+            .screen, .chat-header, .chat-input-area {
+                padding-left: 15px;
+                padding-right: 15px;
+            }
+            #intro-text {
+                font-size: 3.5rem; /* Adjust intro text size for smaller screens */
+            }
+        }
+    </style>
 </head>
 <body>
     <div id="intro-screen">
@@ -434,11 +455,14 @@
     <!-- Toast Notification Container -->
     <div id="toast-container"></div>
 
+    <!-- Notification Sound -->
+    <audio id="notification-sound" src="https://lagaowallpaper.com/wp-content/uploads/2025/09/linkedin_notification.mp3" preload="auto"></audio>
+
     <script>
     // =================================================================================
     // App State & Constants
     // =================================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbxGakqJV0RSlwjpL1vONv610wjlnvyNP8l7vzm9268AyIJ3MAZP3fRnLGhJgfkXDQfC/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwnxN4zeBriClmEu96yTY3WjZeGtcc19IIioU6gf_RAtFKNoQSpFWvPot1dgCufmuQb/exec";
     const appState = {
         userId: null,
         userName: null,
@@ -888,13 +912,24 @@
         // Stop refreshing the chat list while in a chat
         stopPolling('chatList');
 
+        const chatBox = document.getElementById('chatBox');
+        chatBox.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-color);">Loading chats...</p>'; // Show loading indicator
+
         document.getElementById('peerStatus').innerText = ''; // Clear previous status
         document.getElementById('chatWith').innerText = `Chat with ${pPhone}`;
         showScreen('chatScreen');
-        // Pehle saare purane messages load karein
-        loadMessages(true); 
-        // Phir sirf naye messages ke liye polling shuru karein
-        startPollingForNewMessages();
+        
+        // --- New Caching Logic ---
+        // 1. Try to load messages from localStorage for an instant UI
+        const cachedChatId = getChatId(appState.userId, pId);
+        const cachedMessages = JSON.parse(localStorage.getItem(cachedChatId) || '[]');
+        if (cachedMessages.length > 0) {
+            renderMessages(cachedMessages, true); // Render cached data instantly
+        }
+
+        // 2. Fetch latest messages from server in the background and start polling
+        loadMessages(cachedMessages.length === 0); // Only do a "full" scroll if cache was empty
+        startPolling('messages', () => loadMessages(false), 3000);
     }
     
     /**
@@ -947,6 +982,7 @@
             if (data.chats) {
                 // Update localStorage with fresh data from the server
                 localStorage.setItem('chatList', JSON.stringify(data.chats));
+                preloadRecentChats(data.chats); // Start pre-loading recent chats
                 renderChatList(data.chats);
             } else if (data.status === 'error') {
                 console.error("Could not refresh chat list:", data.message);
@@ -975,6 +1011,7 @@
         if (data.chats) {
             localStorage.setItem('chatList', JSON.stringify(data.chats));
             // Only render if the user is on the home screen
+            preloadRecentChats(data.chats); // Also pre-load on manual refresh
             if (document.getElementById('homeScreen').classList.contains('active')) {
                 renderChatList(data.chats);
             }
@@ -1155,43 +1192,68 @@
         const msgText = msgInput.value;
         msgInput.value = ""; // Input ko turant saaf karein
 
-        // Optimistically add to UI and save to localStorage
+        // Optimistically create a temporary message object
         const tempMsg = {
             from: appState.userId,
-            fromId: appState.userId,
             msg: msgText,
             ts: new Date().toISOString(),
-            id: `temp_${Date.now()}` // Ek unique temporary ID banayein
+            id: `temp_${Date.now()}` // A unique temporary ID
         };
-        // Naye message ko UI mein jodein, poori screen ko refresh na karein
-        renderSingleMessage(tempMsg, true); // 'true' batata hai ki yeh ek naya message hai
+
+        // Render the temporary message immediately
+        renderSingleMessage(tempMsg, true);
         scrollToBottom();
 
         try {
-            const data = await jsonpRequest(`${API_URL}?action=sendMessage&fromId=${appState.userId}&toId=${appState.peerId}&msg=${encodeURIComponent(msgText)}`);
-            
-            // Check karein ki server se response sahi hai ya nahi
-            if (data && data.status === 'sent' && data.messageId) {
-                // Server se message confirm hone ke baad, temporary message ko asli message se badlein
+            const data = await jsonpRequest(`${API_URL}?action=sendMessage&fromId=${appState.userId}&toId=${appState.peerId}&msg=${encodeURIComponent(msgText)}`);            
+            if (data?.status === 'sent' && data.messageId) {
+                // Message sent successfully, replace the temporary message with the confirmed one
                 const tempElement = document.querySelector(`[data-temp-id='${tempMsg.id}']`);
-                const realMsg = { ...tempMsg, id: data.messageId, from: appState.userId }; // Server se mili ID ka istemal karein
-                if (tempElement) replaceTempMessage(tempElement, realMsg);
+                const confirmedMsg = { ...tempMsg, id: data.messageId };
+                if (tempElement) replaceTempMessage(tempElement, confirmedMsg);
+
+                // Manually update the chat list in localStorage to reflect the new last message instantly
+                const localChats = JSON.parse(localStorage.getItem('chatList') || '[]');
+                const chatIndex = localChats.findIndex(c => c.peerId == appState.peerId);
+                if (chatIndex > -1) {
+                    localChats[chatIndex].lastMessage = { msg: msgText, ts: tempMsg.ts };
+                    localStorage.setItem('chatList', JSON.stringify(localChats));
+                }
             } else {
-                // Agar server se 'sent' status nahi mila, to error maniye
-                throw new Error(data.message || 'Invalid response from server.');
+                throw new Error(data?.message || 'Invalid response from server.');
             }
 
         } catch (error) {
             console.error("Failed to send message:", error);
-            showToast("Message not sent. Check connection.", 'error');
             // Agar message fail hota hai, to UI mein use failed mark karein
-            const failedMsgElement = document.querySelector(`[data-temp-id='${tempMsg.id}']`);
-            if (failedMsgElement) {
-                failedMsgElement.querySelector('.status-icon').innerHTML = ' ❌'; // Failed icon
-            }
+            const failedMsgContainer = document.querySelector(`[data-temp-id='${tempMsg.id}']`);
+            addRetryOption(failedMsgContainer, tempMsg.id, msgText);
         }
     }
 
+    /**
+     * Pre-loads the message history for the most recent chats in the background.
+     * @param {Array<Object>} chats - The sorted list of chats.
+     */
+    function preloadRecentChats(chats) {
+        if (!appState.userId) return;
+
+        // Pre-load the top 3 most recent chats
+        const chatsToPreload = chats.slice(0, 3);
+
+        chatsToPreload.forEach((chat, index) => {
+            // Stagger the requests to avoid overwhelming the server
+            setTimeout(async () => {
+                const peerId = chat.peerId;
+                const chatId = getChatId(appState.userId, peerId);
+                const data = await jsonpRequest(`${API_URL}?action=getMessages&userId=${appState.userId}&peerId=${peerId}`);
+                if (data.status === 'ok' && data.messages) {
+                    localStorage.setItem(chatId, JSON.stringify(data.messages));
+                    console.log(`Pre-loaded chat with ${peerId}`);
+                }
+            }, index * 1000); // 1-second delay between each preload request
+        });
+    }
     /**
      * Deletes a specific message.
      * @param {string} messageId - The ID of the message to delete.
@@ -1210,6 +1272,72 @@
         } catch (error) {
             showToast("Request failed. Check connection.", 'error');
         }
+    }
+
+    /**
+     * Retries sending a message that previously failed.
+     * @param {string} tempId - The temporary ID of the message to retry.
+     * @param {string} msgText - The text content of the message.
+     */
+    async function retrySendMsg(tempId, msgText) {
+        const failedMsgContainer = document.querySelector(`[data-temp-id='${tempId}']`);
+        if (!failedMsgContainer) return;
+
+        // Show sending status again
+        const statusIcon = failedMsgContainer.querySelector('.status-icon');
+        if (statusIcon) statusIcon.innerHTML = ' 🕒';
+
+        // Remove the 'Retry' link
+        const retryLink = failedMsgContainer.querySelector('.retry-link');
+        if (retryLink) retryLink.remove();
+
+        try {
+            const data = await jsonpRequest(`${API_URL}?action=sendMessage&fromId=${appState.userId}&toId=${appState.peerId}&msg=${encodeURIComponent(msgText)}`);
+
+            if (data && data.status === 'sent' && data.messageId) {
+                // On success, replace the temp message with the confirmed one
+                const confirmedMsg = {
+                    from: appState.userId,
+                    msg: msgText,
+                    ts: new Date().toISOString(),
+                    id: data.messageId
+                };
+                replaceTempMessage(failedMsgContainer, confirmedMsg);
+            } else {
+                throw new Error(data.message || 'Invalid response from server.');
+            }
+        } catch (error) {
+            console.error("Retry failed:", error);
+            showToast("Still couldn't send. Please check connection.", 'error');
+            // Bring back the failure icon and retry link
+            addRetryOption(failedMsgContainer, tempId, msgText);
+        }
+    }
+
+    /**
+     * Adds a 'Retry' link to a failed message container.
+     * @param {HTMLElement} msgContainer - The container of the failed message.
+     * @param {string} tempId - The temporary ID of the message.
+     * @param {string} msgText - The text content of the message.
+     */
+    function addRetryOption(msgContainer, tempId, msgText) {
+        if (!msgContainer) return;
+
+        const statusIcon = msgContainer.querySelector('.status-icon');
+        if (statusIcon) statusIcon.innerHTML = ' ❌'; // Failed icon
+
+        // Remove any existing retry link to avoid duplicates
+        const existingRetry = msgContainer.querySelector('.retry-link');
+        if (existingRetry) existingRetry.remove();
+
+        const retryLink = document.createElement('a');
+        retryLink.href = '#';
+        retryLink.textContent = 'Retry';
+        retryLink.className = 'retry-link';
+        retryLink.style.cssText = 'margin-left: 10px; color: var(--message-me-color); text-decoration: underline;';
+        retryLink.onclick = (e) => { e.preventDefault(); retrySendMsg(tempId, msgText); };
+
+        msgContainer.querySelector('.message-bubble')?.appendChild(retryLink);
     }
 
     /**
@@ -1348,31 +1476,20 @@
     }
 
     /**
-     * Starts polling for only new messages from the peer.
+     * Plays the notification sound for incoming messages.
      */
-    function startPollingForNewMessages() {
-        startPolling('newMessages', async () => {
-            if (!appState.userId || !appState.peerId) return;
-
-            // Get the timestamp of the very last message on screen
-            const allMsgElements = document.querySelectorAll('#chatBox [data-message-id]');
-            const lastMsgElement = allMsgElements[allMsgElements.length - 1];
-            const lastKnownTimestamp = lastMsgElement ? lastMsgElement.dataset.timestamp : new Date(0).toISOString();
-
-            try {
-                const data = await jsonpRequest(`${API_URL}?action=getNewMessages&userId=${appState.userId}&peerId=${appState.peerId}&lastKnownTimestamp=${lastKnownTimestamp}`);
-                if (data.status === 'ok' && data.messages.length > 0) {
-                    const box = document.getElementById('chatBox');
-                    const isScrolledToBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 10;
-                    data.messages.forEach(msg => renderSingleMessage(msg, true));
-                    if (isScrolledToBottom) scrollToBottom();
-                }
-            } catch (error) {
-                console.error("Polling for new messages failed:", error);
-            }
-
-        }, 3000); // Har 3 second mein check karein
+    function playNotificationSound() {
+        const sound = document.getElementById('notification-sound');
+        if (sound) {
+            // Browsers might block autoplay, so we handle the promise returned by play()
+            sound.play().catch(error => {
+                // This error often happens if the user hasn't interacted with the page yet.
+                // We can safely ignore it as it's a browser policy.
+                console.log("Notification sound was blocked by the browser:", error.message);
+            });
+        }
     }
+
 
     /**
      * Loads messages for the current chat from the server.
@@ -1390,12 +1507,22 @@
                 return;
             }
 
+            // --- New Caching Logic ---
+            // Save the latest full message list to localStorage
+            const chatId = getChatId(appState.userId, appState.peerId);
+            if (chatId) {
+                localStorage.setItem(chatId, JSON.stringify(data.messages));
+            }
             // Handle typing indicator and online status from server data
             document.getElementById("typingIndicator").style.display = data.isTyping ? 'block' : 'none';
             document.getElementById('peerStatus').innerText = data.isOnline ? 'Online' : '';
 
             // Render the UI using the fresh data from the server
-            renderMessages(data.messages, true); // Hamesha poori list render karein
+            renderMessages(data.messages, shouldScroll);
+
+            if (shouldScroll) {
+                scrollToBottom();
+            }
 
         } catch (error) {
             console.error("Network error loading messages:", error);
@@ -1446,11 +1573,6 @@
             messageContainer.dataset.timestamp = m.ts; // Timestamp ko store karein
         }
 
-        // If it's a new message, add a fade-in animation class
-        if (isNew) {
-            messageContainer.classList.add('new-message-animation');
-        }
-
         const bubble = document.createElement("div");
         bubble.className = `message-bubble ${isMe ? 'me' : 'them'}`;
 
@@ -1469,6 +1591,11 @@
         bubble.innerHTML = `<span class="message-text">${m.msg}</span><br><small style="opacity: 0.7;">${timestamp}</small>${statusIconHtml}`;
 
         messageContainer.appendChild(bubble);
+
+        // If it's a new message, add a fade-in animation class after appending
+        if (isNew) {
+            setTimeout(() => messageContainer.classList.add('new-message-animation'), 10);
+        }
         box.appendChild(messageContainer);
 
         // Add event listeners for own, non-temporary, non-deleted messages
@@ -1498,26 +1625,6 @@
 
         bubble.addEventListener('touchend', () => clearTimeout(longPressTimer));
         bubble.addEventListener('touchmove', () => clearTimeout(longPressTimer));
-        // Add event listeners for own, non-temporary, non-deleted messages
-        if (isMe && !isTemp && !isDeleted) {
-            let longPressTimer;
-
-            // For Desktop: Right-click
-            bubble.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                showContextMenu(e, m.id, m.msg);
-            });
-
-            // For Mobile: Long-press
-            bubble.addEventListener('touchstart', (e) => {
-                longPressTimer = setTimeout(() => {
-                    showContextMenu(e, m.id, m.msg);
-                }, 500); // 500ms for long press
-            });
-
-            bubble.addEventListener('touchend', () => clearTimeout(longPressTimer));
-            bubble.addEventListener('touchmove', () => clearTimeout(longPressTimer));
-        }
     }
 
     /**
@@ -1527,29 +1634,43 @@
      */
     function renderMessages(messages, shouldScroll = true) {
         const box = document.getElementById("chatBox");
+        const isScrolledToBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 10;
 
-        // `shouldScroll` ka matlab hai ki chat pehli baar khul rahi hai.
-        // Is case mein, poora box saaf karke saare purane messages dikhayein.
+        // If it's the initial load, clear everything and render all messages.
         if (shouldScroll) {
             box.innerHTML = "";
             messages.forEach(m => renderSingleMessage(m, false));
-            scrollToBottom();
         } else {
-            // Yeh case polling ke dauran chalega, jab sirf naye messages check karne hain.
-            // Lekin humara naya `startPollingForNewMessages` function iska dhyan khud rakhta hai.
-            // To is block ko ab hum istemal nahi kar rahe hain.
-            // Hum ise yahan chhod rahe hain taaki भविष्य mein koi confusion na ho.
-            // Naye messages `startPollingForNewMessages` function ke zariye `renderSingleMessage` se seedhe jode jaate hain.
-            
-            // Sirf 'seen' status update karne ke liye iska istemal kar sakte hain.
+            // For polling updates, be more efficient.
+            const existingMessageIds = new Set([...box.querySelectorAll('[data-message-id]')].map(el => el.dataset.messageId));
+
             messages.forEach(msg => {
-                const element = box.querySelector(`[data-message-id='${msg.id}']`);
-                const statusIcon = element?.querySelector('.status-icon');
-                if (statusIcon && msg.seen === 'true' && !statusIcon.classList.contains('seen')) {
-                    statusIcon.innerHTML = ' ✔✔';
-                    statusIcon.classList.add('seen');
+                if (!existingMessageIds.has(msg.id)) {
+                    // This is a new message, render it.
+                    renderSingleMessage(msg, true);
+                    // Play sound only for incoming messages
+                    const isMe = msg.from == appState.userId || msg.fromId == appState.userId;
+                    if (!isMe) {
+                        playNotificationSound();
+                    }
+                } else {
+                    // This message already exists, just update its 'seen' status if needed.
+                    const element = box.querySelector(`[data-message-id='${msg.id}']`);
+                    const statusIcon = element?.querySelector('.status-icon.seen');
+                    if (element && msg.seen === 'true' && !statusIcon) {
+                        const icon = element.querySelector('.status-icon');
+                        if (icon) {
+                            icon.innerHTML = ' ✔✔';
+                            icon.classList.add('seen');
+                        }
+                    }
                 }
             });
+
+            // Auto-scroll only if the user was already at the bottom.
+            if (isScrolledToBottom) {
+                scrollToBottom();
+            }
         }
     }
 
