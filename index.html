@@ -6,49 +6,49 @@
     <title>Digidad</title>
     <style>
         :root {
-            --body-bg: linear-gradient(to right top, #65dfc9, #6cdbeb);
-            --container-bg: rgba(255, 255, 255, 0.2);
+            --body-bg: #E9EBEE; /* A clean, light grey background */
+            --container-bg: #FFFFFF;
             --container-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-            --container-border: 1px solid rgba(255, 255, 255, 0.3);
-            --text-color: #333; /* Changed for light theme readability */
+            --container-border: 1px solid #E0E0E0;
+            --text-color: #1c1e21; /* A standard dark grey for text */
             --text-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            --input-border: rgba(255, 255, 255, 0.4);
-            --input-bg: rgba(255, 255, 255, 0.2);
-            --input-placeholder-color: #666; /* Changed for light theme */
-            --button-bg: rgba(255, 255, 255, 0.3);
-            --button-hover-bg: rgba(255, 255, 255, 0.5);
-            --button-text-color: #212121; /* Dark text for buttons in light mode */
-            --button-disabled-bg: rgba(255, 255, 255, 0.1);
-            --chatbox-bg: rgba(0, 0, 0, 0.1);
-            --message-me-bg: rgba(102, 219, 235, 0.5);
-            --message-me-color: #111; /* Changed for light theme readability */
-            --message-them-bg: rgba(255, 255, 255, 0.4);
-            --message-them-color: #212121; /* Darker text for better readability */
-            --list-item-border: rgba(255, 255, 255, 0.2);
-            --list-item-hover-bg: rgba(255, 255, 255, 0.1);
-            --list-item-subtext-color: #555; /* Changed for light theme */
-            --header-button-color: #333; /* Changed for light theme */
-            --emoji-button-color: #555; /* Changed for light theme */
+            --input-border: #ccd0d5;
+            --input-bg: #f0f2f5;
+            --input-placeholder-color: #65676b;
+            --button-bg: #e4e6eb;
+            --button-hover-bg: #d8dade;
+            --button-text-color: #050505;
+            --button-disabled-bg: #e4e6eb;
+            --chatbox-bg: #f0f2f5; /* Default chatbox background */
+            --message-me-bg: #0084ff;
+            --message-me-color: #ffffff;
+            --message-them-bg: #e4e6eb;
+            --message-them-color: #050505;
+            --list-item-border: #ced0d4;
+            --list-item-hover-bg: #f2f2f2;
+            --list-item-subtext-color: #65676b;
+            --header-button-color: #65676b;
+            --emoji-button-color: #65676b;
         }
 
         body.dark-mode {
-            --body-bg: linear-gradient(to right top, #1d2b64, #f8cdda);
-            --container-bg: rgba(0, 0, 0, 0.25);
-            --container-border: 1px solid rgba(255, 255, 255, 0.18);
-            --text-color: #fff;
-            --input-border: rgba(255, 255, 255, 0.2);
-            --input-bg: rgba(0, 0, 0, 0.2);
-            --button-bg: rgba(255, 255, 255, 0.15);
-            --button-hover-bg: rgba(255, 255, 255, 0.25);
-            --button-text-color: #fff; /* White text for buttons in dark mode */
-            --chatbox-bg: rgba(0, 0, 0, 0.2);
-            --message-me-bg: #7579e7;
-            --message-me-color: #fff;
-            --message-them-bg: rgba(255, 255, 255, 0.1);
-            --message-them-color: #fff;
-            --list-item-border: rgba(255, 255, 255, 0.1);
-            --list-item-hover-bg: rgba(255, 255, 255, 0.08);
-            --list-item-subtext-color: rgba(255, 255, 255, 0.7);
+            --body-bg: #18191a;
+            --container-bg: #242526;
+            --container-border: 1px solid #3a3b3c;
+            --text-color: #e4e6eb;
+            --input-border: #3a3b3c;
+            --input-bg: #3a3b3c;
+            --button-bg: #3a3b3c;
+            --button-hover-bg: #4e4f50;
+            --button-text-color: #e4e6eb;
+            --chatbox-bg: #18191a;
+            --message-me-bg: #0084ff;
+            --message-me-color: #ffffff;
+            --message-them-bg: #3a3b3c;
+            --message-them-color: #e4e6eb;
+            --list-item-border: #3a3b3c;
+            --list-item-hover-bg: #4e4f50; /* Made hover more visible */
+            --list-item-subtext-color: #b0b3b8;
         }
 
         @keyframes fadeInScaleUp {
@@ -119,9 +119,7 @@
         .container { 
             background: var(--container-bg);
             border-radius: 16px;
-            box-shadow: var(--container-shadow);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.1);
             border: var(--container-border);
             max-width: 450px; width: 100%;
             height: calc(100vh - 40px); /* Full height minus body padding */
@@ -151,6 +149,9 @@
             position: static; /* Take up space in the flow */
         }
         #chatScreen {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
             padding: 0; /* Remove padding to allow full control */
             position: relative; /* Establish a positioning context for the input area */
         }
@@ -170,7 +171,7 @@
             box-shadow: 0 0 0 2px var(--button-hover-bg);
             border-color: var(--button-bg);
         }
-        button { padding: 12px 18px; cursor: pointer; border: none; border-radius: 8px; background: var(--button-bg); color: var(--button-text-color); font-size: 16px; transition: background-color 0.3s, color 0.5s ease, transform 0.2s ease, box-shadow 0.3s ease; backdrop-filter: blur(2px); }
+        button { padding: 12px 18px; cursor: pointer; border: none; border-radius: 8px; background: var(--button-bg); color: var(--button-text-color); font-size: 16px; transition: background-color 0.3s, color 0.5s ease, transform 0.2s ease, box-shadow 0.3s ease; }
         button:hover { background: var(--button-hover-bg); transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         button:disabled { background: var(--button-disabled-bg); cursor: not-allowed; }
         
@@ -178,10 +179,12 @@
         #chatBox::-webkit-scrollbar { width: 6px; }
         #chatBox::-webkit-scrollbar-track { background: transparent; }
         #chatBox::-webkit-scrollbar-thumb { background-color: var(--button-bg); border-radius: 6px; }
-        #chatBox::-webkit-scrollbar-thumb:hover { background-color: var(--button-hover-bg); }
+        #chatBox::-webkit-scrollbar-thumb:hover { background-color: var(--button-hover-bg); } 
         #chatBox { flex-grow: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; /* Standard top-to-bottom flow */ transition: background 0.5s ease; scroll-behavior: smooth; gap: 4px; 
-            /* Add padding to the bottom to prevent the last message from being hidden by the fixed input area */
-            padding-bottom: 90px; /* Adjust this value based on the input area's height */
+            /* 
+             * The padding-bottom is no longer needed here. The input area is now a separate
+             * flex item, so it doesn't overlap the chatBox anymore.
+             */
             box-sizing: border-box;
         }
         .message-bubble { padding: 8px 12px; border-radius: 18px; max-width: 75%; word-wrap: break-word; line-height: 1.4; transition: background-color 0.5s ease, color 0.5s ease; }
@@ -218,12 +221,18 @@
         .chat-header .back-button { background: none; color: var(--header-button-color); padding: 0; font-size: 24px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; margin-right: 5px; }
         .back-button .chevron { border: solid var(--header-button-color); border-width: 0 3px 3px 0; display: inline-block; padding: 4px; transform: rotate(135deg); transition: border-color 0.5s ease; }
         .chat-input-area { 
-            position: absolute; /* Fix the input area to the bottom */
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 10px 20px; flex-shrink: 0; flex-direction: column; background: var(--container-bg); border-top: 1px solid var(--list-item-border); transition: background 0.5s ease, border-color 0.5s ease; z-index: 10; 
-            padding-bottom: calc(10px + env(safe-area-inset-bottom)); /* Add safe area padding for mobile notches */
+            /* 
+             * This is the key change. By removing `position: absolute` and using flexbox properties,
+             * the input area becomes part of the document flow. It will never be pushed or overlapped
+             * by the chatBox content.
+             */
+            flex-shrink: 0; /* Prevents the input area from shrinking */
+            padding: 10px 20px; 
+            display: flex; /* Use flex for internal alignment */
+            flex-direction: column; 
+            background: var(--container-bg); /* Solid background, removing glassmorphism */
+            box-shadow: 0 -1px 5px rgba(0,0,0,0.08); /* Subtle top shadow like WhatsApp */
+            padding-bottom: calc(10px + env(safe-area-inset-bottom)); /* iOS safe area support */
         }
         .chat-input-area input { flex-grow: 1; margin-right: 10px; margin-bottom: 0; padding-right: 40px; }
         .edit-name-icon { cursor: pointer; font-size: 16px; margin-left: 8px; }
@@ -302,6 +311,13 @@
             filter: blur(8px);
             animation: float 6s ease-in-out infinite;
         }
+
+        /* Style for the new logo on the home screen */
+        #home-logo {
+            height:180px; /* Increased logo height for better visibility */
+            object-fit: contain; /* Ensure it scales without distortion */
+            margin-left: -5px; /* Adjust position slightly for better alignment */
+        }
     </style>
     <style>
         /* Added styles for new features */
@@ -326,6 +342,13 @@
         .chat-header .search-icon { background: none; color: var(--header-button-color); padding: 0 5px; font-size: 18px; }
         .message-bubble .status-icon { font-size: 16px; opacity: 0.8; }
         .message-bubble .status-icon.seen { color: #34b7f1; } /* Blue ticks for seen */
+    </style>
+    <style>
+        /* Style for the (edited) tag */
+        .edited-tag {
+            font-size: 0.7em; /* Make it smaller */
+            opacity: 0.6;     /* Make it less prominent */
+        }
     </style>
     <style>
         /* Styles for the new context menu */
@@ -406,7 +429,44 @@
             width: 10px;
             height: 10px;
             border-radius: 50%;
+            animation: pulse-dot 2s infinite; /* Animation for the dot */
+            box-shadow: 0 0 0 0 rgba(37, 211, 102, 1);
         }
+
+        @keyframes pulse-dot {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 6px rgba(37, 211, 102, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(37, 211, 102, 0);
+            }
+        }
+
+        /* Style for the unread message count badge on the home screen */
+        .unread-count-badge {
+            background-color: #25d366; /* A vibrant green, like WhatsApp */
+            color: white;
+            font-size: 0.75em;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 10px;
+            text-align: center;
+            line-height: 1.2;
+            animation: pulse-dot 2s infinite; /* Re-use the pulse animation for attention */
+        }
+
+        /* Make chat peer name more prominent in dark mode */
+        .dark-mode .chat-peer-name {
+            color: var(--text-color);
+        }
+
 
         /* Styles for the new hover/swipe reply feature */
         .message-container { position: relative; } /* Needed for absolute positioning of reply icon */
@@ -446,7 +506,7 @@
         #chatBox.theme-whatsapp .them, #chatBox.theme-doodles .them { background-color: #ffffff; color: #111; }
 
         #chatBox.theme-solid-dark .me { background-color: #056162; color: #e9edef; }
-        #chatBox.theme-solid-dark .them { background-color: #262d31; color: #e9edef; }
+        #chatBox.theme-solid-dark .them { background-color: #202c33; color: #e9edef; }
 
         #chatBox.theme-solid-blue .me { background-color: #c5e1a5; color: #111; }
         #chatBox.theme-solid-blue .them { background-color: #e1eaf0; color: #111; }
@@ -518,6 +578,95 @@
         }
     </style>
     <style>
+        /* Styles for Custom Confirmation Modal */
+        #custom-confirm-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent backdrop */
+            display: none; /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+            z-index: 3000; /* High z-index to be on top */
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: var(--container-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: var(--container-shadow);
+            text-align: center;
+            width: 80%;
+            max-width: 300px;
+            animation: fadeInScaleUp 0.3s ease-out;
+        }
+
+        .modal-content p { color: var(--text-color); margin-top: 0; margin-bottom: 20px; font-size: 1.1em; }
+        .modal-buttons { display: flex; flex-direction: column; gap: 10px; }
+        .modal-buttons button { width: 100%; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: background-color 0.2s; }
+        #delete-for-everyone-btn { background-color: #e53935; color: white; }
+        #delete-for-me-btn { background-color: var(--button-bg); color: var(--button-text-color); }
+        #cancel-delete-btn { background-color: transparent; color: var(--text-color); }
+        #delete-for-everyone-btn:hover { background-color: #c62828; }
+        #delete-for-me-btn:hover { background-color: var(--button-hover-bg); }
+        #cancel-delete-btn:hover { background-color: var(--list-item-hover-bg); }
+
+    </style>
+    <style>
+        /* Styles for the new Custom Name Edit Modal */
+        #custom-name-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none; /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            backdrop-filter: blur(5px);
+        }
+
+        .name-modal-content {
+            background: var(--container-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: var(--container-shadow);
+            text-align: center;
+            width: 80%;
+            max-width: 320px;
+            animation: fadeInScaleUp 0.3s ease-out;
+        }
+        /* Styles for the new Date Separator in chat */
+        .date-separator {
+            align-self: center;
+            background: var(--button-bg);
+            color: var(--button-text-color);
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 500;
+            margin: 10px 0;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+        }
+        .dark-mode .date-separator {
+            background: #1e272e; /* A slightly different dark shade */
+            color: var(--text-color);
+        }
+
+
+
+        .name-modal-content p { color: var(--text-color); margin-top: 0; margin-bottom: 15px; font-size: 1.1em; }
+        .name-modal-buttons { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; }
+        .name-modal-buttons button { width: 48%; }
+        #name-modal-cancel { background-color: var(--button-bg); }
+        #name-modal-save { background-color: #0084ff; color: white; }
+    </style>
+    <style>
         /* --- Responsive Styles for Mobile Phones --- */
         @media screen and (max-width: 480px) {
             body {
@@ -562,14 +711,14 @@
                 <h3>Welcome to Digidad</h3>
                 <button id="theme-toggle" style="font-size: 18px; padding: 6px 10px;">🌙</button>
             </div>
-            <input type="text" id="phone" placeholder="Your phone number...">
+            <input type="text" id="phone" placeholder="Your phone number..." autocomplete="tel">
             <button onclick="login()">Login / Register</button>
         </div>
 
         <!-- Home Screen (Chat List & New Chat) -->
         <div id="homeScreen" class="screen">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h4>Digidad</h4>
+                <img src="https://lagaowallpaper.com/wp-content/uploads/2025/09/Gemini_Generated_Image_b6leywb6leywb6le-removebg-preview.png" alt="Digidad Logo" id="home-logo"> <!-- Corrected URL -->
                 <div>
                     <button id="contacts-btn" onclick="showContactsScreen()" style="font-size: 18px; padding: 6px 10px; margin-right: 5px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -581,15 +730,20 @@
                 </div>
             </div>
             <h4>Start a New Chat</h4>
-            <input type="text" id="newPeerPhone" placeholder="Enter peer's phone...">
+            <input type="text" id="newPeerPhone" placeholder="Enter peer's phone..." autocomplete="tel">
             <button onclick="startNewChat()">Chat</button>
             <hr style="margin: 20px 0;" id="chat-list-divider">
-            <h3>Your Chats</h3>
-            <div id="chatList"></div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <h3>Your Chats</h3>
+                <div id="chat-list-status" class="loading-dots" style="display: none;"><span></span><span></span><span></span></div>
+            </div>
+            <div id="chat-list-scroll-container" style="flex-grow: 1; overflow-y: auto; position: relative;">
+                <div id="chatList"></div>
+            </div>
         </div>
 
         <!-- Chat Screen -->
-        <div id="chatScreen" class="screen" style="padding: 0;">
+        <div id="chatScreen" class="screen">
             <div class="chat-header">
                 <button class="back-button" onclick="showHomeScreen()"><i class="chevron"></i></button>
                 <div style="flex-grow: 1;">
@@ -601,7 +755,7 @@
                     </div>
                     <div id="peerStatus" style="font-size: 12px; color: var(--text-color);"></div>
                 </div>
-                <input type="text" id="chat-search-input" placeholder="Search messages...">
+                <input type="text" id="chat-search-input" placeholder="Search messages..." autocomplete="off">
                 <button class="search-icon" onclick="toggleSearch()"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
                 <button id="chat-theme-btn" onclick="toggleThemePicker()" style="font-size: 18px; padding: 6px 10px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><path d="M12 22V12"/></svg></button>
                 <button id="theme-toggle-chat" style="font-size: 18px; padding: 6px 10px;">🌙</button>
@@ -612,7 +766,7 @@
             <div class="chat-input-area" id="chat-input-container">
                 <div id="reply-preview-container" style="display: none;"></div>
                 <div style="display: flex; width: 100%;">
-                    <input type="text" id="msg" placeholder="Type a message...">
+                    <input type="text" id="msg" placeholder="Type a message..." autocomplete="off">
                     <button onclick="sendMsg()">Send</button>
                 </div>
             </div>
@@ -634,11 +788,11 @@
                 <button class="back-button" onclick="showHomeScreen()"><i class="chevron"></i></button>
                 <h3 style="margin: 0; flex-grow: 1;">Your Profile</h3>
             </div>
-            <div class="screen-content">
-                <div id="profile-details"></div>
-                <div id="profile-actions" style="margin-top: 20px;">
-                    <button onclick="logout()" style="background-color: #ff5c5c; color: white; width: 100%;">Logout</button>
-                </div>
+            <div id="profile-content" class="screen-content">
+                <!-- Profile details will be rendered here by JS -->
+            </div>
+            <div id="profile-actions" style="padding: 20px; margin-top: auto;">
+                <button onclick="logout()" style="background-color: #e53935; color: white; width: 100%;">Logout</button>
             </div>
         </div>
 
@@ -649,12 +803,43 @@
                 <h3 style="margin: 0; flex-grow: 1;">Your Contacts</h3>
             </div>
             <div class="screen-content">
-                <h4>Add New Contact</h4>
-                <input type="text" id="newContactName" placeholder="Contact Name...">
-                <input type="text" id="newContactPhone" placeholder="Contact Phone...">
-                <button onclick="saveNewContact()">Save Contact</button>
-                <hr style="margin: 20px 0;">
-                <div id="contactsList"></div>
+                <div id="add-contact-form" style="padding: 0 20px 20px 20px;">
+                     <h4>Add New Contact</h4>
+                     <input type="text" id="newContactName" placeholder="Contact Name..." autocomplete="off">
+                     <input type="text" id="newContactPhone" placeholder="Contact Phone..." autocomplete="tel">
+                     <button onclick="saveNewContact()">Save Contact</button>
+                 </div>
+                 <hr style="margin: 20px 0;">
+                 <div id="contacts-list-container">
+                     <h4>Saved Contacts</h4>
+                     <div id="contactsList">
+                         <!-- Contact list will be rendered here by JS -->
+                     </div>
+                 </div>
+             </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal for Editing Peer Name -->
+    <div id="custom-name-modal">
+        <div class="name-modal-content">
+            <p id="name-modal-title">Edit Contact Name</p>
+            <input type="text" id="name-modal-input" placeholder="Enter name...">
+            <div class="name-modal-buttons">
+                <button id="name-modal-cancel">Cancel</button>
+                <button id="name-modal-save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal for Deleting Messages -->
+    <div id="custom-confirm-modal">
+        <div class="modal-content">
+            <p id="modal-message-text">Delete message?</p>
+            <div class="modal-buttons">
+                <button id="delete-for-everyone-btn">Delete for everyone</button>
+                <button id="delete-for-me-btn">Delete for me</button>
+                <button id="cancel-delete-btn">Cancel</button>
             </div>
         </div>
     </div>
@@ -682,12 +867,14 @@
     // =================================================================================
     // App State & Constants
     // =================================================================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbyd8Gb_UqqLj3V6qsTxBHlphpPar-w3-L1MzqItNxpcryjH4mH_47RgPXzF1PiOokE2/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwrah551yUg7hO9ZB6BaO8pdU-ZV-Mzj-OBcaJNQgmUnPi5WOYu2Tj4-NNY65scWPK0/exec";
     const appState = {
         userId: null,
         userName: null,
         peerId: null,
-        intervals: {}, // To manage all setInterval calls
+        intervals: {},      // To manage all setInterval calls
+        pollingRate: 1500,  // Initial polling rate for messages
+        maxPollingRate: 15000, // Maximum polling rate
         replyingTo: null // To store info about the message being replied to
     };
     // Add event listener for 'Enter' key on message input
@@ -813,6 +1000,20 @@
 
         // --- New: Mobile Keyboard Handling ---
         handleKeyboardLayout();
+
+        // --- New: Pull-to-refresh for chat list ---
+        setupPullToRefresh();
+
+        // --- New: Adaptive Polling based on page visibility ---
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                // Page is not visible, slow down all polling
+                slowDownAllPolling();
+            } else {
+                // Page is visible again, restore normal polling rates
+                restorePollingRates();
+            }
+        });
     }
 
     /**
@@ -820,37 +1021,41 @@
      * It uses the visualViewport API to position the input area above the keyboard.
      */
     function handleKeyboardLayout() {
-        const chatInputContainer = document.getElementById('chat-input-container');
-        const chatBox = document.getElementById('chatBox');
-        const msgInput = document.getElementById('msg');
-        const originalChatBoxPadding = chatBox.style.paddingBottom || '90px';
-
+        // This function is only relevant for mobile browsers that support visualViewport.
         if ('visualViewport' in window) {
             const viewport = window.visualViewport;
-
+            const chatScreen = document.getElementById('chatScreen');
+    
             const viewportResizeHandler = () => {
-                const inputAreaHeight = chatInputContainer.offsetHeight;
-                // The keyboard height is the difference between the layout viewport and the visual viewport.
-                const keyboardHeight = window.innerHeight - viewport.height;
-
-                if (keyboardHeight > 0) {
-                    // Keyboard is open
-                    chatInputContainer.style.bottom = `${keyboardHeight}px`;
-                    chatBox.style.paddingBottom = `${inputAreaHeight}px`;
-                } else {
-                    // Keyboard is closed
-                    chatInputContainer.style.bottom = '0px';
-                    chatBox.style.paddingBottom = originalChatBoxPadding;
-                }
-                // Scroll to bottom to ensure the input is visible
-                setTimeout(scrollToBottom, 100);
+                // When the visual viewport resizes (e.g., keyboard opens), its height changes.
+                // We set the entire chat screen's height to match the new visible area.
+                // The flexbox layout automatically handles the rest:
+                // - The header and input bar take their defined space.
+                // - The #chatBox (with flex-grow: 1) shrinks to fill the remaining space.
+                chatScreen.style.height = `${viewport.height}px`;
+    
+                // After the layout adjusts, scroll to the bottom to keep the latest message
+                // and the input field in view, just above the keyboard.
+                // We use an instant scroll here to prevent animation clashes with the keyboard.
+                setTimeout(() => scrollToBottom(true), 100);
             };
-
+    
             viewport.addEventListener('resize', viewportResizeHandler);
-
+    
+            // We also need to reset the height when the user navigates away from the chat.
+            // A MutationObserver is a clean way to detect when the screen becomes inactive.
+            const observer = new MutationObserver(mutations => {
+                mutations.forEach(mutation => {
+                    if (mutation.attributeName === 'class' && !chatScreen.classList.contains('active')) {
+                        // When leaving the chat screen, reset its height to 100%
+                        // so it behaves correctly when the user returns.
+                        chatScreen.style.height = '100%';
+                    }
+                });
+            });
+            observer.observe(chatScreen, { attributes: true });
         } else {
-            // Fallback for older browsers without visualViewport
-            msgInput.addEventListener('focus', () => {
+            document.getElementById('msg').addEventListener('focus', () => {
                 // On focus, scroll to bottom after a short delay to account for keyboard animation
                 setTimeout(scrollToBottom, 150);
             });
@@ -905,6 +1110,53 @@
     }
 
     /**
+     * Formats a timestamp for display as a date separator (Today, Yesterday, etc.).
+     * @param {string | Date} ts - The timestamp to format.
+     * @returns {string} The formatted date string.
+     */
+    function formatDateSeparator(ts) {
+        const date = new Date(ts);
+        const today = new Date();
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        const isToday = date.toDateString() === today.toDateString();
+        const isYesterday = date.toDateString() === yesterday.toDateString();
+
+        if (isToday) return 'Today';
+        if (isYesterday) return 'Yesterday';
+
+        // Check if it was within the last week
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        if (date > oneWeekAgo) {
+            return date.toLocaleDateString([], { weekday: 'long' }); // e.g., "Sunday"
+        }
+
+        // Otherwise, return the full date
+        return date.toLocaleDateString([], { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    /**
+     * Formats a timestamp for the chat list (Time for today, "Yesterday" for yesterday).
+     * @param {string | Date} ts - The timestamp to format.
+     */
+    function formatChatListTime(ts) {
+        const date = new Date(ts);
+        const today = new Date();
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        if (date.toDateString() === today.toDateString()) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        if (date.toDateString() === yesterday.toDateString()) {
+            return 'Yesterday';
+        }
+        return date.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+    }
+
+    /**
      * Performs a JSONP request to bypass CORS issues with Google Apps Script.
      * @param {string} url - The URL for the JSONP request.
      * @returns {Promise<any>} A promise that resolves with the data from the server.
@@ -956,6 +1208,51 @@
     }
 
     /**
+     * Manages a Least Recently Used (LRU) cache in localStorage for chat messages.
+     * @param {string} chatId - The ID of the chat to manage.
+     */
+    function manageLruCache(chatId) {
+        const CACHE_LIMIT = 10; // Store history for the 10 most recent chats
+        const LRU_KEY = 'chatLruOrder';
+
+        let lruOrder = JSON.parse(localStorage.getItem(LRU_KEY) || '[]');
+
+        // Remove the current chat from the list if it exists
+        const existingIndex = lruOrder.indexOf(chatId);
+        if (existingIndex > -1) {
+            lruOrder.splice(existingIndex, 1);
+        }
+
+        // Add the current chat to the front (most recently used)
+        lruOrder.unshift(chatId);
+
+        // If the cache is over the limit, remove the least recently used chat
+        if (lruOrder.length > CACHE_LIMIT) {
+            const chatToRemove = lruOrder.pop(); // Get the last item
+            localStorage.removeItem(chatToRemove); // Remove its message history
+            console.log(`LRU Cache: Removed old chat history for ${chatToRemove}`);
+        }
+
+        // Save the updated order
+        localStorage.setItem(LRU_KEY, JSON.stringify(lruOrder));
+    }
+
+    /**
+     * Caches messages for a specific chat, respecting the LRU policy.
+     * @param {string} chatId - The ID of the chat.
+     * @param {Array} messages - The array of messages to cache.
+     */
+    function cacheMessages(chatId, messages) {
+        if (!chatId || !messages) return;
+        
+        // First, update the LRU list to mark this chat as most recent
+        manageLruCache(chatId);
+
+        // Then, save the actual message data
+        localStorage.setItem(chatId, JSON.stringify(messages));
+    }
+
+    /**
      * Starts a polling interval, ensuring no duplicates for the same name.
      * @param {string} name - A unique name for the interval.
      * @param {Function} func - The function to execute.
@@ -974,6 +1271,30 @@
         if (appState.intervals[name]) {
             clearInterval(appState.intervals[name]);
             delete appState.intervals[name];
+        }
+    }
+
+    /**
+     * Slows down all active polling intervals when the page is not visible.
+     */
+    function slowDownAllPolling() {
+        console.log("Page hidden, slowing down polling.");
+        // Slow down chat list and heartbeat significantly
+        if (appState.intervals.chatList) startPolling('chatList', appState.intervals.chatList.func, 30000); // 30s
+        if (appState.intervals.heartbeat) startPolling('heartbeat', appState.intervals.heartbeat.func, 60000); // 60s
+        // Stop message polling completely
+        stopPolling('messages');
+    }
+
+    /**
+     * Restores normal polling rates when the page becomes visible again.
+     */
+    function restorePollingRates() {
+        console.log("Page visible, restoring polling.");
+        // Restore heartbeat and chat list refresh
+        startHeartbeat();
+        if (document.getElementById('homeScreen').classList.contains('active')) {
+            showHomeScreen(); // This will restart the chatList poller with its normal rate
         }
     }
 
@@ -1136,19 +1457,19 @@
             div.addEventListener('touchend', () => clearTimeout(longPressTimer));
             div.addEventListener('touchmove', () => clearTimeout(longPressTimer));
 
-            const time = chat.lastMessage.ts ? new Date(chat.lastMessage.ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
-            const unreadIndicator = chat.unreadCount > 0 ? `<div class="unread-dot-indicator"></div>` : '';
+            const time = chat.lastMessage.ts ? formatChatListTime(chat.lastMessage.ts) : '';
+            const unreadIndicator = chat.unreadCount > 0 ? `<div class="unread-count-badge">${chat.unreadCount}</div>` : '';
             div.innerHTML = `
                 <div class="chat-list-item-content">
                     <div style="flex-grow: 1;">
                         <div style="display: flex; justify-content: space-between;">
                             <strong style="display: flex; align-items: center;">
                                 <span class="online-indicator-list ${chat.isOnline ? 'online' : ''}"></span>
-                                ${chat.peerPhone}
+                                <span class="chat-peer-name">${chat.peerPhone}</span>
                             </strong>
                             <small>${time}</small>
                         </div>
-                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                        <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 10px;">
                             <p style="margin: 4px 0 0; color: var(--list-item-subtext-color); flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${chat.lastMessage.msg}</p>
                             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 10px;">
                                 ${unreadIndicator}
@@ -1230,57 +1551,77 @@
              chatBox.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-color);">Loading chats...</p>';
          }
 
-        document.getElementById('peerStatus').innerText = ''; // Clear previous status
-        document.getElementById('chatWith').innerText = `Chat with ${pPhone}`;
+        document.getElementById('peerStatus').innerText = '';
+        document.getElementById('chatWith').innerText = pPhone;
         showScreen('chatScreen');
         
         // Fetch the initial set of latest messages.
         // The loadMessages function will handle showing the "Loading..." state
         // and then rendering the messages or the "No messages" state.
         loadMessages({ isInitialLoad: true, unreadCount: initialUnreadCount, isFromCache: !!cachedMessages }).then(() => {
-            // Start polling for new messages more frequently (every 1.5 seconds).
-            startPolling('messages', () => loadMessages({ isPolling: true }), 1500);
+            // Reset polling rate and start polling for new messages.
+            appState.pollingRate = 1500; // Reset to fastest rate
+            const messagePoller = () => loadMessages({ isPolling: true });
+            messagePoller.originalRate = 1500; // Store original rate
+            startPolling('messages', messagePoller, appState.pollingRate);
         });
     }
     
     /**
      * Scrolls the chat box to the bottom.
+     * @param {boolean} [instant=false] - If true, scrolls instantly without smooth behavior.
      */
-    function scrollToBottom() {
+    function scrollToBottom(instant = false) {
         const chatBox = document.getElementById("chatBox");
         // Hide the "New Messages" indicator when scrolling to bottom
         const newMessagesIndicator = document.getElementById('new-messages-indicator');
         if (newMessagesIndicator) newMessagesIndicator.style.display = 'none';
 
-        const lastMessage = chatBox.lastElementChild;
-        if (lastMessage) {
-            // Using scrollIntoView is more reliable than setting scrollTop directly
-            lastMessage.scrollIntoView({ behavior: "smooth", block: "end" });
-        }
+        // Setting scrollTop directly is often more reliable than scrollIntoView,
+        // especially when dealing with dynamic content and keyboard resizing.
+        chatBox.scrollTo({
+            top: chatBox.scrollHeight,
+            behavior: instant ? 'auto' : 'smooth'
+        });
     }
 
     /**
      * Prompts the user to edit the name of the current peer.
      */
-    async function promptToEditPeerName() {
-        const currentName = document.getElementById('chatWith').innerText.replace('Chat with ', '');
-        const newName = prompt("Enter a new name for this contact:", currentName);
+    function promptToEditPeerName() {
+        const currentName = document.getElementById('chatWith').innerText;
+        const modal = document.getElementById('custom-name-modal');
+        const input = document.getElementById('name-modal-input');
+        const saveBtn = document.getElementById('name-modal-save');
+        const cancelBtn = document.getElementById('name-modal-cancel');
 
-        if (newName && newName.trim() !== "" && appState.userId && appState.peerId) {
-            showToast("Saving name...", 'info', 2000);
-            try {
-                const data = await jsonpRequest(`${API_URL}?action=editPeerName&ownerId=${appState.userId}&peerId=${appState.peerId}&newName=${encodeURIComponent(newName.trim())}`);
-                if (data.status === 'success') {
-                    document.getElementById('chatWith').innerText = `Chat with ${newName.trim()}`;
-                    showToast("Name updated successfully!", 'success');
-                    refreshChatList(); // Refresh chat list to show new name there too
-                } else {
-                    showToast("Error updating name: " + data.message, 'error');
+        input.value = currentName;
+        modal.style.display = 'flex';
+        input.focus();
+
+        const hideModal = () => modal.style.display = 'none';
+
+        cancelBtn.onclick = hideModal;
+
+        saveBtn.onclick = async () => {
+            const newName = input.value.trim();
+            if (newName && newName !== "" && appState.userId && appState.peerId) {
+                hideModal();
+                showToast("Saving name...", 'info', 2000);
+                try {
+                    const data = await jsonpRequest(`${API_URL}?action=editPeerName&ownerId=${appState.userId}&peerId=${appState.peerId}&newName=${encodeURIComponent(newName)}`);
+                    if (data.status === 'success') {
+                        document.getElementById('chatWith').innerText = newName;
+                        showToast("Name updated successfully!", 'success');
+                        refreshChatList(); // Refresh chat list to show new name there too
+                    } else {
+                        showToast("Error updating name: " + data.message, 'error');
+                    }
+                } catch (error) {
+                    showToast("Could not save name. Check connection.", 'error');
                 }
-            } catch (error) {
-                showToast("Could not save name. Check connection.", 'error');
-            }
-        }
+            } else { showToast("Name cannot be empty.", 'error'); }
+        };
     }
 
     /**
@@ -1297,10 +1638,15 @@
 
         showScreen('homeScreen');
 
+        const statusIndicator = document.getElementById('chat-list-status');
+
         const doRefresh = async () => {
             if (!appState.userId) return;
             const userPhone = localStorage.getItem('userPhone');
             if (!userPhone || !document.getElementById('homeScreen').classList.contains('active')) return;
+
+            // Show the "Updating..." indicator before fetching
+            if (statusIndicator) statusIndicator.style.display = 'inline-block';
 
             const data = await jsonpRequest(`${API_URL}?action=login&phone=${userPhone}`);
             if (data.chats) {
@@ -1308,13 +1654,15 @@
                 localStorage.setItem('chatList', JSON.stringify(data.chats));
                 preloadRecentChats(data.chats); // Start pre-loading recent chats
                 renderChatList(data.chats);
+                if (statusIndicator) statusIndicator.style.display = 'none';
             } else if (data.status === 'error') {
                 console.error("Could not refresh chat list:", data.message);
                 // Agar server se error aaye to local data dikhayein
                 const localChats = JSON.parse(localStorage.getItem('chatList'));
                 if (localChats) {
-                    renderChatList(localChats, true); // Offline indicator ke saath render karein
+                    renderChatList(localChats, true);
                 }
+                if (statusIndicator) statusIndicator.style.display = 'none'; // Hide on error too
             }
         };
 
@@ -1339,6 +1687,7 @@
             if (document.getElementById('homeScreen').classList.contains('active')) {
                 renderChatList(data.chats);
             }
+            return true; // Indicate success for pull-to-refresh
         }
     };
 
@@ -1346,38 +1695,25 @@
      * Renders and displays the user's profile screen.
      */
     function showProfileScreen() {
-        const userPhone = document.getElementById("phone").value;
-        const profileDetailsDiv = document.getElementById("profile-details");
+        const userPhone = localStorage.getItem('userPhone') || 'N/A';
+        const profileContentDiv = document.getElementById("profile-content");
 
-        let content = `<p><strong>Phone Number:</strong> ${userPhone}</p>`;
+        let content = `<div style="padding: 0 20px;"><p><strong>Phone Number:</strong> ${userPhone}</p>`;
 
         if (appState.userName) {
             content += `
-                <p><strong>Name:</strong> ${appState.userName}</p>
+                <p><strong>Name:</strong> <span id="profile-user-name">${appState.userName}</span></p>
                 <button onclick="promptToEditUserName()">Edit Name</button>
-            `;
+            </div>`;
         } else {
             content += `
                 <p>You haven't set a name yet.</p>
-                <input type="text" id="newUserName" placeholder="Enter your name...">
-                <button onclick="saveUserName()">Save Name</button>
-            `;
+                <input type="text" id="newUserName" placeholder="Enter your name..." autocomplete="name">
+                <button onclick="saveUserNameFromInput()">Save Name</button>
+            </div>`;
         }
 
-        // Rebuild the profile screen to ensure event listeners are correctly attached
-        const profileScreen = document.getElementById('profileScreen');
-        profileScreen.querySelector('#profile-details').innerHTML = content;
-
-        // Re-attach listeners for dynamically created buttons
-        const editBtn = profileScreen.querySelector('button[onclick="promptToEditUserName()"]');
-        if (editBtn) editBtn.onclick = promptToEditUserName;
-
-        const saveBtn = profileScreen.querySelector('button[onclick="saveUserName()"]');
-        if (saveBtn) saveBtn.onclick = () => saveUserName();
-
-        // Ensure back button and logout button listeners are also solid (using specific class)
-        profileScreen.querySelector('.chat-header .back-button').onclick = showHomeScreen;
-        profileScreen.querySelector('#profile-actions button').onclick = logout;
+        profileContentDiv.innerHTML = content;
 
         showScreen('profileScreen');
     }
@@ -1394,10 +1730,15 @@
 
     /**
      * Saves the user's new name to the server.
-     * @param {string} [name] - The new name to save. If not provided, it's taken from the input field.
+     * @param {string} name - The new name to save.
      */
-    async function saveUserName(name) {
-        const newName = name || document.getElementById("newUserName")?.value;
+    async function saveUserName(newName) {
+        if (!newName || !newName.trim()) {
+            showToast("Name cannot be empty.", 'error');
+            return;
+        }
+
+        const nameToSave = newName.trim();
         if (!newName || !newName.trim()) { alert("Name cannot be empty."); return; }
 
         showToast("Saving...", 'info', 2000);
@@ -1405,9 +1746,9 @@
             const data = await jsonpRequest(`${API_URL}?action=setUserName&userId=${appState.userId}&name=${encodeURIComponent(newName.trim())}`);
             if (data.status === 'success') {
                 appState.userName = newName.trim();
-                localStorage.setItem('userName', appState.userName);
+                localStorage.setItem('userName', nameToSave);
                 showToast("Name updated successfully!", 'success');
-                showProfileScreen(); // Refresh profile screen
+                showProfileScreen(); // Refresh the profile screen to show the new name
             } else {
                 showToast("Error: Could not save the name.", 'error');
             }
@@ -1416,6 +1757,15 @@
         }
     }
 
+    /**
+     * Helper function to save the name from the input field on the profile screen.
+     */
+    function saveUserNameFromInput() {
+        const newNameInput = document.getElementById("newUserName");
+        if (newNameInput) {
+            saveUserName(newNameInput.value);
+        }
+    }
     // =================================================================================
     // Contacts Management
     // =================================================================================
@@ -1427,7 +1777,7 @@
         showScreen('contactsScreen');
         const savedContacts = JSON.parse(localStorage.getItem('contacts')) || [];
         renderContacts(savedContacts);
-        // Optionally, you can fetch fresh contacts from the server here
+        // Optionally, you can fetch fresh contacts from the server here for a full refresh
         // refreshContacts(); 
     }
 
@@ -1447,13 +1797,14 @@
         contacts.forEach(contact => {
             const div = document.createElement("div");
             div.className = "chat-list-item"; // Re-using style
+            div.onclick = () => startChatFromContact(contact.phone); // Make contact clickable
             div.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <strong>${contact.name}</strong>
                         <p style="margin: 4px 0 0; color: var(--list-item-subtext-color);">${contact.phone}</p>
                     </div>
-                    <button onclick="startChatFromContact('${contact.phone}')">Chat</button>
+                    <div style="font-size: 1.2em; color: var(--list-item-subtext-color);">&gt;</div>
                 </div>
             `;
             contactsListDiv.appendChild(div);
@@ -1493,9 +1844,91 @@
         }
     }
     
+    /**
+     * Starts a chat with a user from the contacts list.
+     * @param {string} phone - The phone number of the contact to chat with.
+     */
     function startChatFromContact(phone) {
         document.getElementById('newPeerPhone').value = phone;
         startNewChat();
+    }
+
+    /**
+     * Sets up the pull-to-refresh functionality on the chat list.
+     */
+    function setupPullToRefresh() {
+        const scrollContainer = document.getElementById('chat-list-scroll-container');
+        let startY = 0;
+        let isPulling = false;
+        const refreshThreshold = 70; // How many pixels to pull down to trigger refresh
+
+        // Create the indicator element
+        const indicator = document.createElement('div');
+        indicator.id = 'pull-to-refresh-indicator';
+        indicator.style.cssText = `
+            position: absolute;
+            top: -50px;
+            left: 0;
+            right: 0;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+            color: var(--list-item-subtext-color);
+            transition: top 0.3s ease;
+        `;
+        indicator.innerHTML = '<span>&darr;</span> Pull to refresh';
+        scrollContainer.prepend(indicator);
+
+        scrollContainer.addEventListener('touchstart', (e) => {
+            if (scrollContainer.scrollTop === 0) {
+                startY = e.touches[0].pageY;
+                isPulling = true;
+            }
+        }, { passive: true });
+
+        scrollContainer.addEventListener('touchmove', (e) => {
+            if (!isPulling) return;
+
+            const pullDistance = e.touches[0].pageY - startY;
+
+            if (pullDistance > 0) {
+                e.preventDefault(); // Prevent scrolling the whole page
+                const moveDistance = Math.min(pullDistance, refreshThreshold + 20); // Limit pull
+                scrollContainer.style.transform = `translateY(${moveDistance}px)`;
+                
+                if (pullDistance > refreshThreshold) {
+                    indicator.innerHTML = '<span>&uarr;</span> Release to refresh';
+                } else {
+                    indicator.innerHTML = '<span>&darr;</span> Pull to refresh';
+                }
+            }
+        }, { passive: false });
+
+        scrollContainer.addEventListener('touchend', async () => {
+            if (!isPulling) return;
+            isPulling = false;
+
+            const pullDistance = scrollContainer.style.transform ? parseInt(scrollContainer.style.transform.replace('translateY(', '')) : 0;
+
+            if (pullDistance > refreshThreshold) {
+                indicator.innerHTML = '<span>&#8635;</span> Refreshing...';
+                scrollContainer.style.transition = 'transform 0.3s ease';
+                scrollContainer.style.transform = 'translateY(50px)'; // Keep indicator visible
+                
+                // Show the main loading indicator as well
+                const statusIndicator = document.getElementById('chat-list-status');
+                if (statusIndicator) statusIndicator.style.display = 'inline-block';
+
+                await refreshChatList(); // Wait for the refresh to complete
+                if (statusIndicator) statusIndicator.style.display = 'none'; // Hide it after
+            }
+
+            // Animate back to original position
+            scrollContainer.style.transition = 'transform 0.3s ease';
+            scrollContainer.style.transform = 'translateY(0)';
+        });
     }
 
     // =================================================================================
@@ -1537,7 +1970,12 @@
         scrollToBottom();
 
         try {
-            const data = await jsonpRequest(`${API_URL}?action=sendMessage&fromId=${appState.userId}&toId=${appState.peerId}&msg=${encodeURIComponent(msgText)}&replyTo=${replyToId || ''}&tempId=${tempMsg.id}`);            
+            // Construct the URL, only adding replyTo if it exists.
+            let url = `${API_URL}?action=sendMessage&fromId=${appState.userId}&toId=${appState.peerId}&msg=${encodeURIComponent(msgText)}&tempId=${tempMsg.id}`;
+            if (replyToId) {
+                url += `&replyTo=${replyToId}`;
+            }
+            const data = await jsonpRequest(url);
             if (data?.status !== 'sent') {
                 // The server responded, but with an error
                 throw new Error(data?.message || 'Invalid response from server.');
@@ -1575,8 +2013,8 @@
                 const peerId = chat.peerId;
                 const chatId = getChatId(appState.userId, peerId);
                 const data = await jsonpRequest(`${API_URL}?action=getMessages&userId=${appState.userId}&peerId=${peerId}`);
-                if (data.status === 'ok' && data.messages) {
-                    localStorage.setItem(chatId, JSON.stringify(data.messages));
+                if (data.status === 'ok' && data.messages) {                    
+                    cacheMessages(chatId, data.messages); // Use the new caching function
                     console.log(`Pre-loaded chat with ${peerId}`);
                 }
             }, index * 1000); // 1-second delay between each preload request
@@ -1586,20 +2024,45 @@
      * Deletes a specific message.
      * @param {string} messageId - The ID of the message to delete.
      */
-    async function deleteMessage(messageId) {
-        if (!confirm("Are you sure you want to delete this message?")) return;
-        showToast("Deleting...", 'info', 2000);
-        try {
+    function deleteMessage(messageId) {
+        const modal = document.getElementById('custom-confirm-modal');
+        const cancelBtn = document.getElementById('cancel-delete-btn');
+        const deleteForMeBtn = document.getElementById('delete-for-me-btn');
+        const deleteEveryoneBtn = document.getElementById('delete-for-everyone-btn');
+
+        modal.style.display = 'flex';
+
+        // Function to hide the modal and clean up event listeners
+        const hideModal = () => {
+            modal.style.display = 'none';
+            // Use .cloneNode to remove old event listeners to prevent memory leaks
+            deleteEveryoneBtn.parentNode.replaceChild(deleteEveryoneBtn.cloneNode(true), deleteEveryoneBtn);
+            deleteForMeBtn.parentNode.replaceChild(deleteForMeBtn.cloneNode(true), deleteForMeBtn);
+        };
+
+        cancelBtn.onclick = hideModal;
+
+        // Re-attach listener for "Delete for me"
+        document.getElementById('delete-for-me-btn').onclick = () => {
+            hideModal();
+            const messageElement = document.querySelector(`[data-message-id='${messageId}']`);
+            if (messageElement) {
+                messageElement.remove();
+                showToast("Message deleted for you.", 'success');
+            }
+            // Note: This is a local-only deletion. We don't need to call the server.
+        };
+
+        // Re-attach listener for "Delete for everyone"
+        document.getElementById('delete-for-everyone-btn').onclick = async () => {
+            hideModal();
+            showToast("Deleting...", 'info', 2000);
             const data = await jsonpRequest(`${API_URL}?action=deleteMessage&messageId=${messageId}&userId=${appState.userId}`);
             if (data.status === 'deleted') {
                 showToast("Message deleted.", 'success');
-                loadMessages();
-            } else {
-                showToast("Error: Could not delete message.", 'error');
-            }
-        } catch (error) {
-            showToast("Request failed. Check connection.", 'error');
-        }
+                loadMessages(); // Refresh messages to show the change
+            } else { showToast("Error: " + (data.message || "Could not delete."), 'error'); }
+        };
     }
 
     /**
@@ -1837,7 +2300,7 @@
      */
     function initiateReply(messageId, messageContent) {
         const originalBubble = document.querySelector(`[data-message-id='${messageId}']`);
-        const author = originalBubble.classList.contains('me') ? 'You' : document.getElementById('chatWith').innerText.replace('Chat with ', '');
+        const author = originalBubble.classList.contains('me') ? 'You' : document.getElementById('chatWith').innerText;
 
         appState.replyingTo = { id: messageId, text: messageContent, author: author };
 
@@ -1889,10 +2352,21 @@
         // --- MODIFICATION: Make polling more efficient ---
         // If this is a polling request, find the last message's timestamp and only ask for newer messages.
         if (isPolling) {
-            const lastMessage = chatBox.querySelector('.message-container[data-timestamp]:last-child');
-            const lastTs = lastMessage ? lastMessage.dataset.timestamp : null;
-            if (lastTs) url += `&afterTs=${encodeURIComponent(lastTs)}`;
+                // Don't poll if page is hidden
+                if (document.hidden) return;
+
+                // Use the timestamp of the very last message rendered, regardless of sender
+                const allMessages = chatBox.querySelectorAll('.message-container[data-timestamp]');
+                if (allMessages.length > 0) {
+                    const lastMessage = allMessages[allMessages.length - 1];
+                    const lastTs = lastMessage.dataset.timestamp;
+                    if (lastTs) {
+                        url += `&afterTs=${encodeURIComponent(lastTs)}`;
+                    }
+                }
         }
+
+
 
         try {
             // Only show the main "Loading..." indicator on the very first load.
@@ -1908,18 +2382,34 @@
                 // Don't show toast on regular polling errors to avoid spam
                 return;
             }
-            if (data.status === 'cleared') {
+
+            // --- Adaptive Polling Logic ---
+            if (isPolling) {
+                if (data.messages && data.messages.length > 0) {
+                    appState.pollingRate = 1500; // New messages arrived, speed up
+                } else {
+                    // No new messages, slow down polling rate
+                    appState.pollingRate = Math.min(appState.pollingRate * 1.5, appState.maxPollingRate);
+                }
+                startPolling('messages', () => loadMessages({ isPolling: true }), appState.pollingRate);
+            }
+
+            if (data.status === 'cleared' || (data.messages && data.messages.length === 0)) {
                 // Handle the case where the chat history was cleared on the server
-                chatBox.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-color); opacity: 0.7;">No messages in this chat yet.</p>';
-                return;
+                // or it's a brand new chat with no messages.
+                const peerName = document.getElementById('chatWith').innerText;
+                chatBox.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: var(--list-item-subtext-color);">
+                        <p>This is the beginning of your chat with <strong>${peerName}</strong>.</p>
+                        <p>Say hello! 👋</p>
+                    </div>`;
+                return; // Stop further processing
             }
 
             // --- New Caching Logic ---
             // Save the latest full message list to localStorage
             const chatId = getChatId(appState.userId, appState.peerId);
-            if (chatId) {
-                localStorage.setItem(chatId, JSON.stringify(data.messages));
-            }
+            cacheMessages(chatId, data.messages); // Use the new LRU-aware caching function
             
             // --- New Typing Indicator Logic ---
             const existingIndicator = document.getElementById('typing-indicator');
@@ -2077,7 +2567,7 @@
         if (isMe) {
             if (isTemp) {
                 statusIconHtml = '<span class="status-icon"> 🕒</span>'; // Clock for sending
-            } else if (m.seen === "true") {
+            } else if (m.seen === true || m.seen === "true") {
                 statusIconHtml = '<span class="status-icon seen"> ✓✓</span>'; // Double check for seen
             } else {
                 statusIconHtml = '<span class="status-icon"> ✓</span>'; // Single check for sent
@@ -2099,6 +2589,21 @@
                 ${metaHtml}`;
         } else {
             bubble.innerHTML = `${replyHtml}<span class="message-text">${m.msg}</span>${metaHtml}`;
+            let messageText = m.msg;
+            let editedTagHtml = '';
+
+            // Check if the message has been edited
+            if (messageText.endsWith(' (edited)')) {
+                messageText = messageText.slice(0, -9); // Remove " (edited)" from the main text
+                editedTagHtml = ` <span class="edited-tag">(edited)</span>`;
+            }
+
+            bubble.innerHTML = `${replyHtml}<span class="message-text">${messageText}</span>${metaHtml}`;
+            // Now, find the message-meta div and insert the edited tag before it
+            const metaDiv = bubble.querySelector('.message-meta');
+            if (metaDiv) {
+                metaDiv.insertAdjacentHTML('beforebegin', editedTagHtml);
+            }
         }
 
         // --- Add Reply Icon for Hover/Swipe ---
@@ -2220,13 +2725,30 @@
         const { isInitialLoad = false, unreadCount = 0, beforeTs = null, isFromCache = false, isPolling = false } = options;
         const box = document.getElementById("chatBox");
     
+        let lastDateString = null;
+        if (!isInitialLoad && box.lastChild) {
+            // Get the date of the last message already in the chatbox
+            const lastMsg = box.querySelector('.message-container:last-child');
+            if (lastMsg && lastMsg.dataset.timestamp) {
+                lastDateString = new Date(lastMsg.dataset.timestamp).toDateString();
+            }
+        }
+
         // If it's the initial load, clear the box and render everything from scratch.
         if (isInitialLoad && !isFromCache) {
             box.innerHTML = ""; // Only clear if we didn't render from cache
             const fragment = document.createDocumentFragment();
             const firstUnreadIndex = unreadCount > 0 ? Math.max(0, messages.length - unreadCount) : -1;
-    
+
             messages.forEach((m, index) => {
+                const currentDateString = new Date(m.ts).toDateString();
+                if (currentDateString !== lastDateString) {
+                    const dateSeparator = document.createElement('div');
+                    dateSeparator.className = 'date-separator';
+                    dateSeparator.textContent = formatDateSeparator(m.ts);
+                    fragment.appendChild(dateSeparator);
+                    lastDateString = currentDateString;
+                }
                 if (index === firstUnreadIndex) {
                     const separator = document.createElement('div');
                     separator.className = 'unread-separator';
@@ -2234,9 +2756,6 @@
                     fragment.appendChild(separator);
                 }
                 const msgElement = renderSingleMessage(m, false);
-                if (isInitialLoad) {
-                    msgElement.classList.add('new-message-animation');
-                }
                 fragment.appendChild(msgElement);
             });
             box.appendChild(fragment);
@@ -2247,8 +2766,16 @@
             const oldScrollHeight = box.scrollHeight;
             const fragment = document.createDocumentFragment();
 
+            lastDateString = new Date(messages[messages.length - 1].ts).toDateString();
+
             messages.reverse().forEach(m => {
-                // Prepending older messages, no animation needed
+                const currentDateString = new Date(m.ts).toDateString();
+                if (currentDateString !== lastDateString) {
+                    const dateSeparator = document.createElement('div');
+                    dateSeparator.className = 'date-separator';
+                    dateSeparator.textContent = formatDateSeparator(lastDateString); // Use the date of the previous block
+                    fragment.appendChild(dateSeparator);
+                }
                 fragment.appendChild(renderSingleMessage(m, false));
             });
             box.prepend(fragment);
@@ -2276,6 +2803,16 @@
                     // It's a genuinely new message (e.g., from the other user). Render it.
                     const newElement = renderSingleMessage(msg, true); // Animate new incoming messages
                     newElement.classList.add('new-message-animation');
+
+                    // Check if a date separator is needed before adding the new message
+                    const currentDateString = new Date(msg.ts).toDateString();
+                    if (currentDateString !== lastDateString) {
+                        const dateSeparator = document.createElement('div');
+                        dateSeparator.className = 'date-separator';
+                        dateSeparator.textContent = formatDateSeparator(msg.ts);
+                        fragment.appendChild(dateSeparator);
+                        lastDateString = currentDateString;
+                    }
                     fragment.appendChild(newElement);
                     newMessagesAdded = true;
                     if (!isMe) {
@@ -2298,7 +2835,7 @@
 
             // --- New Conditional Auto-Scroll Logic ---
             const newMessagesIndicator = document.getElementById('new-messages-indicator');
-            const distanceFromBottom = box.scrollHeight - (box.scrollTop + box.clientHeight);
+            const distanceFromBottom = box.scrollHeight - box.scrollTop - box.clientHeight;
             const shouldAutoScroll = distanceFromBottom < 80;
 
             if (shouldAutoScroll) {
