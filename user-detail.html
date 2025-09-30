@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💬</text></svg>">
+    <title>Digidad - User Details</title>
+    <style>
+        :root {
+            --body-bg: #E9EBEE;
+            --container-bg: #FFFFFF;
+            --container-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            --container-border: 1px solid #E0E0E0;
+            --text-color: #1c1e21;
+            --text-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --input-border: #ccd0d5;
+            --input-bg: #f0f2f5;
+            --input-placeholder-color: #65676b;
+            --button-bg: #e4e6eb;
+            --button-hover-bg: #d8dade;
+            --button-text-color: #050505;
+            --button-disabled-bg: #e4e6eb;
+            --list-item-border: #ced0d4;
+            --list-item-hover-bg: #f2f2f2;
+            --list-item-subtext-color: #65676b;
+            --header-button-color: #65676b;
+        }
+
+        body.dark-mode {
+            --body-bg: #18191a;
+            --container-bg: #242526;
+            --container-border: 1px solid #3a3b3c;
+            --text-color: #e4e6eb;
+            --input-border: #3a3b3c;
+            --input-bg: #3a3b3c;
+            --button-bg: #3a3b3c;
+            --button-hover-bg: #4e4f50;
+            --button-text-color: #e4e6eb;
+            --list-item-border: #3a3b3c;
+            --list-item-hover-bg: #4e4f50;
+            --list-item-subtext-color: #b0b3b8;
+        }
+
+        @keyframes fadeInScaleUp {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--body-bg);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            min-height: 100dvh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            background: var(--container-bg);
+            width: 100%;
+            max-width: 480px;
+            height: 100vh;
+            height: 100dvh;
+            margin: 0 auto;
+            box-shadow: 0 0 30px rgba(0,0,0,0.1);
+            transition: background 0.5s ease, border 0.5s ease;
+            animation: fadeInScaleUp 0.6s ease-out forwards;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .user-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 20px;
+            border-bottom: 1px solid var(--list-item-border);
+            transition: border-color 0.5s ease;
+            flex-shrink: 0;
+        }
+
+        .user-header .back-button {
+            background: none;
+            color: var(--header-button-color);
+            padding: 0;
+            font-size: 24px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 50%;
+            transition: background-color 0.3s;
+        }
+
+        .user-header .back-button:hover {
+            background-color: var(--list-item-hover-bg);
+        }
+
+        .user-profile {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: var(--container-bg);
+        }
+
+        .user-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0084ff, #44c8f5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 40px;
+            margin: 0 auto 20px;
+            box-shadow: 0 4px 20px rgba(0, 132, 255, 0.3);
+        }
+
+        .user-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--text-color);
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .user-phone {
+            color: var(--list-item-subtext-color);
+            font-size: 18px;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .user-email {
+            color: var(--list-item-subtext-color);
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .online-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #28a745;
+        }
+
+        .status-indicator.offline {
+            background-color: #aaa;
+        }
+
+        .user-actions {
+            padding: 20px;
+            background: var(--container-bg);
+            border-top: 1px solid var(--list-item-border);
+            display: flex;
+            gap: 12px;
+        }
+
+        .action-button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-chat {
+            background: #0084ff;
+            color: white;
+        }
+
+        .btn-chat:hover {
+            background: #0056cc;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--button-bg);
+            color: var(--button-text-color);
+            border: 1px solid var(--input-border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--button-hover-bg);
+        }
+
+        .user-info-section {
+            background: var(--input-bg);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+
+        .info-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--text-color);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--list-item-border);
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-icon {
+            width: 20px;
+            height: 20px;
+            opacity: 0.7;
+        }
+
+        .info-text {
+            flex-grow: 1;
+            color: var(--text-color);
+            font-size: 16px;
+        }
+
+        .info-subtext {
+            color: var(--list-item-subtext-color);
+            font-size: 14px;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--header-button-color);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background-color 0.3s;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--list-item-hover-bg);
+        }
+
+        /* Three-dot menu styles */
+        .three-dot-menu-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .contact-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--container-bg);
+            border: 1px solid var(--container-border);
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 1000;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            min-width: 200px;
+            margin-top: 8px;
+        }
+
+        .contact-dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            cursor: pointer;
+            color: var(--text-color);
+            transition: all 0.2s ease;
+            border-bottom: 1px solid var(--list-item-border);
+            font-size: 14px;
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-item:hover {
+            background: linear-gradient(135deg, rgba(0, 132, 255, 0.1), rgba(0, 132, 255, 0.05));
+            padding-left: 20px;
+        }
+
+        .dropdown-item svg {
+            flex-shrink: 0;
+            opacity: 0.8;
+        }
+
+        /* Enhanced button styling for three-dot menu */
+        #contact-menu-btn {
+            min-width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #contact-menu-btn:hover {
+            background: linear-gradient(135deg, rgba(0, 132, 255, 0.1), rgba(0, 132, 255, 0.05));
+            transform: scale(1.05);
+        }
+
+        #contact-menu-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Loading state */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--list-item-subtext-color);
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--list-item-border);
+            border-top-color: #0084ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast notifications */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toast {
+            padding: 10px 20px;
+            border-radius: 20px;
+            color: white;
+            font-size: 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            animation: toast-in 0.4s ease forwards;
+            opacity: 0;
+        }
+
+        .toast.success { background-color: rgba(40, 167, 69, 0.9); }
+        .toast.error { background-color: rgba(229, 57, 53, 0.9); }
+        .toast.info { background-color: rgba(52, 152, 219, 0.9); }
+
+        @keyframes toast-in { to { opacity: 1; transform: translateY(0); } }
+
+        /* ===== ENHANCED MOBILE-FIRST RESPONSIVE DESIGN ===== */
+
+        /* Base responsive variables and utilities */
+        :root {
+            --mobile-padding: 12px;
+            --tablet-padding: 16px;
+            --desktop-padding: 20px;
+            --mobile-touch-target: 48px; /* Minimum touch target size */
+            --mobile-font-scale: 0.95;
+            --tablet-font-scale: 1;
+            --desktop-font-scale: 1.05;
+        }
+
+        /* Mobile First Approach - Small Mobile Devices (up to 480px) */
+        @media screen and (max-width: 480px) {
+            body {
+                font-size: calc(16px * var(--mobile-font-scale));
+            }
+
+            .container {
+                width: 100vw;
+                max-width: 100vw;
+                height: 100vh;
+                height: 100dvh;
+                margin: 0;
+                border-radius: 0;
+                border: none;
+                box-shadow: none;
+            }
+
+            /* Enhanced header and content padding */
+            .user-header {
+                padding: 8px var(--mobile-padding);
+            }
+
+            .user-profile {
+                padding: var(--mobile-padding);
+                flex-grow: 1;
+                overflow-y: auto;
+            }
+
+            .user-actions {
+                padding: var(--mobile-padding);
+                gap: 8px;
+            }
+
+            /* Touch-friendly buttons */
+            .action-button,
+            .btn-secondary {
+                min-height: var(--mobile-touch-target);
+                padding: 12px 16px;
+                font-size: 16px; /* Prevents zoom on iOS */
+                border-radius: 8px;
+            }
+
+            /* Back button and theme toggle */
+            .back-button,
+            .theme-toggle {
+                min-width: 44px;
+                min-height: 44px;
+                padding: 8px;
+            }
+
+            /* Enhanced three-dot menu button */
+            #contact-menu-btn {
+                min-width: 44px;
+                min-height: 44px;
+                padding: 8px;
+            }
+
+            /* Avatar sizing for mobile */
+            .user-avatar {
+                width: 80px;
+                height: 80px;
+                font-size: 32px;
+            }
+
+            /* Typography adjustments */
+            .user-name {
+                font-size: 24px;
+                margin-bottom: 6px;
+            }
+
+            .user-phone {
+                font-size: 16px;
+                margin-bottom: 8px;
+            }
+
+            .user-email {
+                font-size: 14px;
+                margin-bottom: 16px;
+            }
+
+            /* Enhanced info sections */
+            .user-info-section {
+                padding: 16px var(--mobile-padding);
+                border-radius: 10px;
+                margin-bottom: 12px;
+            }
+
+            .info-title {
+                font-size: 13px;
+                margin-bottom: 10px;
+            }
+
+            .info-item {
+                padding: 14px 0;
+                gap: 10px;
+            }
+
+            .info-icon {
+                width: 18px;
+                height: 18px;
+            }
+
+            .info-text {
+                font-size: 15px;
+            }
+
+            .info-subtext {
+                font-size: 13px;
+            }
+
+            /* Safe area handling for devices with notches */
+            .container {
+                padding-top: env(safe-area-inset-top, 0px);
+            }
+
+            /* Better spacing for profile content */
+            .user-profile {
+                padding-bottom: 20px;
+            }
+
+            /* Enhanced dropdown menu for mobile */
+            .contact-dropdown-menu {
+                min-width: 180px;
+                margin-top: 6px;
+            }
+
+            .dropdown-item {
+                padding: 16px 14px;
+                font-size: 15px;
+            }
+        }
+
+        /* Large Mobile Devices and Small Tablets (481px to 768px) */
+        @media screen and (min-width: 481px) and (max-width: 768px) {
+            .container {
+                max-width: 420px;
+            }
+
+            .user-header,
+            .user-profile,
+            .user-actions {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .action-button,
+            .btn-secondary {
+                min-height: 46px;
+                padding: 14px 18px;
+            }
+        }
+
+        /* Tablets (769px to 1024px) */
+        @media screen and (min-width: 769px) and (max-width: 1024px) {
+            .container {
+                max-width: 480px;
+            }
+
+            .user-header,
+            .user-profile,
+            .user-actions {
+                padding-left: var(--tablet-padding);
+                padding-right: var(--tablet-padding);
+            }
+
+            .action-button,
+            .btn-secondary {
+                min-height: 48px;
+                padding: 14px 20px;
+            }
+        }
+
+        /* Desktop (1025px and up) */
+        @media screen and (min-width: 1025px) {
+            .container {
+                max-width: 480px;
+                box-shadow: 0 0 30px rgba(0,0,0,0.1);
+            }
+
+            .user-header,
+            .user-profile,
+            .user-actions {
+                padding-left: var(--desktop-padding);
+                padding-right: var(--desktop-padding);
+            }
+
+            .action-button,
+            .btn-secondary {
+                padding: 16px 22px;
+            }
+        }
+
+        /* Landscape orientation adjustments for mobile */
+        @media screen and (max-width: 768px) and (orientation: landscape) {
+            .container {
+                height: 100vh;
+                height: 100dvh;
+            }
+
+            .user-header,
+            .user-profile,
+            .user-actions {
+                padding-top: 6px;
+                padding-bottom: 6px;
+            }
+
+            /* Reduce avatar size in landscape */
+            .user-avatar {
+                width: 70px;
+                height: 70px;
+                font-size: 28px;
+            }
+
+            .user-name {
+                font-size: 22px;
+            }
+        }
+
+        /* High DPI displays */
+        @media screen and (-webkit-min-device-pixel-ratio: 2),
+                screen and (min-resolution: 192dpi) {
+            .container {
+                -webkit-backface-visibility: hidden;
+                backface-visibility: hidden;
+            }
+        }
+
+        /* Reduced motion preferences */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- User Header -->
+        <div class="user-header">
+            <button class="back-button" onclick="goBack()" title="Go Back">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+            </button>
+            <div style="flex-grow: 1;">
+                <h3 style="margin: 0; font-size: 18px; font-weight: 600;">User Details</h3>
+                <div style="font-size: 12px; color: var(--list-item-subtext-color); margin-top: 2px;">View contact information</div>
+            </div>
+            <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">🌙</button>
+        </div>
+
+        <!-- User Profile -->
+        <div class="user-profile" id="user-profile">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading user details...</p>
+            </div>
+        </div>
+
+        <!-- User Actions -->
+        <div class="user-actions" id="user-actions" style="display: none;">
+            <button class="action-button btn-chat" onclick="startChatWithUser()">Start Chat</button>
+            <div class="three-dot-menu-container">
+                <button class="action-button btn-secondary" onclick="toggleContactMenu()" id="contact-menu-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="12" cy="5" r="1"></circle>
+                        <circle cx="12" cy="19" r="1"></circle>
+                    </svg>
+                </button>
+                <div class="contact-dropdown-menu" id="contact-dropdown">
+                    <div class="dropdown-item" onclick="addToContacts()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M19 8v6"/>
+                            <path d="M22 11l-3-3-3 3"/>
+                        </svg>
+                        Add to Contacts
+                    </div>
+                    <div class="dropdown-item" onclick="shareContact()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="18" cy="5" r="3"/>
+                            <circle cx="6" cy="12" r="3"/>
+                            <circle cx="18" cy="19" r="3"/>
+                            <path d="M8.59 13.51l6.83 3.98"/>
+                            <path d="M15.41 6.51l-6.82 3.98"/>
+                        </svg>
+                        Share Contact
+                    </div>
+                    <div class="dropdown-item" onclick="blockContact()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <circle cx="12" cy="16" r="1"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        Block Contact
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <script>
+        // =================================================================================
+        // App State & Constants
+        // =================================================================================
+        const API_URL = "https://script.google.com/macros/s/AKfycbz6ia3rb8D2BiH_JBMgdxgcNMQtpxYztarZ7TtIKax_9uzLFgjeULFogDWHH_K3YJyT/exec";
+        const appState = {
+            currentUser: {
+                id: null,
+                name: null,
+                phone: null,
+                email: null,
+                isOnline: false
+            },
+            loggedInUser: {
+                id: null,
+                phone: null
+            }
+        };
+
+        // =================================================================================
+        // Theme Management
+        // =================================================================================
+        function applyTheme(theme) {
+            const body = document.body;
+            const toggle = document.getElementById('theme-toggle');
+            if (theme === 'dark') {
+                body.classList.add('dark-mode');
+                toggle.textContent = '☀️';
+            } else {
+                body.classList.remove('dark-mode');
+                toggle.textContent = '🌙';
+            }
+        }
+
+        function toggleTheme() {
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            localStorage.setItem('theme', newTheme);
+            applyTheme(newTheme);
+        }
+
+        // =================================================================================
+        // Navigation
+        // =================================================================================
+        function goBack() {
+            // Get the current user phone to restore chat
+            const currentUserPhone = appState.currentUser?.phone;
+            let redirectUrl = 'index.html';
+
+            if (currentUserPhone) {
+                // Redirect back to main app with chat parameter to restore the chat
+                redirectUrl = `index.html?chatWith=${encodeURIComponent(currentUserPhone)}`;
+            }
+
+            window.location.href = redirectUrl;
+        }
+
+        // =================================================================================
+        // User Details Management
+        // =================================================================================
+        function loadUserDetails() {
+            // Get user data from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const userId = urlParams.get('userId');
+            const userName = urlParams.get('name');
+            const userPhone = urlParams.get('phone');
+            const userEmail = urlParams.get('email');
+
+            // Get logged in user data
+            appState.loggedInUser.id = localStorage.getItem('userId');
+            appState.loggedInUser.phone = localStorage.getItem('userPhone');
+
+            if (!userPhone) {
+                showToast('User information not found. Redirecting...', 'error');
+                setTimeout(() => {
+                    goBack();
+                }, 2000);
+                return;
+            }
+
+            // Set current user data
+            appState.currentUser = {
+                id: userId,
+                name: userName || userPhone, // Use phone as fallback for name
+                phone: userPhone,
+                email: userEmail || null,
+                isOnline: false, // Will be updated from server
+                lastSeen: null, // Will be fetched from server
+                contacts: [] // Will be fetched from server
+            };
+
+            // Load additional user data from server
+            loadUserDataFromServer();
+        }
+
+        /**
+         * Checks if the current user is in contacts.
+         * @returns {boolean} True if in contacts, false otherwise.
+         */
+        function isUserInContacts() {
+            const contacts = JSON.parse(localStorage.getItem('contacts') || '[]');
+            return contacts.some(c => c.phone === appState.currentUser.phone);
+        }
+
+        async function loadUserDataFromServer() {
+            try {
+                // Get user's online status and additional info
+                const data = await jsonpRequest(`${API_URL}?action=findUser&phone=${appState.currentUser.phone}`);
+
+                if (data.status === 'found') {
+                    appState.currentUser.isOnline = true; // Assume online if found
+                    appState.currentUser.id = data.userId;
+                    if (data.name) {
+                        appState.currentUser.name = data.name;
+                    }
+                }
+
+                // Get user's contacts count
+                if (appState.loggedInUser.id) {
+                    const contactsData = await jsonpRequest(`${API_URL}?action=login&phone=${appState.loggedInUser.phone}`);
+                    if (contactsData && contactsData.contacts) {
+                        appState.currentUser.contacts = contactsData.contacts;
+                    }
+                }
+
+                renderUserProfile();
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                // Render with local data even if server fails
+                renderUserProfile();
+            }
+        }
+
+        /**
+         * Formats last seen timestamp for display.
+         * @param {string} lastSeen - The last seen timestamp.
+         * @returns {string} Formatted last seen text.
+         */
+        function formatLastSeen(lastSeen) {
+            if (!lastSeen) return 'Never';
+
+            const date = new Date(lastSeen);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / (1000 * 60));
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins} minutes ago`;
+            if (diffHours < 24) return `${diffHours} hours ago`;
+            if (diffDays < 7) return `${diffDays} days ago`;
+
+            return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        }
+
+        function renderUserProfile() {
+            const profileContainer = document.getElementById('user-profile');
+            const actionsContainer = document.getElementById('user-actions');
+
+            const user = appState.currentUser;
+
+            profileContainer.innerHTML = `
+                <div class="user-avatar">
+                    ${user.name.charAt(0).toUpperCase()}
+                </div>
+
+                <div class="user-name">${user.name}</div>
+                <div class="user-phone">${user.phone}</div>
+
+                <!-- Online status moved directly below phone number -->
+                <div class="online-status">
+                    <div class="status-indicator ${user.isOnline ? '' : 'offline'}"></div>
+                    <span>${user.isOnline ? 'Online' : (user.lastSeen ? 'Last seen ' + formatLastSeen(user.lastSeen) : 'Offline')}</span>
+                </div>
+
+                ${user.email ? `<div class="user-email">${user.email}</div>` : ''}
+
+                <!-- User contacts count -->
+                <div class="user-contacts-info" style="text-align: center; margin-bottom: 20px;">
+                    <span style="color: var(--list-item-subtext-color); font-size: 14px;">
+                        ${user.contacts ? user.contacts.length + ' contacts' : 'No contacts'}
+                    </span>
+                </div>
+
+                <div class="user-info-section">
+                    <div class="info-title">Contact Information</div>
+
+                    <div class="info-item">
+                        <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                        </svg>
+                        <div>
+                            <div class="info-text">${user.phone}</div>
+                            <div class="info-subtext">Phone Number</div>
+                        </div>
+                    </div>
+
+                    ${user.email ? `
+                    <div class="info-item">
+                        <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        <div>
+                            <div class="info-text">${user.email}</div>
+                            <div class="info-subtext">Email Address</div>
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <div class="info-item">
+                        <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                        <div>
+                            <div class="info-text">${user.name}</div>
+                            <div class="info-subtext">Display Name</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Show/hide "Add to Contacts" button based on whether contact is saved
+            const isInContacts = isUserInContacts();
+            const addToContactsBtn = actionsContainer.querySelector('.dropdown-item');
+            if (addToContactsBtn) {
+                addToContactsBtn.style.display = isInContacts ? 'none' : 'flex';
+            }
+
+            // Show actions
+            actionsContainer.style.display = 'flex';
+        }
+
+        function startChatWithUser() {
+            // Navigate to main app with chat parameters in same tab
+            const chatUrl = `index.html?chatWith=${encodeURIComponent(appState.currentUser.phone)}`;
+            window.location.href = chatUrl;
+        }
+
+        function toggleContactMenu() {
+            const dropdown = document.getElementById('contact-dropdown');
+            const isVisible = dropdown.classList.contains('show');
+
+            if (isVisible) {
+                dropdown.classList.remove('show');
+            } else {
+                dropdown.classList.add('show');
+                // Close menu when clicking outside
+                setTimeout(() => {
+                    document.addEventListener('click', function closeMenu(e) {
+                        if (!dropdown.contains(e.target) && e.target.id !== 'contact-menu-btn') {
+                            dropdown.classList.remove('show');
+                            document.removeEventListener('click', closeMenu);
+                        }
+                    });
+                }, 0);
+            }
+        }
+
+        async function addToContacts() {
+            const user = appState.currentUser;
+            toggleContactMenu(); // Close the dropdown
+
+            // Navigate to add contact page with pre-filled data in same tab
+            const addContactUrl = `add-contact.html?name=${encodeURIComponent(user.name)}&phone=${encodeURIComponent(user.phone)}&email=${encodeURIComponent(user.email || '')}`;
+            window.location.href = addContactUrl;
+        }
+
+        function shareContact() {
+            const user = appState.currentUser;
+            toggleContactMenu(); // Close the dropdown
+
+            // Create share text with user information
+            const shareText = `Contact Information:\nName: ${user.name}\nPhone: ${user.phone}${user.email ? `\nEmail: ${user.email}` : ''}`;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Contact Information',
+                    text: shareText,
+                }).catch(err => {
+                    console.log('Error sharing:', err);
+                    fallbackShare(shareText);
+                });
+            } else {
+                fallbackShare(shareText);
+            }
+        }
+
+        function fallbackShare(text) {
+            // Create a temporary textarea to copy text to clipboard
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+
+            try {
+                document.execCommand('copy');
+                showToast('Contact information copied to clipboard!', 'success');
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+                showToast('Unable to share contact. Please copy manually.', 'error');
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        async function blockContact() {
+            const user = appState.currentUser;
+            toggleContactMenu(); // Close the dropdown
+
+            // Show confirmation dialog
+            if (confirm(`Are you sure you want to block ${user.name}? You won't receive messages from this contact.`)) {
+                try {
+                    // Here you would typically call an API to block the contact
+                    // For now, we'll just show a toast
+                    showToast(`${user.name} has been blocked.`, 'success');
+
+                    // You could also redirect or disable further interactions
+                    // window.location.href = 'index.html';
+                } catch (error) {
+                    showToast('Failed to block contact. Please try again.', 'error');
+                }
+            }
+        }
+
+        // =================================================================================
+        // API Functions
+        // =================================================================================
+        function jsonpRequest(url) {
+            return new Promise((resolve, reject) => {
+                const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+                let script;
+                let timeoutId;
+                let hasResolved = false;
+
+                const cleanup = () => {
+                    if (hasResolved) return;
+                    hasResolved = true;
+                    clearTimeout(timeoutId);
+                    if (window[callbackName]) {
+                        delete window[callbackName];
+                    }
+                    if (script && script.parentNode) {
+                        script.parentNode.removeChild(script);
+                    }
+                };
+
+                timeoutId = setTimeout(() => {
+                    cleanup();
+                    resolve({ status: 'error', message: 'Request timed out.' });
+                }, 25000);
+
+                window[callbackName] = function(data) {
+                    cleanup();
+                    resolve(data);
+                };
+
+                setTimeout(() => {
+                    if (hasResolved) return;
+
+                    script = document.createElement('script');
+                    script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
+
+                    script.onload = () => {};
+                    script.onerror = () => {
+                        if (!hasResolved) {
+                            cleanup();
+                            resolve({ status: 'error', message: 'Network error.' });
+                        }
+                    };
+
+                    document.body.appendChild(script);
+                }, 10);
+            });
+        }
+
+        // =================================================================================
+        // Toast Notifications
+        // =================================================================================
+        function showToast(message, type = 'info', duration = 3000) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+
+            container.appendChild(toast);
+
+            // Animate out and remove
+            setTimeout(() => {
+                toast.style.animation = 'toast-out 0.5s ease forwards';
+                toast.addEventListener('animationend', () => {
+                    if (container.contains(toast)) {
+                        container.removeChild(toast);
+                    }
+                });
+            }, duration);
+        }
+
+        // =================================================================================
+        // Initialization
+        // =================================================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Apply theme on initial load
+            applyTheme(localStorage.getItem('theme') || 'light');
+
+            // Load user details
+            loadUserDetails();
+        });
+    </script>
+</body>
+</html>

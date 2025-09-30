@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💬</text></svg>">
+    <title>Digidad - Profile</title>
+    <style>
+        :root {
+            --body-bg: #E9EBEE;
+            --container-bg: #FFFFFF;
+            --container-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            --container-border: 1px solid #E0E0E0;
+            --text-color: #1c1e21;
+            --text-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --input-border: #ccd0d5;
+            --input-bg: #f0f2f5;
+            --input-placeholder-color: #65676b;
+            --button-bg: #e4e6eb;
+            --button-hover-bg: #d8dade;
+            --button-text-color: #050505;
+            --button-disabled-bg: #e4e6eb;
+            --list-item-border: #ced0d4;
+            --list-item-hover-bg: #f2f2f2;
+            --list-item-subtext-color: #65676b;
+            --header-button-color: #65676b;
+        }
+
+        body.dark-mode {
+            --body-bg: #18191a;
+            --container-bg: #242526;
+            --container-border: 1px solid #3a3b3c;
+            --text-color: #e4e6eb;
+            --input-border: #3a3b3c;
+            --input-bg: #3a3b3c;
+            --button-bg: #3a3b3c;
+            --button-hover-bg: #4e4f50;
+            --button-text-color: #e4e6eb;
+            --list-item-border: #3a3b3c;
+            --list-item-hover-bg: #4e4f50;
+            --list-item-subtext-color: #b0b3b8;
+        }
+
+        @keyframes fadeInScaleUp {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--body-bg);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            min-height: 100dvh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            background: var(--container-bg);
+            width: 100%;
+            max-width: 480px;
+            height: 100vh;
+            height: 100dvh;
+            margin: 0 auto;
+            box-shadow: 0 0 30px rgba(0,0,0,0.1);
+            transition: background 0.5s ease, border 0.5s ease;
+            animation: fadeInScaleUp 0.6s ease-out forwards;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 20px;
+            border-bottom: 1px solid var(--list-item-border);
+            transition: border-color 0.5s ease;
+            flex-shrink: 0;
+        }
+
+        .profile-header .back-button {
+            background: none;
+            color: var(--header-button-color);
+            padding: 0;
+            font-size: 24px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 50%;
+            transition: background-color 0.3s;
+        }
+
+        .profile-header .back-button:hover {
+            background-color: var(--list-item-hover-bg);
+        }
+
+        .profile-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: var(--container-bg);
+            color: var(--text-color);
+        }
+
+        .profile-section {
+            background: var(--input-bg);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0084ff, #44c8f5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 32px;
+            margin-bottom: 16px;
+        }
+
+        .profile-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--text-color);
+            margin-bottom: 8px;
+        }
+
+        .profile-phone {
+            color: var(--list-item-subtext-color);
+            font-size: 16px;
+            margin-bottom: 16px;
+        }
+
+        .profile-actions {
+            padding: 20px;
+            margin-top: auto;
+            background: var(--container-bg);
+            border-top: 1px solid var(--list-item-border);
+        }
+
+        .action-button {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            background: #e53935;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-bottom: 12px;
+        }
+
+        .action-button:hover {
+            background: #c62828;
+        }
+
+        .secondary-button {
+            background: var(--button-bg);
+            color: var(--button-text-color);
+            border: 1px solid var(--input-border);
+        }
+
+        .secondary-button:hover {
+            background: var(--button-hover-bg);
+        }
+
+        input[type="text"] {
+            padding: 12px;
+            width: calc(100% - 26px);
+            margin-bottom: 10px;
+            border: 1px solid var(--input-border);
+            background: var(--input-bg);
+            border-radius: 8px;
+            font-size: 16px;
+            color: var(--text-color);
+            transition: background 0.5s ease, border 0.5s ease, color 0.5s ease;
+            box-sizing: border-box;
+        }
+
+        input[type="text"]::placeholder {
+            color: var(--input-placeholder-color);
+            transition: color 0.5s ease;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--header-button-color);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background-color 0.3s;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--list-item-hover-bg);
+        }
+
+        /* Loading spinner */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast notifications */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toast {
+            padding: 10px 20px;
+            border-radius: 20px;
+            color: white;
+            font-size: 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            animation: toast-in 0.4s ease forwards;
+            opacity: 0;
+        }
+
+        .toast.success { background-color: rgba(40, 167, 69, 0.9); }
+        .toast.error { background-color: rgba(229, 57, 53, 0.9); }
+        .toast.info { background-color: rgba(52, 152, 219, 0.9); }
+
+        @keyframes toast-in { to { opacity: 1; transform: translateY(0); } }
+
+        /* ===== ENHANCED MOBILE-FIRST RESPONSIVE DESIGN SYSTEM ===== */
+
+        /* Base responsive variables and utilities */
+        :root {
+            --mobile-padding: 12px;
+            --tablet-padding: 16px;
+            --desktop-padding: 20px;
+            --mobile-touch-target: 48px; /* Minimum touch target size */
+            --mobile-font-scale: 0.95;
+            --tablet-font-scale: 1;
+            --desktop-font-scale: 1.05;
+        }
+
+        /* Mobile First Approach - Small Mobile Devices (up to 480px) */
+        @media screen and (max-width: 480px) {
+            body {
+                font-size: calc(16px * var(--mobile-font-scale));
+            }
+
+            .container {
+                width: 100vw;
+                max-width: 100vw;
+                height: 100vh;
+                height: 100dvh;
+                margin: 0;
+                border-radius: 0;
+                border: none;
+                box-shadow: none;
+            }
+
+            /* Enhanced header and content padding - comfortable touch spacing */
+            .profile-header {
+                padding: 8px var(--mobile-padding);
+            }
+
+            .profile-content {
+                padding: var(--mobile-padding);
+                flex-grow: 1;
+                overflow-y: auto;
+            }
+
+            .profile-actions {
+                padding: var(--mobile-padding);
+            }
+
+            /* Touch-friendly buttons */
+            button,
+            .action-button,
+            .secondary-button {
+                min-height: var(--mobile-touch-target);
+                padding: 12px 16px;
+                font-size: 16px; /* Prevents zoom on iOS */
+                border-radius: 8px;
+            }
+
+            /* Back button and theme toggle */
+            .back-button,
+            .theme-toggle {
+                min-width: 44px;
+                min-height: 44px;
+                padding: 8px;
+            }
+
+            /* Profile sections */
+            .profile-section {
+                padding: 16px var(--mobile-padding);
+                border-radius: 10px;
+                margin-bottom: 12px;
+            }
+
+            /* Avatar sizing for mobile */
+            .profile-avatar {
+                width: 75px;
+                height: 75px;
+                font-size: 30px;
+            }
+
+            /* Typography adjustments */
+            .profile-name {
+                font-size: 24px;
+                margin-bottom: 6px;
+            }
+
+            .profile-phone {
+                font-size: 16px;
+                margin-bottom: 12px;
+            }
+
+            /* Safe area handling for devices with notches */
+            .container {
+                padding-top: env(safe-area-inset-top, 0px);
+            }
+
+            /* Modal sizing */
+            .modal-content,
+            .name-modal-content {
+                width: 90vw;
+                max-width: 320px;
+                margin: 0 5vw;
+            }
+
+            /* Better spacing for profile content */
+            .profile-content {
+                padding-bottom: 20px;
+            }
+
+            /* Enhanced input styling for mobile */
+            input[type="text"] {
+                padding: 16px;
+                font-size: 16px;
+                border-radius: 8px;
+                min-height: 22px;
+            }
+        }
+
+        /* Large Mobile Devices and Small Tablets (481px to 768px) */
+        @media screen and (min-width: 481px) and (max-width: 768px) {
+            .container {
+                max-width: 420px;
+            }
+
+            .profile-header,
+            .profile-content {
+                padding: 18px;
+            }
+
+            button,
+            .action-button,
+            .secondary-button {
+                min-height: 48px;
+                padding: 16px 20px;
+            }
+        }
+
+        /* Tablets (769px to 1024px) */
+        @media screen and (min-width: 769px) and (max-width: 1024px) {
+            .container {
+                max-width: 480px;
+            }
+
+            .profile-header,
+            .profile-content {
+                padding: var(--tablet-padding);
+            }
+
+            button,
+            .action-button,
+            .secondary-button {
+                min-height: 50px;
+                padding: 16px 22px;
+            }
+        }
+
+        /* Desktop (1025px and up) */
+        @media screen and (min-width: 1025px) {
+            .container {
+                max-width: 480px;
+                box-shadow: 0 0 30px rgba(0,0,0,0.1);
+            }
+
+            .profile-header,
+            .profile-content {
+                padding: var(--desktop-padding);
+            }
+
+            button,
+            .action-button,
+            .secondary-button {
+                padding: 18px 26px;
+            }
+        }
+
+        /* Landscape orientation adjustments for mobile */
+        @media screen and (max-width: 768px) and (orientation: landscape) {
+            .container {
+                height: 100vh;
+                height: 100dvh;
+            }
+
+            .profile-header,
+            .profile-content {
+                padding-top: 8px;
+                padding-bottom: 8px;
+            }
+        }
+
+        /* High DPI displays */
+        @media screen and (-webkit-min-device-pixel-ratio: 2),
+                screen and (min-resolution: 192dpi) {
+            .container {
+                -webkit-backface-visibility: hidden;
+                backface-visibility: hidden;
+            }
+        }
+
+        /* Reduced motion preferences */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <button class="back-button" onclick="goBack()" title="Go Back">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+            </button>
+            <div style="flex-grow: 1;">
+                <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Your Profile</h3>
+                <div style="font-size: 12px; color: var(--list-item-subtext-color); margin-top: 2px;">Manage your account</div>
+            </div>
+            <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">🌙</button>
+        </div>
+
+        <!-- Profile Content -->
+        <div class="profile-content" id="profile-content">
+            <!-- Profile details will be rendered here by JS -->
+        </div>
+
+        <!-- Profile Actions -->
+        <div class="profile-actions">
+            <button class="action-button" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <script>
+        // =================================================================================
+        // App State & Constants
+        // =================================================================================
+        const API_URL = "https://script.google.com/macros/s/AKfycbz6ia3rb8D2BiH_JBMgdxgcNMQtpxYztarZ7TtIKax_9uzLFgjeULFogDWHH_K3YJyT/exec";
+        const appState = {
+            userId: null,
+            userName: null,
+            userPhone: null
+        };
+
+        // =================================================================================
+        // Theme Management
+        // =================================================================================
+        function applyTheme(theme) {
+            const body = document.body;
+            const toggle = document.getElementById('theme-toggle');
+            if (theme === 'dark') {
+                body.classList.add('dark-mode');
+                toggle.textContent = '☀️';
+            } else {
+                body.classList.remove('dark-mode');
+                toggle.textContent = '🌙';
+            }
+        }
+
+        function toggleTheme() {
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            localStorage.setItem('theme', newTheme);
+            applyTheme(newTheme);
+        }
+
+        // =================================================================================
+        // Toast Notifications
+        // =================================================================================
+        function showToast(message, type = 'info', duration = 3000) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+
+            container.appendChild(toast);
+
+            // Animate out and remove
+            setTimeout(() => {
+                toast.style.animation = 'toast-out 0.5s ease forwards';
+                toast.addEventListener('animationend', () => {
+                    if (container.contains(toast)) {
+                        container.removeChild(toast);
+                    }
+                });
+            }, duration);
+        }
+
+        // =================================================================================
+        // Navigation
+        // =================================================================================
+        function goBack() {
+            // Try to go back in history, if not possible, redirect to main app
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = 'index.html';
+            }
+        }
+
+        // =================================================================================
+        // Profile Management
+        // =================================================================================
+        function loadProfile() {
+            // Get user data from URL parameters or localStorage
+            const urlParams = new URLSearchParams(window.location.search);
+            appState.userId = urlParams.get('userId') || localStorage.getItem('userId');
+            appState.userName = urlParams.get('userName') || localStorage.getItem('userName');
+            appState.userPhone = urlParams.get('userPhone') || localStorage.getItem('userPhone');
+
+            if (!appState.userId) {
+                showToast('User not logged in. Redirecting...', 'error');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+                return;
+            }
+
+            renderProfile();
+        }
+
+        function renderProfile() {
+            const profileContentDiv = document.getElementById("profile-content");
+
+            if (!profileContentDiv) {
+                console.error('[DEBUG] profile-content div not found');
+                return;
+            }
+
+            const userPhone = appState.userPhone || 'N/A';
+            const userName = appState.userName || '';
+
+            let content = `
+                <div class="profile-section">
+                    <div class="profile-avatar">
+                        ${userName ? userName.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                    <div class="profile-name">${userName || 'No name set'}</div>
+                    <div class="profile-phone">${userPhone}</div>
+                </div>
+            `;
+
+            if (userName) {
+                content += `
+                    <div class="profile-section">
+                        <h4 style="margin: 0 0 16px 0; color: var(--text-color);">Profile Actions</h4>
+                        <button class="secondary-button" onclick="promptToEditUserName()" style="width: 100%; padding: 12px; margin-bottom: 12px; background: var(--button-bg); color: var(--button-text-color); border: 1px solid var(--input-border); border-radius: 8px; cursor: pointer;">Edit Name</button>
+                        <button class="secondary-button" onclick="refreshProfile()" style="width: 100%; padding: 12px;">Refresh Profile</button>
+                    </div>
+                `;
+            } else {
+                content += `
+                    <div class="profile-section">
+                        <h4 style="margin: 0 0 16px 0; color: var(--text-color);">Set Your Name</h4>
+                        <input type="text" id="newUserName" placeholder="Enter your name..." autocomplete="name" style="margin-bottom: 16px;">
+                        <button class="secondary-button" onclick="saveUserNameFromInput()" style="width: 100%; padding: 12px; background: #0084ff; color: white; border: none;">Save Name</button>
+                    </div>
+                `;
+            }
+
+            profileContentDiv.innerHTML = content;
+        }
+
+        function promptToEditUserName() {
+            const newName = prompt("Enter your new name:", appState.userName);
+            if (newName && newName.trim() !== "") {
+                saveUserName(newName.trim());
+            }
+        }
+
+        async function saveUserName(newName) {
+            if (!newName || !newName.trim()) {
+                showToast("Name cannot be empty.", 'error');
+                return;
+            }
+
+            const nameToSave = newName.trim();
+            showToast("Saving...", 'info');
+
+            try {
+                const data = await jsonpRequest(`${API_URL}?action=setUserName&userId=${appState.userId}&name=${encodeURIComponent(newName.trim())}`);
+                if (data.status === 'success') {
+                    appState.userName = newName.trim();
+                    localStorage.setItem('userName', nameToSave);
+                    showToast("Name updated successfully!", 'success');
+                    renderProfile(); // Refresh the profile screen
+                } else {
+                    showToast("Error: Could not save the name.", 'error');
+                }
+            } catch (error) {
+                showToast("Request failed. Check connection.", 'error');
+            }
+        }
+
+        function saveUserNameFromInput() {
+            const newNameInput = document.getElementById("newUserName");
+            if (newNameInput) {
+                saveUserName(newNameInput.value);
+            }
+        }
+
+        async function refreshProfile() {
+            showToast("Refreshing...", 'info');
+            try {
+                const data = await jsonpRequest(`${API_URL}?action=login&phone=${appState.userPhone}`);
+                if (data.status !== 'error' && data.userId) {
+                    appState.userName = data.name || '';
+                    localStorage.setItem('userName', appState.userName);
+                    showToast("Profile refreshed!", 'success');
+                    renderProfile();
+                } else {
+                    showToast("Failed to refresh profile.", 'error');
+                }
+            } catch (error) {
+                showToast("Request failed. Check connection.", 'error');
+            }
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                // Clear session from localStorage
+                localStorage.removeItem('userId');
+                localStorage.removeItem('userPhone');
+                localStorage.removeItem('userName');
+
+                // Reset app state
+                appState.userId = null;
+                appState.userName = null;
+                appState.userPhone = null;
+
+                showToast('Logged out successfully!', 'success');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
+            }
+        }
+
+        // =================================================================================
+        // API Functions
+        // =================================================================================
+        function jsonpRequest(url) {
+            return new Promise((resolve, reject) => {
+                const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+                let script;
+                let timeoutId;
+                let hasResolved = false;
+
+                const cleanup = () => {
+                    if (hasResolved) return;
+                    hasResolved = true;
+                    clearTimeout(timeoutId);
+                    if (window[callbackName]) {
+                        delete window[callbackName];
+                    }
+                    if (script && script.parentNode) {
+                        script.parentNode.removeChild(script);
+                    }
+                };
+
+                timeoutId = setTimeout(() => {
+                    cleanup();
+                    resolve({ status: 'error', message: 'Request timed out.' });
+                }, 25000);
+
+                window[callbackName] = function(data) {
+                    cleanup();
+                    resolve(data);
+                };
+
+                setTimeout(() => {
+                    if (hasResolved) return;
+
+                    script = document.createElement('script');
+                    script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
+
+                    script.onload = () => {};
+                    script.onerror = () => {
+                        if (!hasResolved) {
+                            cleanup();
+                            resolve({ status: 'error', message: 'Network error.' });
+                        }
+                    };
+
+                    document.body.appendChild(script);
+                }, 10);
+            });
+        }
+
+        // =================================================================================
+        // Initialization
+        // =================================================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Apply theme on initial load
+            applyTheme(localStorage.getItem('theme') || 'light');
+
+            // Load profile data
+            loadProfile();
+        });
+    </script>
+</body>
+</html>

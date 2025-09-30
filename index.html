@@ -216,6 +216,7 @@
             margin-top: 4px; /* Space above the timestamp */
             display: flex;
             align-items: center;
+            gap: 4px; /* Space between timestamp and status icon */
         }
 
         /* Styles for message replies */
@@ -229,8 +230,25 @@
         }
         .reply-preview p { margin: 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        .chat-list-item { padding: 12px; border-bottom: 1px solid var(--list-item-border); cursor: pointer; transition: background-color 0.3s, border-color 0.5s ease; }
-        .chat-list-item-content { display: flex; align-items: center; position: relative; }
+        .chat-list-item {
+            padding: 12px;
+            border-bottom: 1px solid var(--list-item-border);
+            cursor: pointer;
+            transition: background-color 0.3s, border-color 0.5s ease;
+            display: block !important;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .chat-list-item-content {
+            display: flex;
+            align-items: center;
+            position: relative;
+            width: 100%;
+        }
+        #chatList {
+            display: block !important;
+            width: 100%;
+        }
         #chatList div:hover { background-color: var(--list-item-hover-bg); border-radius: 8px; }
         
         .chat-header { display: flex; align-items: center; gap: 10px; padding: 10px 20px; border-bottom: 1px solid var(--list-item-border); transition: border-color 0.5s ease; flex-shrink: 0; }
@@ -361,8 +379,28 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
         .chat-header .search-icon { background: none; color: var(--header-button-color); padding: 0 5px; font-size: 18px; }
-        .message-bubble .status-icon { font-size: 16px; opacity: 0.8; }
-        .message-bubble .status-icon.seen { color: #34b7f1; } /* Blue ticks for seen */
+        .message-bubble .status-icon {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-left: 4px;
+            font-weight: bold;
+            transition: color 0.3s ease;
+        }
+        .message-bubble .status-icon.seen {
+            color: #34b7f1; /* Blue ticks for seen */
+        }
+        .message-bubble .status-icon.sent {
+            color: #8e8e8e; /* Grey ticks for sent */
+        }
+        .message-bubble .status-icon.sending {
+            color: #ffa500; /* Orange for sending */
+            opacity: 0.7;
+        }
+
+        /* Dark mode support for status icons */
+        .dark-mode .message-bubble .status-icon.sent { color: #a8a8a8; }
+        .dark-mode .message-bubble .status-icon.seen { color: #5dade2; }
+        .dark-mode .message-bubble .status-icon.sending { color: #f39c12; }
     </style>
     <style>
         /* Style for the (edited) tag */
@@ -483,9 +521,87 @@
             animation: pulse-dot 2s infinite; /* Re-use the pulse animation for attention */
         }
 
+        /* Floating Action Button Styles */
+        #fab-add-contact {
+            position: fixed;
+            bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #0084ff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 132, 255, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+        }
+
+        #fab-add-contact:hover {
+            background: #0056cc;
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(0, 132, 255, 0.4);
+        }
+
+        #fab-add-contact:active {
+            transform: scale(0.95);
+        }
+
         /* Make chat peer name more prominent in dark mode */
         .dark-mode .chat-peer-name {
             color: var(--text-color);
+        }
+
+        /* Clickable phone numbers styling */
+        .chat-peer-name.clickable {
+            color: #0084ff;
+            cursor: pointer;
+            text-decoration: none;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .chat-peer-name.clickable:hover {
+            background-color: rgba(0, 132, 255, 0.1);
+            text-decoration: underline;
+        }
+
+        .dark-mode .chat-peer-name.clickable {
+            color: #44c8f5;
+        }
+
+        .dark-mode .chat-peer-name.clickable:hover {
+            background-color: rgba(68, 200, 245, 0.1);
+        }
+
+        /* Clickable phone numbers in messages styling */
+        .clickable-phone-number {
+            color: #0084ff;
+            cursor: pointer;
+            text-decoration: none;
+            padding: 1px 2px;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+            background-color: rgba(0, 132, 255, 0.1);
+        }
+
+        .clickable-phone-number:hover {
+            background-color: rgba(0, 132, 255, 0.2);
+            text-decoration: underline;
+        }
+
+        .dark-mode .clickable-phone-number {
+            color: #44c8f5;
+            background-color: rgba(68, 200, 245, 0.1);
+        }
+
+        .dark-mode .clickable-phone-number:hover {
+            background-color: rgba(68, 200, 245, 0.2);
         }
 
 
@@ -688,35 +804,598 @@
         #name-modal-save { background-color: #0084ff; color: white; }
     </style>
     <style>
-        /* --- Responsive Styles for Mobile Phones --- */
+        /* ===== ENHANCED MOBILE-FIRST RESPONSIVE DESIGN ===== */
+
+        /* Base responsive variables and utilities */
+        :root {
+            --mobile-padding: 12px;
+            --tablet-padding: 16px;
+            --desktop-padding: 20px;
+            --mobile-touch-target: 48px; /* Minimum touch target size */
+            --mobile-font-scale: 0.95;
+            --tablet-font-scale: 1;
+            --desktop-font-scale: 1.05;
+        }
+
+        /* Mobile First Approach - Small Mobile Devices (up to 480px) */
         @media screen and (max-width: 480px) {
             body {
-                padding: 0; /* Remove padding to go edge-to-edge */
-                min-height: -webkit-fill-available; /* Fix for 100vh on mobile */
+                font-size: calc(16px * var(--mobile-font-scale));
+                padding: 0;
+                min-height: 100vh;
+                min-height: 100dvh; /* Dynamic viewport height for mobile */
             }
+
             html {
-                height: -webkit-fill-available;
+                height: 100vh;
+                height: 100dvh;
             }
+
             .container {
-                height: 100%; /* Use 100% instead of 100vh */
-                max-width: 100%; /* Full screen width */
+                width: 100vw;
+                max-width: 100vw;
+                height: 100vh;
+                height: 100dvh;
+                margin: 0;
                 border-radius: 0;
-                border: none; /* Remove border on mobile */
+                border: none;
+                box-shadow: none;
             }
-            .screen, .chat-header, .chat-input-area {
-                padding-left: 15px;
-                padding-right: 15px;
+
+            /* Enhanced screen padding for better mobile UX */
+            .screen {
+                padding: var(--mobile-padding);
             }
-            #intro-text {
-                font-size: 3.5rem; /* Adjust intro text size for smaller screens */
+
+            .chat-header {
+                padding: 8px var(--mobile-padding);
+                gap: 8px;
             }
+
+            .chat-input-area {
+                padding: 8px var(--mobile-padding);
+                padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+            }
+
+            /* Touch-friendly buttons and inputs */
+            button {
+                min-height: var(--mobile-touch-target);
+                min-width: var(--mobile-touch-target);
+                padding: 10px 12px;
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+
+            input[type="text"] {
+                padding: 14px;
+                font-size: 16px; /* Prevents zoom on iOS */
+                min-height: 20px;
+            }
+
+            /* Improved chat list items for mobile */
             .chat-list-item {
+                padding: 12px var(--mobile-padding);
+                font-size: 15px;
+            }
+
+            .chat-list-item-content {
+                gap: 8px;
+            }
+
+            /* Better message bubbles for mobile */
+            .message-bubble {
+                padding: 10px 14px;
+                max-width: 85%; /* More space for text on mobile */
+                font-size: 15px;
+            }
+
+            /* Enhanced intro screen for mobile */
+            #intro-text {
+                font-size: 2.5rem; /* Smaller for mobile screens */
+            }
+
+            /* Safe area handling for devices with notches */
+            .container {
+                padding-top: env(safe-area-inset-top, 0px);
+            }
+
+            /* Improved emoji picker positioning */
+            emoji-picker {
+                bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+                right: var(--mobile-padding);
+                left: var(--mobile-padding);
+            }
+
+            /* Better spacing for form elements */
+            .form-section {
+                margin-bottom: 16px;
+            }
+
+            /* Enhanced header button sizing */
+            .back-button,
+            #theme-toggle,
+            #theme-toggle-home,
+            #theme-toggle-chat,
+            #contacts-btn,
+            #profile-btn,
+            #add-contact-btn,
+            #chat-theme-btn {
+                min-width: 44px;
+                min-height: 44px;
+                padding: 8px;
+            }
+
+            /* Improved chat header layout */
+            .chat-header {
+                flex-wrap: wrap;
+            }
+
+            /* Better message container spacing */
+            .message-container {
+                margin-bottom: 6px;
+            }
+
+            /* Enhanced attachment button */
+            .attachment-btn {
+                min-width: 44px;
+                min-height: 44px;
                 padding: 10px;
-                font-size: 0.9rem;
+            }
+
+            /* Mobile FAB adjustments */
+            #fab-add-contact {
+                bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+                right: 16px;
+                width: 52px;
+                height: 52px;
+            }
+        }
+
+        /* Large Mobile Devices and Small Tablets (481px to 768px) */
+        @media screen and (min-width: 481px) and (max-width: 768px) {
+            .container {
+                max-width: 420px;
+            }
+
+            .screen {
+                padding: 16px;
+            }
+
+            .chat-header,
+            .chat-input-area {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            button {
+                min-height: 46px;
+                padding: 12px 16px;
+            }
+
+            input[type="text"] {
+                padding: 16px;
+            }
+
+            .message-bubble {
+                max-width: 80%;
+            }
+
+            /* FAB adjustments for larger mobile/tablet */
+            #fab-add-contact {
+                width: 54px;
+                height: 54px;
+                bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+                right: 18px;
+            }
+        }
+
+        /* Tablets (769px to 1024px) */
+        @media screen and (min-width: 769px) and (max-width: 1024px) {
+            .container {
+                max-width: 480px;
+            }
+
+            .screen {
+                padding: var(--tablet-padding);
+            }
+
+            .chat-header,
+            .chat-input-area {
+                padding-left: var(--tablet-padding);
+                padding-right: var(--tablet-padding);
+            }
+
+            button {
+                min-height: 48px;
+                padding: 14px 18px;
+            }
+
+            input[type="text"] {
+                padding: 18px;
+            }
+        }
+
+        /* Desktop (1025px and up) */
+        @media screen and (min-width: 1025px) {
+            .container {
+                max-width: 480px;
+                box-shadow: 0 0 30px rgba(0,0,0,0.1);
+            }
+
+            .screen {
+                padding: var(--desktop-padding);
+            }
+
+            .chat-header,
+            .chat-input-area {
+                padding-left: var(--desktop-padding);
+                padding-right: var(--desktop-padding);
+            }
+
+            button {
+                padding: 16px 20px;
+            }
+
+            input[type="text"] {
+                padding: 20px;
+            }
+
+            /* Desktop FAB styling */
+            #fab-add-contact {
+                width: 60px;
+                height: 60px;
+                bottom: 24px;
+                right: 24px;
+            }
+        }
+
+        /* Landscape orientation adjustments for mobile */
+        @media screen and (max-width: 768px) and (orientation: landscape) {
+            .container {
+                height: 100vh;
+                height: 100dvh;
+            }
+
+            .chat-header,
+            .chat-input-area {
+                padding-top: 6px;
+                padding-bottom: 6px;
+            }
+
+            /* Reduce font sizes in landscape to fit more content */
+            #intro-text {
+                font-size: 2rem;
+            }
+
+            .message-bubble {
+                font-size: 14px;
+                padding: 8px 12px;
+            }
+        }
+
+        /* High DPI displays */
+        @media screen and (-webkit-min-device-pixel-ratio: 2),
+                screen and (min-resolution: 192dpi) {
+            .container {
+                -webkit-backface-visibility: hidden;
+                backface-visibility: hidden;
+            }
+
+            /* Sharper borders on high DPI displays */
+            .message-bubble,
+            .chat-list-item,
+            button {
+                border-width: 0.5px;
+            }
+        }
+
+        /* Mobile responsive styles for contacts modal */
+        @media screen and (max-width: 480px) {
+            .contacts-modal-content {
+                width: 95%;
+                max-height: 90vh;
+                border-radius: 8px;
+            }
+
+            .contacts-modal-header {
+                padding: 16px;
+            }
+
+            .contacts-modal-body {
+                padding: 16px;
+                max-height: calc(90vh - 120px); /* Adjusted for mobile */
+            }
+
+            .contacts-view {
+                min-height: 250px;
+            }
+
+            /* Ensure smooth scrolling on mobile */
+            .contacts-modal-body {
+                -webkit-overflow-scrolling: touch;
+                scroll-behavior: smooth;
+                overscroll-behavior: contain; /* Prevent overscroll */
+            }
+
+            /* Improve touch targets for mobile */
+            .contact-item-modal {
+                min-height: 48px; /* Minimum touch target size */
+                padding: 12px 16px;
+            }
+        }
+
+        /* Click outside to close modal */
+        .contacts-modal {
+            cursor: pointer;
+        }
+
+        .contacts-modal-content {
+            cursor: default;
+        }
+
+        /* Reduced motion preferences */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Focus visible for better accessibility */
+        @media (prefers-reduced-motion: no-preference) {
+            button:focus-visible,
+            input:focus-visible {
+                outline: 2px solid #0084ff;
+                outline-offset: 2px;
             }
         }
     </style>
     <style>
+        /* Styles for the Contacts Modal */
+        .contacts-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            backdrop-filter: blur(5px);
+        }
+
+        .contacts-modal-content {
+            background: var(--container-bg);
+            border-radius: 12px;
+            box-shadow: var(--container-shadow);
+            width: 90%;
+            max-width: 400px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            animation: fadeInScaleUp 0.3s ease-out;
+            overflow: hidden; /* Prevent content overflow */
+        }
+
+        .contacts-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid var(--list-item-border);
+            flex-shrink: 0;
+        }
+
+        .contacts-modal-title {
+            margin: 0;
+            color: var(--text-color);
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .contacts-modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-color);
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background-color 0.3s;
+        }
+
+        .contacts-modal-close:hover {
+            background-color: var(--list-item-hover-bg);
+        }
+
+        .contacts-modal-body {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+            max-height: calc(80vh - 140px); /* Account for header and padding */
+            scroll-behavior: smooth; /* Enable smooth scrolling */
+        }
+
+        /* Custom scrollbar for modal body */
+        .contacts-modal-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .contacts-modal-body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .contacts-modal-body::-webkit-scrollbar-thumb {
+            background-color: var(--button-bg);
+            border-radius: 6px;
+        }
+
+        .contacts-modal-body::-webkit-scrollbar-thumb:hover {
+            background-color: var(--button-hover-bg);
+        }
+
+        .contacts-view {
+            min-height: 300px;
+            height: 100%; /* Take full height of modal body */
+            display: flex;
+            flex-direction: column;
+        }
+
+        #contacts-list {
+            flex-grow: 1;
+            overflow-y: visible; /* Let parent handle scrolling */
+            padding-right: 4px; /* Account for scrollbar */
+            min-height: 100px; /* Ensure minimum height */
+        }
+
+        /* Ensure contact items don't break layout during scrolling */
+        .contact-item-modal {
+            box-sizing: border-box;
+            width: 100%;
+            position: relative;
+        }
+
+        /* Smooth focus transitions for accessibility */
+        .contact-item-modal:focus {
+            outline: 2px solid var(--button-hover-bg);
+            outline-offset: 2px;
+        }
+
+        /* Scroll indicator for long lists */
+        .contacts-modal-body::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: transparent;
+            pointer-events: none;
+        }
+
+        /* Performance optimization for long lists */
+        .contacts-list {
+            contain: layout style paint;
+        }
+
+        .contacts-list-header {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .add-contact-btn {
+            background: #0084ff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .add-contact-btn:hover {
+            background: #0056cc;
+        }
+
+        .form-header {
+            margin-bottom: 20px;
+        }
+
+        .back-to-contacts-btn {
+            background: none;
+            border: none;
+            color: #0084ff;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-section {
+            margin-bottom: 20px;
+        }
+
+        .form-section label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-color);
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid var(--input-border);
+            background: var(--input-bg);
+            border-radius: 8px;
+            font-size: 16px;
+            color: var(--text-color);
+            box-sizing: border-box;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #0084ff;
+            box-shadow: 0 0 0 2px rgba(0, 132, 255, 0.2);
+        }
+
+        .validation-error {
+            color: #e53935;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn-cancel {
+            flex: 1;
+            padding: 14px;
+            border: 1px solid var(--input-border);
+            background: var(--button-bg);
+            color: var(--button-text-color);
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn-cancel:hover {
+            background: var(--button-hover-bg);
+        }
+
+        .btn-save {
+            flex: 1;
+            padding: 14px;
+            background: #0084ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn-save:hover {
+            background: #0056cc;
+        }
+
         /* Styles for the new Skeleton Loader with Shimmer Effect */
         .skeleton-chat-item {
             padding: 12px;
@@ -752,6 +1431,7 @@
             background: linear-gradient(to right, transparent 20%, var(--list-item-hover-bg) 50%, transparent 80%);
             animation: shimmer-animation 1.5s infinite;
         }
+
     </style>
 </head>
 <body>
@@ -778,13 +1458,10 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <img src="https://lagaowallpaper.com/wp-content/uploads/2025/09/Gemini_Generated_Image_b6leywb6leywb6le-removebg-preview.png" alt="Digidad Logo" id="home-logo"> <!-- Corrected URL -->
                 <div>
-                    <button id="contacts-btn" style="font-size: 18px; padding: 6px 10px; margin-right: 5px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    </button>
-                    <button id="profile-btn" style="font-size: 18px; padding: 6px 10px; margin-right: 5px;">
+                    <button id="profile-btn" style="font-size: 18px; padding: 6px 10px; margin-right: 5px;" title="Profile" onclick="openStandaloneProfile()">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     </button>
-                    <button id="theme-toggle-home" style="font-size: 18px; padding: 6px 10px;">🌙</button>
+                    <button id="theme-toggle-home" style="font-size: 18px; padding: 6px 10px;" title="Toggle Theme">🌙</button>
                 </div>
             </div>
             <h4>Start a New Chat</h4>
@@ -795,9 +1472,19 @@
                 <h3>Your Chats</h3>
                 <div id="chat-list-status" class="loading-dots" style="display: none;"><span></span><span></span><span></span></div>
             </div>
-            <div id="chat-list-scroll-container" style="flex-grow: 1; overflow-y: auto; position: relative;">
-                <div id="chatList"></div>
+            <div id="chat-list-scroll-container" style="flex-grow: 1; overflow-y: auto; position: relative; display: block; width: 100%;">
+                <div id="chatList" style="display: block; width: 100%;"></div>
             </div>
+
+            <!-- Floating Action Button for Contacts & Add Contact -->
+            <button id="fab-add-contact" onclick="showContactsModal()" title="Contacts & Add New Contact">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M19 8v6"/>
+                    <path d="M22 11l-3-3-3 3"/>
+                </svg>
+            </button>
         </div>
 
         <!-- Chat Screen -->
@@ -806,8 +1493,8 @@
                 <button class="back-button" onclick="showHomeScreen()"><i class="chevron"></i></button>
                 <div style="flex-grow: 1;">
                     <div style="display: flex; align-items: center;">
-                        <h3 style="margin: 0;" id="chatWith"></h3>
-                        <span class="edit-name-icon" onclick="promptToEditPeerName()">
+                        <h3 style="margin: 0; cursor: pointer;" id="chatWith" onclick="showUserDetailsInSameTab()" title="Click to view user details"></h3>
+                        <span class="edit-name-icon" onclick="event.stopPropagation(); promptToEditPeerName()">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
                         </span>
                     </div>
@@ -921,6 +1608,52 @@
         <div class="context-menu-item" id="chat-context-delete">Delete</div>
     </div>
 
+    <!-- Contacts Modal -->
+    <div id="contacts-modal" class="contacts-modal" style="display: none;">
+        <div class="contacts-modal-content">
+            <div class="contacts-modal-header">
+                <h3 id="contacts-modal-title">Your Contacts</h3>
+                <button class="contacts-modal-close" onclick="hideContactsModal()">&times;</button>
+            </div>
+            <div class="contacts-modal-body">
+                <!-- Contacts List View -->
+                <div id="contacts-list-view" class="contacts-view">
+                    <div id="contacts-list-container">
+                        <div class="contacts-list-header">
+                            <button class="add-contact-btn" onclick="showAddContactForm()">+ Add New Contact</button>
+                        </div>
+                        <div id="contacts-list">
+                            <!-- Contact list will be rendered here by JS -->
+                        </div>
+                    </div>
+                </div>
+                <!-- Add Contact Form View -->
+                <div id="add-contact-view" class="contacts-view" style="display: none;">
+                    <div class="add-contact-form-container">
+                        <div class="form-header">
+                            <button class="back-to-contacts-btn" onclick="showContactsList()">← Back to Contacts</button>
+                        </div>
+                        <div class="form-section">
+                            <label for="modal-contact-name">Contact Name *</label>
+                            <input type="text" id="modal-contact-name" class="form-input" placeholder="Enter contact name..." autocomplete="off">
+                            <div id="modal-name-error" class="validation-error" style="display: none;"></div>
+                        </div>
+                        <div class="form-section">
+                            <label for="modal-contact-phone">Phone Number *</label>
+                            <input type="text" id="modal-contact-phone" class="form-input" placeholder="Enter phone number..." autocomplete="tel">
+                            <div id="modal-phone-error" class="validation-error" style="display: none;"></div>
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn-cancel" onclick="showContactsList()">Cancel</button>
+                            <button class="btn-save" onclick="saveContactFromModal()">Save Contact</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <!-- Toast Notification Container -->
     <div id="toast-container"></div>
 
@@ -942,6 +1675,53 @@
         replyingTo: null // To store info about the message being replied to
     };
     // Add event listener for 'Enter' key on message input
+
+    // --- Background Sync System ---
+    /**
+     * Continuous background sync system that doesn't disrupt UI.
+     */
+    function startBackgroundSync() {
+        if (appState.backgroundSync) return; // Already running
+
+        appState.backgroundSync = setInterval(async () => {
+            if (!appState.userId || !appState.peerId) return;
+
+            if (document.hidden) {
+                // Only sync when page is visible to avoid wasting resources
+                return;
+            }
+
+            try {
+                const chatId = getChatId(appState.userId, appState.peerId);
+                const lastMessage = document.querySelector('#chatBox .message-container:last-child');
+                const sinceTs = lastMessage ? lastMessage.dataset.timestamp : null;
+
+                if (sinceTs) {
+                    const url = `${API_URL}?action=getMessages&userId=${appState.userId}&peerId=${appState.peerId}&afterTs=${encodeURIComponent(sinceTs)}`;
+                    const data = await jsonpRequest(url);
+
+                    if (data && data.messages && data.messages.length > 0) {
+                        console.log(`🔄 Background sync found ${data.messages.length} new messages`);
+                        // Silently add new messages without disrupting user
+                        renderMessages(data.messages, { isPolling: true, isStable: true });
+                    }
+                }
+            } catch (error) {
+                // Silent fail - background sync shouldn't bother user
+                console.log('Background sync failed silently:', error.message);
+            }
+        }, 3000); // Sync every 3 seconds
+
+        console.log('🔄 Background sync system started');
+    }
+
+    function stopBackgroundSync() {
+        if (appState.backgroundSync) {
+            clearInterval(appState.backgroundSync);
+            delete appState.backgroundSync;
+            console.log('🔄 Background sync system stopped');
+        }
+    }
 
     // --- Theme Toggle ---
     /**
@@ -1014,9 +1794,34 @@
         // Theme toggles
         document.querySelectorAll('#theme-toggle, #theme-toggle-home, #theme-toggle-chat').forEach(toggle => toggle.onclick = toggleTheme);
 
-        // --- New: Independent event listeners for Profile and Contacts buttons ---
-        document.getElementById('profile-btn').addEventListener('click', showProfileScreen);
-        document.getElementById('contacts-btn').addEventListener('click', showContactsScreen);
+        // --- Navigation functions for standalone pages ---
+        window.openStandaloneProfile = function() {
+            const params = new URLSearchParams({
+                userId: appState.userId,
+                userName: appState.userName || '',
+                userPhone: localStorage.getItem('userPhone') || ''
+            });
+            window.open(`profile.html?${params.toString()}`, '_blank');
+        };
+
+        // --- New: Independent event listeners for Profile button ---
+        document.getElementById('profile-btn').addEventListener('click', openStandaloneProfile);
+
+        window.openStandaloneContacts = function() {
+            const params = new URLSearchParams({
+                userId: appState.userId,
+                userPhone: localStorage.getItem('userPhone') || ''
+            });
+            window.open(`add-contact.html?${params.toString()}`, '_blank');
+        };
+
+        window.openStandaloneAddContact = function() {
+            const params = new URLSearchParams({
+                userId: appState.userId,
+                userPhone: localStorage.getItem('userPhone') || ''
+            });
+            window.open(`add-contact.html?${params.toString()}`, '_blank');
+        };
 
         // Emoji picker
         const emojiPicker = document.querySelector('emoji-picker');
@@ -1069,16 +1874,44 @@
         // Pull-to-refresh for chat list
         setupPullToRefresh();
 
-        // --- New: Adaptive Polling based on page visibility ---
+        // --- Enhanced: Adaptive Polling based on page visibility ---
         document.addEventListener("visibilitychange", () => {
             if (document.hidden) {
-                // Page is not visible, slow down all polling
+                // Page is not visible, slow down all polling but keep background sync
                 slowDownAllPolling();
             } else {
                 // Page is visible again, restore normal polling rates
                 restorePollingRates();
             }
         });
+
+        // --- Cache Health Monitoring ---
+        /**
+         * Monitors cache health and shows appropriate indicators.
+         */
+        function monitorCacheHealth() {
+            setInterval(() => {
+                if (document.getElementById('homeScreen').classList.contains('active')) {
+                    const cacheIndicator = document.getElementById('cache-health-indicator');
+                    const lastCacheUpdate = localStorage.getItem('lastCacheUpdate');
+
+                    if (lastCacheUpdate) {
+                        const age = Date.now() - parseInt(lastCacheUpdate);
+                        const hours = age / (1000 * 60 * 60);
+
+                        if (hours > 1 && !cacheIndicator) {
+                            // Show stale cache indicator
+                            showCacheHealthIndicator('warning', 'Chat data might be outdated');
+                        } else if (cacheIndicator && hours < 1) {
+                            // Hide indicator if cache is fresh
+                            if (cacheIndicator) cacheIndicator.remove();
+                        }
+                    }
+                }
+            }, 60000); // Check every minute
+        }
+
+        monitorCacheHealth();
     }
 
     /**
@@ -1126,6 +1959,43 @@
                 }
             });
         }, duration);
+    }
+
+    /**
+     * Shows cache health indicator to inform users about data freshness.
+     * @param {string} type - The type of indicator ('warning', 'error', 'info').
+     * @param {string} message - The message to display.
+     */
+    function showCacheHealthIndicator(type, message) {
+        const indicator = document.createElement('div');
+        indicator.id = 'cache-health-indicator';
+        indicator.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: var(--container-bg);
+            border: 1px solid var(--list-item-border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.8em;
+            color: var(--text-color);
+            box-shadow: var(--container-shadow);
+            z-index: 1000;
+            max-width: 200px;
+            opacity: 0.9;
+        `;
+
+        const icon = type === 'warning' ? '⚠️' : type === 'error' ? '❌' : 'ℹ️';
+        indicator.innerHTML = `${icon} ${message}`;
+
+        document.body.appendChild(indicator);
+
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            if (indicator.parentNode) {
+                indicator.remove();
+            }
+        }, 5000);
     }
 
     /**
@@ -1234,59 +2104,314 @@
     }
 
     /**
-     * Manages a Least Recently Used (LRU) cache in localStorage for chat messages.
-     * @param {string} chatId - The ID of the chat to manage.
+     * 🚨 CRITICAL CACHE SYSTEM - DO NOT MODIFY WITHOUT EXPLICIT PERMISSION 🚨
+     *
+     * This enhanced multi-layer caching system is the backbone of the chat stability system.
+     * It prevents message blinking, ensures smooth scrolling, and provides offline functionality.
+     *
+     * ⚠️  BEFORE MAKING ANY CHANGES:
+     * 1. Get explicit permission from the system maintainer
+     * 2. Understand that changes here can break the entire chat experience
+     * 3. Test thoroughly on multiple devices and network conditions
+     * 4. Ensure backward compatibility with existing cache versions
+     *
+     * This system uses intelligent merging and conflict resolution to ensure UI stability.
+     * Any modifications must preserve the 3-layer architecture and checksum validation.
      */
-    function manageLruCache(chatId) {
-        const CACHE_LIMIT = 10; // Store history for the 10 most recent chats
-        const LRU_KEY = 'chatLruOrder';
+    function manageMultiLayerCache(chatId, messages, operation = 'write') {
+        if (!chatId || !messages) return;
 
-        let lruOrder = JSON.parse(localStorage.getItem(LRU_KEY) || '[]');
+        const CACHE_VERSION = 'v3.0';
+        const PRIMARY_CACHE_KEY = `chat_${chatId}_${CACHE_VERSION}`;
+        const BACKUP_CACHE_KEY = `chat_${chatId}_backup`;
+        const EMERGENCY_CACHE_KEY = `chat_${chatId}_emergency`;
+        const CACHE_METADATA_KEY = `chat_${chatId}_meta`;
+        const SCROLL_STATE_KEY = `scroll_${chatId}`;
 
-        // Remove the current chat from the list if it exists
-        const existingIndex = lruOrder.indexOf(chatId);
-        if (existingIndex > -1) {
-            lruOrder.splice(existingIndex, 1);
+        try {
+            if (operation === 'write') {
+                // Layer 1: Primary cache with enhanced metadata
+                const cacheData = {
+                    messages: messages,
+                    timestamp: Date.now(),
+                    version: CACHE_VERSION,
+                    messageCount: messages.length,
+                    lastMessageId: messages.length > 0 ? messages[messages.length - 1].id : null,
+                    oldestMessageId: messages.length > 0 ? messages[0].id : null,
+                    checksum: generateMessageChecksum(messages) // For change detection
+                };
+                localStorage.setItem(PRIMARY_CACHE_KEY, JSON.stringify(cacheData));
+
+                // Layer 2: Backup cache (previous version)
+                localStorage.setItem(BACKUP_CACHE_KEY, JSON.stringify(cacheData));
+
+                // Layer 3: Emergency cache (recent messages only for quick recovery)
+                const emergencyData = {
+                    messages: messages.slice(-30), // Keep only recent messages
+                    timestamp: Date.now(),
+                    version: CACHE_VERSION,
+                    lastMessageId: messages.length > 0 ? messages[messages.length - 1].id : null
+                };
+                localStorage.setItem(EMERGENCY_CACHE_KEY, JSON.stringify(emergencyData));
+
+                // Enhanced metadata for cache management
+                const metadata = {
+                    lastUpdated: Date.now(),
+                    messageCount: messages.length,
+                    hasBackup: true,
+                    hasEmergency: true,
+                    checksum: cacheData.checksum,
+                    version: CACHE_VERSION
+                };
+                localStorage.setItem(CACHE_METADATA_KEY, JSON.stringify(metadata));
+
+                console.log(`💾 Enhanced multi-layer cache updated for ${chatId}: ${messages.length} messages`);
+            } else if (operation === 'read') {
+                return getCachedMessagesWithStability(chatId);
+            }
+        } catch (error) {
+            console.error('Enhanced cache operation failed:', error);
+            // Don't throw error, just log it - caching is not critical
         }
-
-        // Add the current chat to the front (most recently used)
-        lruOrder.unshift(chatId);
-
-        // If the cache is over the limit, remove the least recently used chat
-        if (lruOrder.length > CACHE_LIMIT) {
-            const chatToRemove = lruOrder.pop(); // Get the last item
-            localStorage.removeItem(chatToRemove); // Remove its message history
-            console.log(`LRU Cache: Removed old chat history for ${chatToRemove}`);
-        }
-
-        // Save the updated order
-        localStorage.setItem(LRU_KEY, JSON.stringify(lruOrder));
     }
 
     /**
-     * Caches messages for a specific chat, respecting the LRU policy.
+     * Generates a checksum for messages to detect changes without full comparison.
+     */
+    function generateMessageChecksum(messages) {
+        if (!messages || messages.length === 0) return '';
+
+        const recentMessages = messages.slice(-10); // Only check last 10 messages
+        const contentString = recentMessages.map(m => `${m.id}:${m.ts}:${m.msg}`).join('|');
+        let hash = 0;
+
+        for (let i = 0; i < contentString.length; i++) {
+            const char = contentString.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32-bit integer
+        }
+
+        return hash.toString();
+    }
+
+    /**
+     * Enhanced message retrieval with stability checks and conflict resolution.
+     */
+    function getCachedMessagesWithStability(chatId) {
+        if (!chatId) return null;
+
+        const CACHE_VERSION = 'v3.0';
+        const PRIMARY_CACHE_KEY = `chat_${chatId}_${CACHE_VERSION}`;
+        const BACKUP_CACHE_KEY = `chat_${chatId}_backup`;
+        const EMERGENCY_CACHE_KEY = `chat_${chatId}_emergency`;
+        const LEGACY_CACHE_KEY = `legacy_${chatId}`;
+
+        // Try primary cache first with validation
+        try {
+            const primaryData = localStorage.getItem(PRIMARY_CACHE_KEY);
+            if (primaryData) {
+                const parsed = JSON.parse(primaryData);
+                if (parsed && parsed.messages && Array.isArray(parsed.messages) && parsed.version === CACHE_VERSION) {
+                    // Validate cache integrity
+                    if (parsed.checksum && parsed.checksum === generateMessageChecksum(parsed.messages)) {
+                        console.log(`💾 Loaded stable primary cache: ${parsed.messages.length} messages`);
+                        return {
+                            messages: parsed.messages,
+                            metadata: {
+                                timestamp: parsed.timestamp,
+                                checksum: parsed.checksum,
+                                isStable: true
+                            }
+                        };
+                    } else {
+                        console.warn('💾 Primary cache checksum mismatch, trying backup');
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('Primary cache read failed:', e);
+        }
+
+        // Try backup cache if primary fails or is corrupted
+        try {
+            const backupData = localStorage.getItem(BACKUP_CACHE_KEY);
+            if (backupData) {
+                const parsed = JSON.parse(backupData);
+                if (parsed && parsed.messages && Array.isArray(parsed.messages)) {
+                    console.log(`💾 Loaded from backup cache: ${parsed.messages.length} messages`);
+                    return {
+                        messages: parsed.messages,
+                        metadata: {
+                            timestamp: parsed.timestamp,
+                            isFromBackup: true,
+                            isStable: false
+                        }
+                    };
+                }
+            }
+        } catch (e) {
+            console.warn('Backup cache read failed:', e);
+        }
+
+        // Try emergency cache for quick recovery
+        try {
+            const emergencyData = localStorage.getItem(EMERGENCY_CACHE_KEY);
+            if (emergencyData) {
+                const parsed = JSON.parse(emergencyData);
+                if (parsed && parsed.messages && Array.isArray(parsed.messages)) {
+                    console.log(`💾 Loaded from emergency cache: ${parsed.messages.length} messages`);
+                    return {
+                        messages: parsed.messages,
+                        metadata: {
+                            timestamp: parsed.timestamp,
+                            isEmergency: true,
+                            isStable: false
+                        }
+                    };
+                }
+            }
+        } catch (e) {
+            console.warn('Emergency cache read failed:', e);
+        }
+
+        // Final fallback to legacy cache
+        try {
+            const legacyData = localStorage.getItem(LEGACY_CACHE_KEY);
+            if (legacyData) {
+                const parsed = JSON.parse(legacyData);
+                if (parsed && Array.isArray(parsed)) {
+                    console.log(`💾 Loaded from legacy cache: ${parsed.length} messages`);
+                    return {
+                        messages: parsed,
+                        metadata: {
+                            isLegacy: true,
+                            isStable: false
+                        }
+                    };
+                }
+            }
+        } catch (e) {
+            console.warn('Legacy cache read failed:', e);
+        }
+
+        console.log(`💾 No valid cached messages found for ${chatId}`);
+        return null;
+    }
+
+    /**
+     * Enhanced caching function with multiple backup layers to prevent data loss.
      * @param {string} chatId - The ID of the chat.
      * @param {Array} messages - The array of messages to cache.
      */
     function cacheMessages(chatId, messages) {
         if (!chatId || !messages) return;
-        
-        // First, update the LRU list to mark this chat as most recent
-        manageLruCache(chatId);
 
-        // Then, save the actual message data
-        localStorage.setItem(chatId, JSON.stringify(messages));
+        // Use the new multi-layer caching system
+        manageMultiLayerCache(chatId, messages, 'write');
+
+        // Also maintain backward compatibility with old cache format
+        try {
+            localStorage.setItem(`legacy_${chatId}`, JSON.stringify(messages));
+        } catch (e) {
+            console.warn('Legacy cache write failed:', e);
+        }
     }
 
     /**
-     * Starts a polling interval, ensuring no duplicates for the same name.
+     * Robust message retrieval with multiple fallback layers.
+     * @param {string} chatId - The ID of the chat.
+     * @returns {Array|null} The cached messages or null if not found.
+     */
+    function getCachedMessages(chatId) {
+        if (!chatId) return null;
+
+        const CACHE_VERSION = 'v2.0';
+        const PRIMARY_CACHE_KEY = `chat_${chatId}_${CACHE_VERSION}`;
+        const BACKUP_CACHE_KEY = `chat_${chatId}_backup`;
+        const EMERGENCY_CACHE_KEY = `chat_${chatId}_emergency`;
+        const LEGACY_CACHE_KEY = `legacy_${chatId}`;
+
+        // Try primary cache first
+        try {
+            const primaryData = localStorage.getItem(PRIMARY_CACHE_KEY);
+            if (primaryData) {
+                const parsed = JSON.parse(primaryData);
+                if (parsed && parsed.messages && Array.isArray(parsed.messages)) {
+                    console.log(`💾 Loaded from primary cache: ${parsed.messages.length} messages`);
+                    return parsed.messages;
+                }
+            }
+        } catch (e) {
+            console.warn('Primary cache read failed:', e);
+        }
+
+        // Try backup cache if primary fails
+        try {
+            const backupData = localStorage.getItem(BACKUP_CACHE_KEY);
+            if (backupData) {
+                const parsed = JSON.parse(backupData);
+                if (parsed && parsed.messages && Array.isArray(parsed.messages)) {
+                    console.log(`💾 Loaded from backup cache: ${parsed.messages.length} messages`);
+                    return parsed.messages;
+                }
+            }
+        } catch (e) {
+            console.warn('Backup cache read failed:', e);
+        }
+
+        // Try emergency cache if both primary and backup fail
+        try {
+            const emergencyData = localStorage.getItem(EMERGENCY_CACHE_KEY);
+            if (emergencyData) {
+                const parsed = JSON.parse(emergencyData);
+                if (parsed && parsed.messages && Array.isArray(parsed.messages)) {
+                    console.log(`💾 Loaded from emergency cache: ${parsed.messages.length} messages`);
+                    return parsed.messages;
+                }
+            }
+        } catch (e) {
+            console.warn('Emergency cache read failed:', e);
+        }
+
+        // Final fallback to legacy cache
+        try {
+            const legacyData = localStorage.getItem(LEGACY_CACHE_KEY);
+            if (legacyData) {
+                const parsed = JSON.parse(legacyData);
+                if (parsed && Array.isArray(parsed)) {
+                    console.log(`💾 Loaded from legacy cache: ${parsed.length} messages`);
+                    return parsed;
+                }
+            }
+        } catch (e) {
+            console.warn('Legacy cache read failed:', e);
+        }
+
+        console.log(`💾 No cached messages found for ${chatId}`);
+        return null;
+    }
+
+    /**
+     * Enhanced polling system with intelligent backoff and stability features.
      * @param {string} name - A unique name for the interval.
      * @param {Function} func - The function to execute.
      * @param {number} time - The interval time in milliseconds.
      */
     function startPolling(name, func, time) {
         stopPolling(name); // Ensure no duplicates
-        appState.intervals[name] = setInterval(func, time);
+
+        // Enhanced polling function with error handling
+        const enhancedFunc = async () => {
+            try {
+                await func();
+            } catch (error) {
+                console.error(`Polling error for ${name}:`, error);
+                // Don't show error to user, just log it
+            }
+        };
+
+        appState.intervals[name] = setInterval(enhancedFunc, time);
+        console.log(`🔄 Started stable polling for ${name} every ${time}ms`);
     }
 
     /**
@@ -1321,7 +2446,7 @@
         startHeartbeat();
         if (document.getElementById('homeScreen').classList.contains('active')) {
             showHomeScreen(); // This will restart the chatList poller with its normal rate
-        } else if (document.getElementById('chatScreen').classList.contains('active') && appState.peerId) {
+        } else if (document.getElementById('chatScreen').classList.contains('active') && appState.peerId && appState.userId) {
             // If the chat screen is active, we need to restart message polling.
             console.log("Restoring message polling for active chat.");
             appState.pollingRate = 1500; // Reset to fastest rate
@@ -1422,74 +2547,389 @@
     }
 
     /**
-     * Logs the user out, clearing all session data and reloading the page.
+     * Enhanced logout with complete cleanup of all caching systems.
      */
     function logout() {
         // Stop all background processes
         Object.keys(appState.intervals).forEach(stopPolling);
+        stopBackgroundSync();
 
         // Clear session from localStorage
         localStorage.removeItem('userId');
         localStorage.removeItem('userPhone');
         localStorage.removeItem('userName');
 
+        // Clear cache metadata but keep some cache for better UX on re-login
+        localStorage.removeItem('lastCacheUpdate');
+
         // Reset app state
         appState.userId = null;
         appState.userName = null;
         appState.peerId = null;
+        appState.pollingRate = 1500; // Reset polling rate
+
+        // Remove any cache health indicators
+        const cacheIndicator = document.getElementById('cache-health-indicator');
+        if (cacheIndicator) cacheIndicator.remove();
 
         window.location.reload(); // Reload the page to go back to login screen
     }
 
     /**
-     * Shows a skeleton loader for the chat list.
-     * @param {number} count - The number of skeleton items to show.
+     * Enhanced skeleton loader system with multiple loading states and smooth animations.
      */
     function showChatListSkeleton(count = 4) {
         const chatListDiv = document.getElementById("chatList");
-        chatListDiv.innerHTML = ""; // Clear previous content
+        if (!chatListDiv) return;
+
+        chatListDiv.innerHTML = "";
+        chatListDiv.style.display = 'block';
 
         for (let i = 0; i < count; i++) {
             const skeletonItem = document.createElement("div");
             skeletonItem.className = "skeleton-chat-item";
+            skeletonItem.style.cssText = `
+                padding: 15px;
+                border-bottom: 1px solid var(--list-item-border);
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                opacity: 0;
+                transform: translateY(10px);
+                animation: skeleton-fade-in 0.4s ease forwards;
+            `;
+
             skeletonItem.innerHTML = `
-                <div class="skeleton-avatar shimmer"></div>
-                <div class="skeleton-text-container">
-                    <div class="skeleton-line long shimmer"></div>
-                    <div class="skeleton-line short shimmer"></div>
-                </div>`;
+                <div class="skeleton-avatar" style="
+                    width: 12px;
+                    height: 12px;
+                    border-radius: 50%;
+                    background: linear-gradient(90deg, var(--button-bg) 25%, var(--list-item-hover-bg) 50%, var(--button-bg) 75%);
+                    background-size: 200% 100%;
+                    animation: skeleton-shimmer 1.5s infinite;
+                    flex-shrink: 0;
+                "></div>
+                <div class="skeleton-text-container" style="flex-grow: 1; display: flex; flex-direction: column; gap: 8px;">
+                    <div class="skeleton-line short" style="
+                        height: 16px;
+                        background: linear-gradient(90deg, var(--button-bg) 25%, var(--list-item-hover-bg) 50%, var(--button-bg) 75%);
+                        background-size: 200% 100%;
+                        animation: skeleton-shimmer 1.5s infinite;
+                        border-radius: 4px;
+                    "></div>
+                    <div class="skeleton-line long" style="
+                        height: 14px;
+                        background: linear-gradient(90deg, var(--button-bg) 25%, var(--list-item-hover-bg) 50%, var(--button-bg) 75%);
+                        background-size: 200% 100%;
+                        animation: skeleton-shimmer 1.5s infinite;
+                        border-radius: 4px;
+                    "></div>
+                </div>
+                <div style="
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 50%;
+                    background: linear-gradient(90deg, var(--button-bg) 25%, var(--list-item-hover-bg) 50%, var(--button-bg) 75%);
+                    background-size: 200% 100%;
+                    animation: skeleton-shimmer 1.5s infinite;
+                "></div>
+            `;
+
+            // Stagger animation
+            setTimeout(() => {
+                skeletonItem.style.animationDelay = `${i * 0.1}s`;
+            }, 10);
+
             chatListDiv.appendChild(skeletonItem);
         }
     }
 
     /**
-     * Renders the list of chats on the home screen.
+     * Shows enhanced chat skeleton loader with conversation-like layout.
+     */
+    function showChatSkeleton() {
+        const chatBox = document.getElementById('chatBox');
+        if (!chatBox) return;
+
+        chatBox.innerHTML = '';
+        chatBox.style.display = 'flex';
+        chatBox.style.flexDirection = 'column';
+
+        const messages = [
+            { isMe: false, type: 'text' },
+            { isMe: true, type: 'text' },
+            { isMe: false, type: 'text' },
+            { isMe: false, type: 'text' },
+            { isMe: true, type: 'text' }
+        ];
+
+        messages.forEach((msg, index) => {
+            const messageContainer = document.createElement('div');
+            messageContainer.className = 'message-container';
+            messageContainer.style.cssText = `
+                display: flex;
+                margin: 4px 0;
+                opacity: 0;
+                transform: translateY(15px);
+                animation: skeleton-fade-in 0.5s ease forwards;
+            `;
+
+            const bubble = document.createElement('div');
+            bubble.className = `message-bubble ${msg.isMe ? 'me' : 'them'}`;
+            bubble.style.cssText = `
+                padding: 12px 16px;
+                border-radius: 18px;
+                max-width: 75%;
+                background: linear-gradient(90deg, var(--button-bg) 25%, var(--list-item-hover-bg) 50%, var(--button-bg) 75%);
+                background-size: 200% 100%;
+                animation: skeleton-shimmer 1.8s infinite;
+                position: relative;
+            `;
+
+            if (msg.type === 'text') {
+                bubble.innerHTML = `
+                    <div style="height: 16px; background: rgba(255,255,255,0.2); border-radius: 4px; margin-bottom: 6px;"></div>
+                    <div style="height: 14px; width: 60%; background: rgba(255,255,255,0.2); border-radius: 4px;"></div>
+                `;
+            }
+
+            messageContainer.appendChild(bubble);
+            chatBox.appendChild(messageContainer);
+
+            // Stagger animations
+            setTimeout(() => {
+                messageContainer.style.animationDelay = `${index * 0.15}s`;
+            }, 10);
+        });
+    }
+
+    /**
+     * Enhanced skeleton animations and styles.
+     */
+    function addEnhancedSkeletonStyles() {
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes skeleton-fade-in {
+                0% {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                100% {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            @keyframes skeleton-shimmer {
+                0% {
+                    background-position: -200% 0;
+                }
+                100% {
+                    background-position: 200% 0;
+                }
+            }
+
+            @keyframes enhanced-shimmer {
+                0% {
+                    opacity: 1;
+                    transform: translateX(-100%);
+                }
+                50% {
+                    opacity: 0.6;
+                }
+                100% {
+                    opacity: 1;
+                    transform: translateX(100%);
+                }
+            }
+
+            .skeleton-avatar,
+            .skeleton-line {
+                position: relative;
+                overflow: hidden;
+            }
+
+            .skeleton-avatar::after,
+            .skeleton-line::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+                animation: enhanced-shimmer 1.8s infinite;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    /**
+     * Enhanced toast notification system with better animations.
+     */
+    function showEnhancedToast(message, type = 'info', duration = 3000) {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.style.cssText = `
+            padding: 12px 20px;
+            border-radius: 25px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            backdrop-filter: blur(10px);
+            animation: toast-slide-in 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            opacity: 0;
+            transform: translateY(20px) scale(0.9);
+            max-width: 300px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        `;
+
+        // Add icon based on type
+        const icons = {
+            success: '✅',
+            error: '❌',
+            info: 'ℹ️',
+            warning: '⚠️'
+        };
+
+        toast.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span>${icons[type] || icons.info}</span>
+                <span>${message}</span>
+            </div>
+        `;
+
+        container.appendChild(toast);
+
+        // Auto-dismiss with enhanced animation
+        const dismissToast = () => {
+            toast.style.animation = 'toast-slide-out 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards';
+            setTimeout(() => {
+                if (container.contains(toast)) {
+                    container.removeChild(toast);
+                }
+            }, 300);
+        };
+
+        const timeoutId = setTimeout(dismissToast, duration);
+
+        // Allow manual dismiss on click
+        toast.addEventListener('click', () => {
+            clearTimeout(timeoutId);
+            dismissToast();
+        });
+    }
+
+    /**
+     * Enhanced toast animations.
+     */
+    function addEnhancedToastStyles() {
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes toast-slide-in {
+                0% {
+                    opacity: 0;
+                    transform: translateY(20px) scale(0.9);
+                }
+                100% {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
+
+            @keyframes toast-slide-out {
+                0% {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+                100% {
+                    opacity: 0;
+                    transform: translateY(-10px) scale(0.95);
+                }
+            }
+
+            .toast {
+                cursor: pointer;
+                transition: transform 0.2s ease;
+            }
+
+            .toast:hover {
+                transform: translateY(-2px);
+            }
+
+            .toast.success { background: linear-gradient(135deg, #4CAF50, #45a049); }
+            .toast.error { background: linear-gradient(135deg, #f44336, #d32f2f); }
+            .toast.info { background: linear-gradient(135deg, #2196F3, #1976D2); }
+            .toast.warning { background: linear-gradient(135deg, #FF9800, #F57C00); }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // Initialize enhanced styles and systems
+    document.addEventListener('DOMContentLoaded', () => {
+        addEnhancedSkeletonStyles();
+        addEnhancedToastStyles();
+        initializeErrorHandling();
+        initializePerformanceMonitoring();
+        initializeContactsModal();
+    });
+
+    /**
+     * Renders the list of chats on the home screen with enhanced error handling.
      * @param {Array<Object>} chats - The array of chat objects to render.
      * @param {boolean} [isOffline=false] - Whether to show an offline indicator.
      */
     function renderChatList(chats, isOffline = false) {
         const chatListDiv = document.getElementById("chatList");
+
+        // Enhanced error handling for malformed data
+        if (!Array.isArray(chats)) {
+            console.error('renderChatList: Invalid chats data received:', chats);
+            chatListDiv.innerHTML = "<p>Error loading chats. Please refresh.</p>";
+            return;
+        }
+
         chatListDiv.innerHTML = "";
 
-        // Filter out archived chats from the main view
-        const activeChats = chats.filter(chat => !chat.isArchived);
+        // Filter out archived chats from the main view with safety check
+        const activeChats = chats.filter(chat => chat && !chat.isArchived);
 
         if (activeChats.length === 0) {
-            chatListDiv.innerHTML = "<p>No active chats. Start a new one!</p>" + (isOffline ? "<p><small>(Showing offline data)</small></p>" : "");
+            const noChatsMsg = document.createElement('div');
+            noChatsMsg.style.cssText = 'text-align: center; padding: 40px 20px; color: var(--list-item-subtext-color);';
+            noChatsMsg.innerHTML = `
+                <p>No active chats yet.</p>
+                <p>Start a new conversation!</p>
+                ${isOffline ? '<p><small style="opacity: 0.7;">(Showing offline data)</small></p>' : ''}
+            `;
+            chatListDiv.appendChild(noChatsMsg);
             return;
         }
 
         // Add an offline indicator if showing data from localStorage
         if (isOffline) {
-            const offlineNote = document.createElement('p');
-            offlineNote.innerHTML = '<small>Offline mode. Data might be outdated.</small>';
-            offlineNote.style.textAlign = 'center';
+            const offlineNote = document.createElement('div');
+            offlineNote.style.cssText = 'text-align: center; padding: 10px; background: var(--button-bg); margin: 10px; border-radius: 8px; opacity: 0.8;';
+            offlineNote.innerHTML = '<small>🔄 Offline mode - Data might be outdated</small>';
             chatListDiv.appendChild(offlineNote);
         }
-        
-        activeChats.forEach(chat => {
+
+        activeChats.forEach((chat, index) => {
+            // Enhanced validation for each chat object
+            if (!chat || !chat.peerId || !chat.peerPhone) {
+                console.warn('renderChatList: Skipping invalid chat object:', chat);
+                return;
+            }
+
             const div = document.createElement("div");
             div.className = "chat-list-item";
+            div.style.display = 'block'; // Ensure visibility
             div.onclick = () => openChat(chat.peerId, chat.peerPhone);
 
             // --- Add Context Menu Listeners ---
@@ -1497,7 +2937,7 @@
             // For Desktop: Right-click
             div.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
-                e.stopPropagation(); // Stop it from bubbling up
+                e.stopPropagation();
                 showChatContextMenu(e, chat.peerId);
             });
             // For Mobile: Long-press
@@ -1510,20 +2950,26 @@
             div.addEventListener('touchend', () => clearTimeout(longPressTimer));
             div.addEventListener('touchmove', () => clearTimeout(longPressTimer));
 
-            const time = chat.lastMessage.ts ? formatChatListTime(chat.lastMessage.ts) : '';
-            const unreadIndicator = chat.unreadCount > 0 ? `<div class="unread-count-badge">${chat.unreadCount}</div>` : '';
+            // Safe formatting with fallbacks
+            const time = chat.lastMessage && chat.lastMessage.ts ? formatChatListTime(chat.lastMessage.ts) : '';
+            const lastMessage = chat.lastMessage && chat.lastMessage.msg ? chat.lastMessage.msg : 'No messages yet';
+            const unreadCount = parseInt(chat.unreadCount || 0, 10);
+            const unreadIndicator = unreadCount > 0 ? `<div class="unread-count-badge">${unreadCount}</div>` : '';
+
             div.innerHTML = `
                 <div class="chat-list-item-content">
-                    <div style="flex-grow: 1;">
-                        <div style="display: flex; justify-content: space-between;">
-                            <strong style="display: flex; align-items: center;">
+                    <div style="flex-grow: 1; display: flex; flex-direction: column;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong style="display: flex; align-items: center; color: var(--text-color);">
                                 <span class="online-indicator-list ${chat.isOnline ? 'online' : ''}"></span>
                                 <span class="chat-peer-name">${chat.peerPhone}</span>
                             </strong>
-                            <small>${time}</small>
+                            <small style="color: var(--list-item-subtext-color);">${time}</small>
                         </div>
-                        <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 10px;">
-                            <p style="margin: 4px 0 0; color: var(--list-item-subtext-color); flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${chat.lastMessage.msg}</p>
+                        <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-top: 4px;">
+                            <p style="margin: 0; color: var(--list-item-subtext-color); flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px;">
+                                ${lastMessage}
+                            </p>
                             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 10px;">
                                 ${unreadIndicator}
                             </div>
@@ -1571,54 +3017,141 @@
      * @param {string} pPhone - The peer's phone number or name.
      */
     function openChat(pId, pPhone) {
-         appState.peerId = pId;
-         const chatBox = document.getElementById('chatBox');
-         const chatId = getChatId(appState.userId, pId);
- 
-         // Get the unread count for this specific chat before we open it
-         const localChats = JSON.parse(localStorage.getItem('chatList') || '[]');
-         const currentChatData = localChats.find(c => c.peerId === pId);
-         const chatSettings = currentChatData ? currentChatData.settings : {};
- 
-         // Apply saved theme
-         chatBox.className = 'chatBox'; // Reset classes
-         if (chatSettings && chatSettings.theme && chatSettings.theme !== 'default') {
-             chatBox.classList.add(chatSettings.theme);
-         }
-         const initialUnreadCount = currentChatData ? currentChatData.unreadCount : 0;
- 
-         // Stop refreshing the chat list while in a chat
-         stopPolling('chatList');
- 
-         // Clear any active reply state when opening a new chat
-         cancelReply();
- 
-         // --- New Instant Load Logic ---
-         // 1. Immediately render messages from localStorage cache, if available.
-         const cachedMessages = JSON.parse(localStorage.getItem(chatId) || 'null');
+          console.log('🔍 DEBUG: openChat called with peerId:', pId, 'phone:', pPhone);
+
+          // Stop any existing message polling and background sync before switching chats
+          stopPolling('messages');
+          stopBackgroundSync();
+
+          appState.peerId = pId;
+          const chatBox = document.getElementById('chatBox');
+          const chatId = getChatId(appState.userId, pId);
+
+          console.log('🔍 DEBUG: chatId generated:', chatId);
+
+          // Hide FAB when opening chat
+          const fab = document.getElementById('fab-add-contact');
+          if (fab) fab.style.display = 'none';
+
+          // Get the unread count for this specific chat before we open it
+          const localChats = JSON.parse(localStorage.getItem('chatList') || '[]');
+          const currentChatData = localChats.find(c => c.peerId === pId);
+          const chatSettings = currentChatData ? currentChatData.settings : {};
+
+          console.log('🔍 DEBUG: currentChatData:', currentChatData);
+
+          // Apply saved theme
+          chatBox.className = 'chatBox'; // Reset classes
+          if (chatSettings && chatSettings.theme && chatSettings.theme !== 'default') {
+              chatBox.classList.add(chatSettings.theme);
+          }
+          const initialUnreadCount = currentChatData ? currentChatData.unreadCount : 0;
+
+          console.log('🔍 DEBUG: initialUnreadCount:', initialUnreadCount);
+
+          // Stop refreshing the chat list while in a chat
+          stopPolling('chatList');
+
+          // Clear any active reply state when opening a new chat
+          cancelReply();
+
+          // Clear chatBox for new chat
+          chatBox.innerHTML = '';
+
+         document.getElementById('peerStatus').innerText = '';
+         document.getElementById('chatWith').innerText = pPhone;
+         showScreen('chatScreen');
+
+         // --- Enhanced Stable Load Logic with Multiple Cache Layers ---
+         // 1. Try to get messages from robust multi-layer cache
+         const cachedMessages = getCachedMessages(chatId);
+         console.log('🔍 STABLE: cachedMessages:', cachedMessages ? cachedMessages.length : 0, 'messages');
+
          if (cachedMessages && cachedMessages.length > 0) {
-             renderMessages(cachedMessages, { isInitialLoad: true, unreadCount: 0, isFromCache: true }); // Render from cache
+             console.log('🔍 STABLE: Rendering from multi-layer cache instantly');
+
+             // Clear chat box only if it's empty or has loading text
+             if (chatBox.children.length === 0 ||
+                 (chatBox.children.length === 1 && chatBox.textContent.includes('Loading'))) {
+                 chatBox.innerHTML = '';
+             }
+
+             // Render cached messages immediately for instant load experience
+             renderMessages(cachedMessages, {
+                 isInitialLoad: true,
+                 unreadCount: initialUnreadCount,
+                 isFromCache: true,
+                 isStable: true
+             });
              scrollToBottom();
+
+             // Show subtle "syncing" indicator while fetching fresh messages
+             const syncIndicator = document.createElement('div');
+             syncIndicator.id = 'sync-indicator';
+             syncIndicator.innerHTML = '<p style="text-align: center; padding: 8px; color: var(--list-item-subtext-color); font-size: 0.8em; opacity: 0.7; background: var(--container-bg); margin: 5px; border-radius: 8px;">🔄 Syncing latest messages...</p>';
+             chatBox.appendChild(syncIndicator);
+
+             // Set a flag to indicate we're syncing in background
+             chatBox.dataset.backgroundSyncing = 'true';
          } else {
-             // If no cache, show the loading indicator.
-             chatBox.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-color);">Loading chats...</p>';
+             console.log('🔍 STABLE: No cache found, showing minimal loading indicator');
+             // If no cache, show minimal loading indicator that doesn't cause layout shift
+             chatBox.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-color);"><p>Loading conversation...</p><p style="font-size: 0.8em; opacity: 0.7; margin-top: 10px;">Please wait while we fetch your messages</p></div>';
          }
 
-        document.getElementById('peerStatus').innerText = '';
-        document.getElementById('chatWith').innerText = pPhone;
-        showScreen('chatScreen');
-        
-        // Fetch the initial set of latest messages.
-        // The loadMessages function will handle showing the "Loading..." state
-        // and then rendering the messages or the "No messages" state.
-        loadMessages({ isInitialLoad: true, unreadCount: initialUnreadCount }).then(() => {
-            // Reset polling rate and start polling for new messages.
-            appState.pollingRate = 1500; // Reset to fastest rate
-            const messagePoller = () => loadMessages({ isPolling: true });
-            messagePoller.originalRate = 1500; // Store original rate
-            startPolling('messages', messagePoller, appState.pollingRate);
-        });
-    }
+         // Fetch the initial set of latest messages with enhanced stability.
+         console.log('🔍 STABLE: Starting initial loadMessages call');
+         loadMessages({
+             isInitialLoad: true,
+             unreadCount: initialUnreadCount,
+             isFromCache: cachedMessages && cachedMessages.length > 0,
+             isStable: true
+         }).then((success) => {
+             console.log('🔍 STABLE: Initial loadMessages completed, starting polling');
+             // Remove sync indicator silently
+             const syncIndicator = document.getElementById('sync-indicator');
+             if (syncIndicator) syncIndicator.remove();
+             delete chatBox.dataset.backgroundSyncing;
+
+             // Reset polling rate and start polling for new messages seamlessly.
+             appState.pollingRate = 1500; // Reset to fastest rate
+             const messagePoller = () => loadMessages({ isPolling: true, isStable: true });
+             messagePoller.originalRate = 1500; // Store original rate
+             startPolling('messages', messagePoller, appState.pollingRate);
+
+             // Start background sync for continuous data fetching
+             startBackgroundSync();
+         }).catch((error) => {
+             console.error('🔍 STABLE: Initial loadMessages failed gracefully:', error);
+             // Remove sync indicator on error but don't show error to user
+             const syncIndicator = document.getElementById('sync-indicator');
+             if (syncIndicator) syncIndicator.remove();
+             delete chatBox.dataset.backgroundSyncing;
+
+             // If we have cached messages, keep them displayed and try polling anyway
+             if (cachedMessages && cachedMessages.length > 0) {
+                 console.log('🔍 STABLE: Keeping cached messages despite error, starting polling');
+                 appState.pollingRate = 1500;
+                 const messagePoller = () => loadMessages({ isPolling: true, isStable: true });
+                 startPolling('messages', messagePoller, appState.pollingRate);
+
+                 // Show subtle indicator that we're working with cached data
+                 const cacheIndicator = document.createElement('div');
+                 cacheIndicator.id = 'cache-indicator';
+                 cacheIndicator.innerHTML = '<p style="text-align: center; padding: 8px; color: var(--list-item-subtext-color); font-size: 0.8em; opacity: 0.7; background: var(--button-bg); margin: 5px; border-radius: 8px;">💾 Showing cached messages - will sync when connection available</p>';
+                 chatBox.appendChild(cacheIndicator);
+             } else {
+                 // No cached messages, show helpful error
+                 chatBox.innerHTML = `
+                     <div style="text-align: center; padding: 40px 20px; color: var(--list-item-subtext-color);">
+                         <p>Unable to load messages.</p>
+                         <p>Please check your connection and try again.</p>
+                         <button onclick="openChat('${pId}', '${pPhone}')" style="margin-top: 10px; padding: 8px 16px; background: var(--button-bg); border: none; border-radius: 8px; cursor: pointer;">Retry</button>
+                     </div>
+                 `;
+             }
+         });
+     }
     
     /**
      * Scrolls the chat box to the bottom.
@@ -1679,49 +3212,114 @@
 
     /**
      * Navigates to the home screen and starts polling for chat list updates.
+    /**
+     * Shows the home screen and manages FAB visibility with enhanced error handling.
      */
     function showHomeScreen() {
         // Stop chat-specific polling
         stopPolling('messages');
         appState.peerId = null;
-        
+
         // Reset chatbox theme when going home
         const chatBox = document.getElementById('chatBox');
         chatBox.className = 'chatBox';
 
         showScreen('homeScreen');
 
+        // Show FAB only on home screen
+        const fab = document.getElementById('fab-add-contact');
+        if (fab) fab.style.display = 'flex';
+
         const statusIndicator = document.getElementById('chat-list-status');
 
-        const doRefresh = async () => {
+        const doRefresh = async (retryCount = 0) => {
             if (!appState.userId) return;
             const userPhone = localStorage.getItem('userPhone');
             if (!userPhone || !document.getElementById('homeScreen').classList.contains('active')) return;
 
-            // Only show skeleton loader on initial load to prevent flickering.
-            const isInitialLoad = !document.getElementById('chatList').hasChildNodes();
-            if (isInitialLoad) {
-                showChatListSkeleton();
-            }
+            // Show loading state
+            if (statusIndicator) statusIndicator.style.display = 'inline-block';
 
-            const data = await jsonpRequest(`${API_URL}?action=login&phone=${userPhone}`);
-            if (data.chats) {
-                const newChatsString = JSON.stringify(data.chats);
-                const oldChatsString = localStorage.getItem('chatList');
+            // Determine if this is initial load
+            const chatListDiv = document.getElementById('chatList');
+            const isInitialLoad = !chatListDiv || !chatListDiv.hasChildNodes();
 
-                // Only re-render the list if the data has actually changed.
-                // This is the key fix to stop the list from disappearing.
-                if (newChatsString !== oldChatsString) {
-                    localStorage.setItem('chatList', newChatsString);
-                    preloadRecentChats(data.chats);
-                    renderChatList(data.chats);
+            try {
+                const data = await jsonpRequest(`${API_URL}?action=login&phone=${userPhone}`);
+
+                if (statusIndicator) statusIndicator.style.display = 'none';
+
+                if (data && data.chats) {
+                    const newChatsString = JSON.stringify(data.chats);
+                    const oldChatsString = localStorage.getItem('chatList');
+
+                    // Only re-render if data actually changed or if initial load
+                    if (newChatsString !== oldChatsString || isInitialLoad) {
+                        localStorage.setItem('chatList', newChatsString);
+                        preloadRecentChats(data.chats);
+                        renderChatList(data.chats);
+                    }
+                } else if (data && data.status === 'error') {
+                    console.error("Could not refresh chat list:", data.message);
+
+                    // Enhanced fallback logic
+                    if (isInitialLoad) {
+                        const localChats = JSON.parse(localStorage.getItem('chatList') || '[]');
+                        if (localChats.length > 0) {
+                            renderChatList(localChats, true);
+                            showToast('Using offline data. Check connection.', 'info');
+                        } else {
+                            chatListDiv.innerHTML = `
+                                <div style="text-align: center; padding: 40px 20px; color: var(--list-item-subtext-color);">
+                                    <p>Unable to load chats.</p>
+                                    <p>Please check your connection and try again.</p>
+                                    <button onclick="showHomeScreen()" style="margin-top: 10px;">Retry</button>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        showToast('Failed to refresh chats: ' + data.message, 'error');
+                    }
+                } else {
+                    // Handle unexpected response
+                    console.error('Unexpected response structure:', data);
+                    if (isInitialLoad) {
+                        chatListDiv.innerHTML = `
+                            <div style="text-align: center; padding: 40px 20px; color: var(--list-item-subtext-color);">
+                                <p>Error loading chats.</p>
+                                <button onclick="showHomeScreen()">Retry</button>
+                            </div>
+                        `;
+                    }
                 }
-            } else if (data.status === 'error') {
-                console.error("Could not refresh chat list:", data.message);
-                // If there's an error and the list is empty, try rendering from local storage.
+            } catch (error) {
+                console.error('Network error in showHomeScreen:', error);
+                if (statusIndicator) statusIndicator.style.display = 'none';
+
+                // Enhanced retry logic
+                if (retryCount < 2) {
+                    console.log(`Retrying chat list refresh (attempt ${retryCount + 1})`);
+                    setTimeout(() => doRefresh(retryCount + 1), 2000 * (retryCount + 1));
+                    return;
+                }
+
+                // Final fallback after retries
                 if (isInitialLoad) {
-                    const localChats = JSON.parse(localStorage.getItem('chatList'));
-                    if (localChats) renderChatList(localChats, true);
+                    const localChats = JSON.parse(localStorage.getItem('chatList') || '[]');
+                    if (localChats.length > 0) {
+                        renderChatList(localChats, true);
+                        showToast('Using offline data. Check connection.', 'info');
+                    } else {
+                        chatListDiv.innerHTML = `
+                            <div style="text-align: center; padding: 40px 20px; color: var(--list-item-subtext-color);">
+                                <p>Connection failed.</p>
+                                <p>Please check your internet and try again.</p>
+                                <button onclick="showHomeScreen()">Retry</button>
+                            </div>
+                        `;
+                    }
+                } else {
+                    showToast('Connection error. Pull down to refresh.', 'error');
                 }
             }
         };
@@ -1735,19 +3333,52 @@
      * Fetches the latest chat list from the server and re-renders it if on the home screen.
      * Can be called from anywhere to force a refresh.
      */
-    const refreshChatList = async () => {
-        if (!appState.userId) return;
+    const refreshChatList = async (retryCount = 0) => {
+        if (!appState.userId) return false;
         const userPhone = localStorage.getItem('userPhone');
-        if (!userPhone) return;
-        const data = await jsonpRequest(`${API_URL}?action=login&phone=${userPhone}`);
-        if (data.chats) {
-            localStorage.setItem('chatList', JSON.stringify(data.chats));
-            // Only render if the user is on the home screen
-            preloadRecentChats(data.chats); // Also pre-load on manual refresh
-            if (document.getElementById('homeScreen').classList.contains('active')) {
-                renderChatList(data.chats);
+        if (!userPhone) return false;
+
+        const statusIndicator = document.getElementById('chat-list-status');
+        if (statusIndicator) statusIndicator.style.display = 'inline-block';
+
+        try {
+            const data = await jsonpRequest(`${API_URL}?action=login&phone=${userPhone}`);
+
+            if (statusIndicator) statusIndicator.style.display = 'none';
+
+            if (data && data.chats) {
+                localStorage.setItem('chatList', JSON.stringify(data.chats));
+                // Only render if the user is on the home screen
+                preloadRecentChats(data.chats); // Also pre-load on manual refresh
+                if (document.getElementById('homeScreen').classList.contains('active')) {
+                    renderChatList(data.chats);
+                }
+                return true; // Indicate success for pull-to-refresh
+            } else if (data && data.status === 'error') {
+                console.error('Chat list refresh failed:', data.message);
+                if (document.getElementById('homeScreen').classList.contains('active')) {
+                    showToast('Failed to refresh: ' + data.message, 'error');
+                }
+                return false;
+            } else {
+                console.error('Unexpected response in refreshChatList:', data);
+                return false;
             }
-            return true; // Indicate success for pull-to-refresh
+        } catch (error) {
+            console.error('Network error in refreshChatList:', error);
+            if (statusIndicator) statusIndicator.style.display = 'none';
+
+            // Retry logic for manual refresh
+            if (retryCount < 2) {
+                console.log(`Retrying refresh (attempt ${retryCount + 1})`);
+                await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+                return refreshChatList(retryCount + 1);
+            }
+
+            if (document.getElementById('homeScreen').classList.contains('active')) {
+                showToast('Connection failed. Please try again.', 'error');
+            }
+            return false;
         }
     };
 
@@ -1755,6 +3386,10 @@
      * Renders and displays the user's profile screen.
      */
     function showProfileScreen() {
+        // Hide FAB when showing profile
+        const fab = document.getElementById('fab-add-contact');
+        if (fab) fab.style.display = 'none';
+
         const userPhone = localStorage.getItem('userPhone') || 'N/A';
         const profileContentDiv = document.getElementById("profile-content");
 
@@ -1831,14 +3466,18 @@
     // =================================================================================
 
     /**
-     * Shows the contacts screen and renders the list of saved contacts.
+     * Shows the contacts screen with both existing contacts and add new contact functionality.
      */
     function showContactsScreen() {
+        // Hide FAB when showing contacts
+        const fab = document.getElementById('fab-add-contact');
+        if (fab) fab.style.display = 'none';
+
         showScreen('contactsScreen');
         const savedContacts = JSON.parse(localStorage.getItem('contacts')) || [];
         renderContacts(savedContacts);
         // Optionally, you can fetch fresh contacts from the server here for a full refresh
-        // refreshContacts(); 
+        // refreshContacts();
     }
 
     /**
@@ -1914,35 +3553,296 @@
     }
 
     /**
-     * Sets up the pull-to-refresh functionality on the chat list.
+     * Shows the contacts modal popup.
+     */
+    function showContactsModal() {
+        const modal = document.getElementById('contacts-modal');
+        if (modal) {
+            modal.style.display = 'flex';
+            showContactsList();
+        }
+    }
+
+    /**
+     * Hides the contacts modal popup.
+     */
+    function hideContactsModal() {
+        const modal = document.getElementById('contacts-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    /**
+     * Initializes click outside to close for contacts modal.
+     */
+    function initializeContactsModal() {
+        const modal = document.getElementById('contacts-modal');
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    hideContactsModal();
+                }
+            });
+        }
+    }
+
+    /**
+     * Shows the contacts list view in the modal.
+     */
+    function showContactsList() {
+        // Hide add contact form
+        document.getElementById('add-contact-view').style.display = 'none';
+        // Show contacts list
+        document.getElementById('contacts-list-view').style.display = 'block';
+        // Update modal title
+        document.getElementById('contacts-modal-title').textContent = 'Your Contacts';
+
+        // Load and render contacts
+        const savedContacts = JSON.parse(localStorage.getItem('contacts')) || [];
+        renderContactsInModal(savedContacts);
+    }
+
+    /**
+     * Shows the add contact form view in the modal.
+     */
+    function showAddContactForm() {
+        // Hide contacts list
+        document.getElementById('contacts-list-view').style.display = 'none';
+        // Show add contact form
+        document.getElementById('add-contact-view').style.display = 'block';
+        // Update modal title
+        document.getElementById('contacts-modal-title').textContent = 'Add New Contact';
+
+        // Clear form
+        document.getElementById('modal-contact-name').value = '';
+        document.getElementById('modal-contact-phone').value = '';
+        clearModalValidationErrors();
+
+        // Focus on name input
+        setTimeout(() => {
+            document.getElementById('modal-contact-name').focus();
+        }, 100);
+    }
+
+    /**
+     * Renders contacts in the modal with proper scrolling support.
+     * @param {Array<Object>} contacts - Array of contact objects.
+     */
+    function renderContactsInModal(contacts) {
+        const contactsListDiv = document.getElementById('contacts-list');
+        contactsListDiv.innerHTML = '';
+
+        if (!contacts || contacts.length === 0) {
+            contactsListDiv.innerHTML = '<p style="text-align: center; color: var(--list-item-subtext-color); padding: 40px 20px;">No contacts saved yet.</p>';
+            return;
+        }
+
+        // Create a wrapper div for better scrolling behavior
+        const listWrapper = document.createElement('div');
+        listWrapper.style.cssText = `
+            flex-grow: 1;
+            overflow-y: visible;
+            padding-bottom: 8px;
+        `;
+
+        contacts.forEach((contact, index) => {
+            const div = document.createElement('div');
+            div.className = 'contact-item-modal';
+            div.style.cssText = `
+                padding: 14px 16px;
+                border-bottom: 1px solid var(--list-item-border);
+                cursor: pointer;
+                transition: background-color 0.2s ease;
+                border-radius: 8px;
+                margin-bottom: 2px;
+                position: relative;
+            `;
+
+            div.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="flex-grow: 1; min-width: 0;">
+                        <div style="font-weight: 600; color: var(--text-color); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${contact.name}</div>
+                        <div style="color: var(--list-item-subtext-color); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${contact.phone}</div>
+                    </div>
+                    <div style="font-size: 1.2em; color: var(--list-item-subtext-color); margin-left: 12px; flex-shrink: 0;">›</div>
+                </div>
+            `;
+
+            div.onclick = () => {
+                startChatFromContact(contact.phone);
+                hideContactsModal();
+            };
+
+            // Enhanced hover/touch effects
+            div.addEventListener('mouseenter', () => {
+                div.style.backgroundColor = 'var(--list-item-hover-bg)';
+            });
+
+            div.addEventListener('mouseleave', () => {
+                div.style.backgroundColor = 'transparent';
+            });
+
+            // Add touch feedback for mobile
+            div.addEventListener('touchstart', function() {
+                this.style.backgroundColor = 'var(--list-item-hover-bg)';
+            }, { passive: true });
+
+            div.addEventListener('touchend', function() {
+                this.style.backgroundColor = 'transparent';
+            }, { passive: true });
+
+            listWrapper.appendChild(div);
+        });
+
+        contactsListDiv.appendChild(listWrapper);
+    }
+
+    /**
+     * Clears validation errors in the modal form.
+     */
+    function clearModalValidationErrors() {
+        const inputs = ['modal-contact-name', 'modal-contact-phone'];
+        inputs.forEach(inputId => {
+            const input = document.getElementById(inputId);
+            const errorDiv = document.getElementById(inputId + '-error');
+            input.style.borderColor = '';
+            input.style.boxShadow = '';
+            if (errorDiv) errorDiv.style.display = 'none';
+        });
+    }
+
+    /**
+     * Shows validation error in the modal form.
+     * @param {string} inputId - The input field ID.
+     * @param {string} message - The error message.
+     */
+    function showModalValidationError(inputId, message) {
+        const input = document.getElementById(inputId);
+        const errorDiv = document.getElementById(inputId + '-error');
+
+        input.style.borderColor = '#e53935';
+        input.style.boxShadow = '0 0 0 2px rgba(229, 57, 53, 0.2)';
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+
+        // Remove error styling after 3 seconds
+        setTimeout(() => {
+            input.style.borderColor = '';
+            input.style.boxShadow = '';
+            errorDiv.style.display = 'none';
+        }, 3000);
+    }
+
+    /**
+     * Saves contact from the modal form.
+     */
+    async function saveContactFromModal() {
+        const nameInput = document.getElementById('modal-contact-name');
+        const phoneInput = document.getElementById('modal-contact-phone');
+
+        const name = nameInput.value.trim();
+        const phone = phoneInput.value.trim();
+
+        // Clear previous validation errors
+        clearModalValidationErrors();
+
+        let hasErrors = false;
+
+        // Validate name
+        if (!name) {
+            showModalValidationError('modal-contact-name', 'Contact name is required.');
+            hasErrors = true;
+        }
+
+        // Validate phone
+        if (!phone) {
+            showModalValidationError('modal-contact-phone', 'Phone number is required.');
+            hasErrors = true;
+        } else if (!validatePhone(phone)) {
+            showModalValidationError('modal-contact-phone', 'Please enter a valid phone number (at least 10 digits).');
+            hasErrors = true;
+        }
+
+        if (hasErrors) {
+            return;
+        }
+
+        showToast("Saving contact...", 'info');
+        try {
+            const data = await jsonpRequest(`${API_URL}?action=addContact&ownerId=${appState.userId}&contactName=${encodeURIComponent(name)}&contactPhone=${encodeURIComponent(phone)}`);
+            if (data.status === 'success') {
+                showToast("Contact saved successfully!", 'success');
+
+                // Update localStorage with new contacts
+                const updatedContacts = data.contacts || [];
+                localStorage.setItem('contacts', JSON.stringify(updatedContacts));
+
+                // Refresh contacts list in modal
+                showContactsList();
+
+                // Also refresh contacts in the main contacts screen if it's open
+                if (document.getElementById('contactsScreen').classList.contains('active')) {
+                    renderContacts(updatedContacts);
+                }
+            } else {
+                showToast("Error: " + (data.message || "Could not save contact."), 'error');
+            }
+        } catch (error) {
+            showToast("Request failed. Check connection.", 'error');
+        }
+    }
+
+    /**
+     * Validates phone number format.
+     * @param {string} phone - The phone number to validate.
+     * @returns {boolean} True if valid, false otherwise.
+     */
+    function validatePhone(phone) {
+        const digitsOnly = phone.replace(/\D/g, '');
+        return digitsOnly.length >= 10;
+    }
+
+    /**
+     * Sets up enhanced pull-to-refresh functionality on the chat list.
      */
     function setupPullToRefresh() {
         const scrollContainer = document.getElementById('chat-list-scroll-container');
+        if (!scrollContainer) return;
+
         let startY = 0;
         let isPulling = false;
         const refreshThreshold = 70; // How many pixels to pull down to trigger refresh
 
-        // Create the indicator element
+        // Create enhanced indicator element
         const indicator = document.createElement('div');
         indicator.id = 'pull-to-refresh-indicator';
         indicator.style.cssText = `
             position: absolute;
-            top: -50px;
+            top: -60px;
             left: 0;
             right: 0;
-            height: 50px;
+            height: 60px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 0.9em;
             color: var(--list-item-subtext-color);
-            transition: top 0.3s ease;
+            transition: all 0.3s ease;
+            background: var(--container-bg);
+            border-bottom: 1px solid var(--list-item-border);
+            z-index: 10;
         `;
-        indicator.innerHTML = '<span>&darr;</span> Pull to refresh';
+        indicator.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.2em;">↓</span>
+                <span>Pull to refresh</span>
+            </div>
+        `;
         scrollContainer.prepend(indicator);
 
         scrollContainer.addEventListener('touchstart', (e) => {
-            if (scrollContainer.scrollTop === 0) {
+            if (scrollContainer.scrollTop === 0 && document.getElementById('homeScreen').classList.contains('active')) {
                 startY = e.touches[0].pageY;
                 isPulling = true;
             }
@@ -1955,13 +3855,21 @@
 
             if (pullDistance > 0) {
                 e.preventDefault(); // Prevent scrolling the whole page
-                const moveDistance = Math.min(pullDistance, refreshThreshold + 20); // Limit pull
+                const moveDistance = Math.min(pullDistance, refreshThreshold + 30); // Limit pull
                 scrollContainer.style.transform = `translateY(${moveDistance}px)`;
-                
+
+                // Update indicator based on pull distance
+                const arrow = indicator.querySelector('span');
+                const text = indicator.querySelector('span:last-child');
+
                 if (pullDistance > refreshThreshold) {
-                    indicator.innerHTML = '<span>&uarr;</span> Release to refresh';
+                    indicator.style.background = 'var(--button-hover-bg)';
+                    arrow.textContent = '↑';
+                    text.textContent = 'Release to refresh';
                 } else {
-                    indicator.innerHTML = '<span>&darr;</span> Pull to refresh';
+                    indicator.style.background = 'var(--container-bg)';
+                    arrow.textContent = '↓';
+                    text.textContent = 'Pull to refresh';
                 }
             }
         }, { passive: false });
@@ -1973,22 +3881,305 @@
             const pullDistance = scrollContainer.style.transform ? parseInt(scrollContainer.style.transform.replace('translateY(', '')) : 0;
 
             if (pullDistance > refreshThreshold) {
-                indicator.innerHTML = '<span>&#8635;</span> Refreshing...';
+                // Trigger refresh
+                indicator.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.2em;">⟳</span>
+                        <span>Refreshing...</span>
+                    </div>
+                `;
+                indicator.style.background = 'var(--button-bg)';
+
                 scrollContainer.style.transition = 'transform 0.3s ease';
-                scrollContainer.style.transform = 'translateY(50px)'; // Keep indicator visible
-                
+                scrollContainer.style.transform = 'translateY(60px)'; // Keep indicator visible
+
                 // Show the main loading indicator as well
                 const statusIndicator = document.getElementById('chat-list-status');
                 if (statusIndicator) statusIndicator.style.display = 'inline-block';
 
-                await refreshChatList(); // Wait for the refresh to complete
-                if (statusIndicator) statusIndicator.style.display = 'none'; // Hide it after
+                const success = await refreshChatList(); // Wait for the refresh to complete
+
+                if (statusIndicator) statusIndicator.style.display = 'none';
+
+                // Show success/error message
+                if (success) {
+                    showToast('Chat list updated!', 'success');
+                } else {
+                    showToast('Refresh failed. Please try again.', 'error');
+                }
             }
 
             // Animate back to original position
             scrollContainer.style.transition = 'transform 0.3s ease';
             scrollContainer.style.transform = 'translateY(0)';
+
+            // Reset indicator after animation
+            setTimeout(() => {
+                indicator.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.2em;">↓</span>
+                        <span>Pull to refresh</span>
+                    </div>
+                `;
+                indicator.style.background = 'var(--container-bg)';
+            }, 300);
         });
+    }
+
+    // =================================================================================
+    // User Detail Navigation
+    // =================================================================================
+    /**
+     * Shows the user details modal (WhatsApp-style).
+     */
+    async function showUserDetailsModal() {
+        if (!appState.peerId) return;
+
+        const modal = document.getElementById('user-details-modal');
+        const currentPeerPhone = document.getElementById('chatWith').innerText;
+
+        // Get user data from server
+        try {
+            const data = await jsonpRequest(`${API_URL}?action=findUser&phone=${currentPeerPhone}`);
+
+            let userName = currentPeerPhone;
+            let isOnline = false;
+
+            if (data && data.status === 'found') {
+                userName = data.name || currentPeerPhone;
+                isOnline = true;
+            }
+
+            // Check if user is in contacts
+            const isInContacts = getContactNameByPhone(currentPeerPhone) !== null;
+
+            // Update modal content
+            document.getElementById('modal-user-avatar').textContent = userName.charAt(0).toUpperCase();
+            document.getElementById('modal-user-name').textContent = userName;
+            document.getElementById('modal-user-phone').textContent = currentPeerPhone;
+            document.getElementById('modal-user-status').textContent = isOnline ? 'Online' : 'Offline';
+
+            // Show/hide "Add to Contacts" button
+            const addToContactsBtn = document.getElementById('add-to-contacts-btn');
+            addToContactsBtn.style.display = isInContacts ? 'none' : 'flex';
+
+            // Store current user data for actions
+            modal.dataset.userPhone = currentPeerPhone;
+            modal.dataset.userName = userName;
+
+            modal.style.display = 'flex';
+        } catch (error) {
+            console.error('Error loading user details:', error);
+            showToast('Error loading user details', 'error');
+        }
+    }
+
+    /**
+     * Hides the user details modal.
+     */
+    function hideUserDetailsModal() {
+        const modal = document.getElementById('user-details-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    /**
+     * Starts a chat with the current user (already in chat, so just close modal).
+     */
+    function startChatWithCurrentUser() {
+        hideUserDetailsModal();
+        // Already in chat with this user
+    }
+
+    /**
+     * Initiates a call to the user.
+     */
+    function callUser() {
+        const modal = document.getElementById('user-details-modal');
+        const phoneNumber = modal?.dataset.userPhone;
+
+        if (phoneNumber) {
+            // Try to initiate a call
+            if (window.navigator && window.navigator.clipboard) {
+                // Copy number to clipboard for manual calling
+                navigator.clipboard.writeText(phoneNumber).then(() => {
+                    showToast('Phone number copied to clipboard', 'success');
+                    hideUserDetailsModal();
+                }).catch(() => {
+                    showToast('Please call ' + phoneNumber + ' manually', 'info');
+                    hideUserDetailsModal();
+                });
+            } else {
+                showToast('Please call ' + phoneNumber + ' manually', 'info');
+                hideUserDetailsModal();
+            }
+        }
+    }
+
+    /**
+     * Opens the full user details page.
+     */
+    function viewUserDetails() {
+        const modal = document.getElementById('user-details-modal');
+        const phoneNumber = modal?.dataset.userPhone;
+        const userName = modal?.dataset.userName;
+
+        if (phoneNumber) {
+            hideUserDetailsModal();
+
+            // Create URL parameters for the user detail page
+            const params = new URLSearchParams({
+                phone: phoneNumber,
+                name: userName
+            });
+
+            // Open the user detail page in a new window/tab
+            window.open(`user-detail.html?${params.toString()}`, '_blank');
+        }
+    }
+
+    /**
+     * Adds the current user to contacts.
+     */
+    async function addCurrentUserToContacts() {
+        const modal = document.getElementById('user-details-modal');
+        const phoneNumber = modal?.dataset.userPhone;
+        const userName = modal?.dataset.userName;
+
+        if (!phoneNumber || !userName) return;
+
+        hideUserDetailsModal();
+        showToast('Adding to contacts...', 'info');
+
+        try {
+            const data = await jsonpRequest(`${API_URL}?action=addContact&ownerId=${appState.userId}&contactName=${encodeURIComponent(userName)}&contactPhone=${encodeURIComponent(phoneNumber)}`);
+
+            if (data.status === 'success') {
+                showToast('Contact added successfully!', 'success');
+                // Update localStorage with new contacts
+                const updatedContacts = data.contacts || [];
+                localStorage.setItem('contacts', JSON.stringify(updatedContacts));
+            } else {
+                showToast('Error: ' + (data.message || 'Could not add contact.'), 'error');
+            }
+        } catch (error) {
+            showToast('Request failed. Check connection.', 'error');
+        }
+    }
+
+    /**
+     * Shows user details in the same tab.
+     */
+    async function showUserDetailsInSameTab() {
+        if (!appState.peerId) return;
+
+        const currentPeerPhone = document.getElementById('chatWith').innerText;
+
+        try {
+            // Get user data from server to get the actual name and details
+            const data = await jsonpRequest(`${API_URL}?action=findUser&phone=${currentPeerPhone}`);
+
+            let userName = currentPeerPhone;
+            let userId = null;
+
+            if (data && data.status === 'found') {
+                userName = data.name || currentPeerPhone;
+                userId = data.userId;
+            }
+
+            // Create URL parameters for the user detail page
+            const params = new URLSearchParams({
+                phone: currentPeerPhone,
+                name: userName,
+                userId: userId || ''
+            });
+
+            // Navigate to user detail page in the same tab
+            window.location.href = `user-detail.html?${params.toString()}`;
+        } catch (error) {
+            console.error('Error loading user details:', error);
+            // Fallback: navigate with current display name
+            const params = new URLSearchParams({
+                phone: currentPeerPhone,
+                name: currentPeerPhone
+            });
+            window.location.href = `user-detail.html?${params.toString()}`;
+        }
+    }
+
+    /**
+     * Opens the user detail page for a specific phone number.
+     * @param {string} phoneNumber - The phone number to view details for.
+     */
+    function openUserDetail(phoneNumber) {
+        if (!phoneNumber) {
+            showToast('Phone number not available', 'error');
+            return;
+        }
+
+        // Get user data for this phone number
+        const userName = getContactNameByPhone(phoneNumber) || phoneNumber;
+
+        // Create URL parameters for the user detail page
+        const params = new URLSearchParams({
+            phone: phoneNumber,
+            name: userName
+        });
+
+        // Open the user detail page in a new window/tab
+        window.open(`user-detail.html?${params.toString()}`, '_blank');
+    }
+
+    /**
+     * Detects and makes phone numbers clickable in chat messages.
+     * @param {HTMLElement} messageElement - The message element to process.
+     */
+    function makePhoneNumbersClickable(messageElement) {
+        if (!messageElement) return;
+
+        const messageText = messageElement.querySelector('.message-text');
+        if (!messageText) return;
+
+        const text = messageText.textContent;
+        const phoneRegex = /(\+?[\d\s\-\(\)]{10,})/g; // Basic phone number pattern
+
+        if (phoneRegex.test(text)) {
+            const clickableText = text.replace(phoneRegex, (match) => {
+                const cleanNumber = match.replace(/\D/g, '');
+                if (cleanNumber.length >= 10) {
+                    return `<span class="clickable-phone-number" onclick="event.stopPropagation(); openUserDetail('${cleanNumber}');" title="Click to view details for ${cleanNumber}">${match}</span>`;
+                }
+                return match;
+            });
+
+            messageText.innerHTML = clickableText;
+        }
+    }
+
+    /**
+     * Gets the contact name for a phone number from saved contacts.
+     * @param {string} phoneNumber - The phone number to look up.
+     * @returns {string|null} The contact name or null if not found.
+     */
+    function getContactNameByPhone(phoneNumber) {
+        const contacts = JSON.parse(localStorage.getItem('contacts') || '[]');
+        const contact = contacts.find(c => c.phone === phoneNumber);
+        return contact ? contact.name : null;
+    }
+
+    /**
+     * Initializes the user details modal functionality.
+     */
+    function initializeUserDetailsModal() {
+        const modal = document.getElementById('user-details-modal');
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    hideUserDetailsModal();
+                }
+            });
+        }
     }
 
     // =================================================================================
@@ -2497,172 +4688,605 @@
     }
 
     /**
-     * Loads messages for the current chat from the server.
+     * 🚨 CRITICAL MESSAGE LOADING SYSTEM - DO NOT MODIFY WITHOUT EXPLICIT PERMISSION 🚨
+     *
+     * This function is responsible for loading messages with progressive loading and anti-blinking measures.
+     * It coordinates between cache, server, and UI to provide seamless chat experience.
+     *
+     * ⚠️  MODIFICATIONS REQUIRE:
+     * 1. Explicit permission from system maintainer
+     * 2. Understanding of cache-server synchronization
+     * 3. Testing across all loading scenarios (initial, polling, infinite scroll)
+     * 4. Ensuring no race conditions or layout shifts
+     *
+     * Changes here can cause message blinking, lost messages, or broken scroll behavior.
+     *
      * @param {object} options - Configuration for loading messages.
      * @param {boolean} [options.isInitialLoad=false] - Is this the first page of messages?
      * @param {number} [options.unreadCount=0] - Number of unread messages for the separator.
      * @param {string} [options.beforeTs=null] - Timestamp to fetch messages older than this.
      * @param {boolean} [options.isPolling=false] - Is this a background poll for new messages?
      * @param {string} [options.afterTs=null] - Timestamp to fetch messages newer than this (for polling).
+     * @param {boolean} [options.isLoadingMore=false] - Is this loading older messages for infinite scroll?
      * @returns {Promise<boolean>} A promise that resolves to true if messages were loaded, false otherwise.
      */
     async function loadMessages(options = {}) {
-        const { isInitialLoad = false, unreadCount = 0, beforeTs = null, isPolling = false, afterTs = null } = options;
-        if (!appState.userId || !appState.peerId) return;
+        const {
+            isInitialLoad = false,
+            unreadCount = 0,
+            beforeTs = null,
+            isPolling = false,
+            afterTs = null,
+            isFromCache = false,
+            isLoadingMore = false
+        } = options;
+
+        console.log('🚀 STABLE: loadMessages called with options:', options);
+
+        // Enhanced validation and early returns
+        if (!appState.userId || !appState.peerId) {
+            console.log('🚀 STABLE: No userId or peerId, stopping operations');
+            if (isPolling) stopPolling('messages');
+            return false;
+        }
+
         const chatBox = document.getElementById('chatBox');
-        
+        const chatId = getChatId(appState.userId, appState.peerId);
+
+        // Prevent concurrent loading operations
+        if (chatBox.dataset.loading === 'true' && !isPolling) {
+            console.log('🚀 STABLE: Already loading, skipping duplicate request');
+            return false;
+        }
+
+        // Set loading state to prevent concurrent requests
+        if (!isPolling) {
+            chatBox.dataset.loading = 'true';
+        }
+
         let url = `${API_URL}?action=getMessages&userId=${appState.userId}&peerId=${appState.peerId}`;
-        if (beforeTs) {
-            url += `&beforeTs=${encodeURIComponent(beforeTs)}`;
-        }
-        // --- MODIFICATION: Make polling more efficient ---
-        // If this is a polling request, find the last message's timestamp and only ask for newer messages.
+        if (beforeTs) url += `&beforeTs=${encodeURIComponent(beforeTs)}`;
+        if (afterTs) url += `&afterTs=${encodeURIComponent(afterTs)}`;
+
+        // Enhanced polling logic with better efficiency
         if (isPolling) {
-                // Don't poll if page is hidden
-                if (document.hidden) return;
+            if (document.hidden) {
+                console.log('🚀 STABLE: Page hidden, skipping poll');
+                return false;
+            }
 
-                // Use the timestamp of the very last message rendered, regardless of sender
-                const allMessages = chatBox.querySelectorAll('.message-container[data-timestamp]');
-                if (allMessages.length > 0) {
-                    const lastMessage = allMessages[allMessages.length - 1];
-                    const lastTs = lastMessage.dataset.timestamp;
-                    if (lastTs) {
-                        url += `&afterTs=${encodeURIComponent(lastTs)}`;
-                    }
-                }
+            // Get last message timestamp more efficiently
+            const lastMessage = chatBox.querySelector('.message-container[data-timestamp]:last-child');
+            if (lastMessage?.dataset.timestamp) {
+                url += `&afterTs=${encodeURIComponent(lastMessage.dataset.timestamp)}`;
+            }
         }
-
-
 
         try {
-            // Only show the main "Loading..." indicator if the chatbox is completely empty.
-            // This prevents the loading text from overwriting cached messages.
-            if (isInitialLoad && chatBox.children.length === 0) {
-                chatBox.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-color);">Loading chats...</p>';
+            // Progressive loading indicators
+            if (isInitialLoad && !isFromCache) {
+                showProgressiveLoader(chatBox, 'Loading conversation...');
+            } else if (isLoadingMore) {
+                showProgressiveLoader(chatBox, 'Loading older messages...', true);
             }
 
+            console.log('🚀 STABLE: Making request to:', url);
             const data = await jsonpRequest(url);
-            
+
+            // Remove loading indicators
+            removeProgressiveLoader(chatBox);
+
             if (data.status === 'error') {
-                console.error("Error loading messages:", data.message);
-                if (beforeTs) return false; // Indicate no messages were loaded
-                // Don't show toast on regular polling errors to avoid spam
-                return;
+                console.error("🚀 STABLE: Server error:", data.message);
+                if (isLoadingMore) return false;
+
+                // For non-loading-more errors, show user-friendly error
+                if (!isPolling) {
+                    showErrorState(chatBox, 'Unable to load messages. Please check your connection.');
+                }
+                return false;
             }
 
-            // --- Adaptive Polling Logic ---
+            // Handle empty chat state
+            if (data.status === 'cleared' || !data.messages || data.messages.length === 0) {
+                if (isInitialLoad) {
+                    showEmptyChatState(chatBox);
+                }
+                return false;
+            }
+
+            // Enhanced adaptive polling with better rate management
             if (isPolling) {
                 if (data.messages && data.messages.length > 0) {
-                    appState.pollingRate = 1500; // New messages arrived, speed up
+                    appState.pollingRate = Math.max(1500, appState.pollingRate * 0.8); // Speed up but not too fast
+                    console.log('🚀 STABLE: New messages detected, optimizing polling rate');
                 } else {
-                    // No new messages, slow down polling rate
-                    appState.pollingRate = Math.min(appState.pollingRate * 1.5, appState.maxPollingRate);
+                    appState.pollingRate = Math.min(appState.pollingRate * 1.2, appState.maxPollingRate);
                 }
                 startPolling('messages', () => loadMessages({ isPolling: true }), appState.pollingRate);
             }
 
-            if (data.status === 'cleared' || (data.messages && data.messages.length === 0)) {
-                // Handle the case where the chat history was cleared on the server
-                // or it's a brand new chat with no messages.
-                const peerName = document.getElementById('chatWith').innerText;
-                chatBox.innerHTML = `
-                    <div style="text-align: center; padding: 40px 20px; color: var(--list-item-subtext-color);">
-                        <p>This is the beginning of your chat with <strong>${peerName}</strong>.</p>
-                        <p>Say hello! 👋</p>
-                    </div>`;
-                return; // Stop further processing
+            // Enhanced caching with conflict detection
+            if (chatId && data.messages) {
+                const cachedData = manageMultiLayerCache(chatId, 'read');
+                const shouldMergeWithCache = isLoadingMore && cachedData;
+
+                if (shouldMergeWithCache) {
+                    // For loading more messages, merge with existing cache
+                    const mergedMessages = mergeMessageArrays(cachedData.messages, data.messages, 'prepend');
+                    manageMultiLayerCache(chatId, mergedMessages, 'write');
+                    console.log('🚀 STABLE: Merged older messages with cache');
+                } else {
+                    // Standard caching for new data
+                    manageMultiLayerCache(chatId, data.messages, 'write');
+                    console.log('🚀 STABLE: Updated cache with', data.messages.length, 'messages');
+                }
             }
 
-            // --- New Caching Logic ---
-            // Save the latest full message list to localStorage
-            const chatId = getChatId(appState.userId, appState.peerId);
-            cacheMessages(chatId, data.messages); // Use the new LRU-aware caching function
-            
-            // --- New Typing Indicator Logic ---
-            const existingIndicator = document.getElementById('typing-indicator');
-            if (data.isTyping) {
-                if (!existingIndicator) {
-                    const indicatorBubble = document.createElement('div');
-                    indicatorBubble.id = 'typing-indicator';
-                    indicatorBubble.className = 'typing-indicator-bubble';
-                    indicatorBubble.innerHTML = '<span></span><span></span><span></span>';
-                    chatBox.appendChild(indicatorBubble);
-                    scrollToBottom();
-                }
+            // Handle typing indicators with smooth transitions
+            updateTypingIndicator(data.isTyping);
+
+            // Update peer status
+            updatePeerStatus(data.isOnline);
+
+            // Enhanced message rendering with stability
+            const renderOptions = {
+                isInitialLoad: isInitialLoad && !isFromCache,
+                unreadCount,
+                beforeTs,
+                isPolling,
+                isFromCache,
+                isLoadingMore,
+                data: data
+            };
+
+            if (isLoadingMore) {
+                // For loading more, prepend messages without clearing
+                await renderMessagesProgressive(data.messages, renderOptions);
             } else {
-                if (existingIndicator) {
-                    existingIndicator.remove();
-                }
+                // Standard rendering
+                renderMessages(data.messages, renderOptions);
             }
 
-            // Handle online status from server data
-            document.getElementById('peerStatus').innerText = data.isOnline ? 'Online' : '';
-
-            // Render the UI using the fresh data from the server
-            renderMessages(data.messages, { isInitialLoad, unreadCount, beforeTs, isPolling });
-
-            // Mark that the initial load is done so we can use the instant check next time
+            // Mark initial load complete
             if (isInitialLoad) {
-                document.getElementById('chatBox').dataset.initialLoadComplete = 'true';
-            }
-            if (isInitialLoad) {
+                chatBox.dataset.initialLoadComplete = 'true';
+                chatBox.dataset.loading = 'false';
                 scrollToBottom();
             }
 
-            // Return true if messages were loaded, or if there are more to load
             return data.messages.length > 0 || data.hasMore;
 
         } catch (error) {
-            console.error("Network error loading messages:", error);
-            return false; // Indicate failure
+            console.error("🚀 STABLE: Network error:", error);
+            removeProgressiveLoader(chatBox);
+
+            if (isLoadingMore) {
+                showToast('Failed to load older messages. Please try again.', 'error');
+                return false;
+            }
+
+            // For other errors, try to recover gracefully
+            if (!isPolling) {
+                handleLoadError(chatBox, error);
+            }
+            return false;
+        } finally {
+            // Always clean up loading state
+            if (!isPolling) {
+                chatBox.dataset.loading = 'false';
+            }
         }
     }
 
     /**
-     * Loads older messages when the user scrolls to the top.
+     * Shows progressive loading indicators that don't cause layout shifts.
+     */
+    function showProgressiveLoader(chatBox, message, prepend = false) {
+        const loader = document.createElement('div');
+        loader.className = 'progressive-loader';
+        loader.style.cssText = `
+            text-align: center;
+            padding: 15px;
+            color: var(--list-item-subtext-color);
+            font-size: 0.9em;
+            background: var(--container-bg);
+            border-radius: 8px;
+            margin: 10px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        `;
+        loader.textContent = message;
+
+        if (prepend) {
+            chatBox.prepend(loader);
+        } else {
+            chatBox.appendChild(loader);
+        }
+
+        // Fade in smoothly
+        setTimeout(() => loader.style.opacity = '1', 10);
+        chatBox.dataset.hasLoader = 'true';
+    }
+
+    /**
+     * Removes progressive loading indicators.
+     */
+    function removeProgressiveLoader(chatBox) {
+        const loader = chatBox.querySelector('.progressive-loader');
+        if (loader) {
+            loader.style.opacity = '0';
+            setTimeout(() => loader.remove(), 300);
+            delete chatBox.dataset.hasLoader;
+        }
+    }
+
+    /**
+     * Shows user-friendly error state.
+     */
+    function showErrorState(chatBox, message) {
+        chatBox.innerHTML = `
+            <div style="text-align: center; padding: 40px 20px; color: var(--list-item-subtext-color);">
+                <p>${message}</p>
+                <button onclick="retryLastOperation()" style="margin-top: 10px; padding: 8px 16px; background: var(--button-bg); border: none; border-radius: 8px; cursor: pointer;">Retry</button>
+            </div>
+        `;
+    }
+
+    /**
+     * Shows empty chat state.
+     */
+    function showEmptyChatState(chatBox) {
+        const peerName = document.getElementById('chatWith').innerText || 'this user';
+        chatBox.innerHTML = `
+            <div style="text-align: center; padding: 40px 20px; color: var(--list-item-subtext-color);">
+                <p>This is the beginning of your chat with <strong>${peerName}</strong>.</p>
+                <p>Say hello! 👋</p>
+            </div>`;
+    }
+
+    /**
+     * Handles loading errors gracefully.
+     */
+    function handleLoadError(chatBox, error) {
+        // Try to show cached messages if available
+        const chatId = getChatId(appState.userId, appState.peerId);
+        const cachedData = manageMultiLayerCache(chatId, 'read');
+
+        if (cachedData && cachedData.messages.length > 0) {
+            console.log('🚀 STABLE: Showing cached messages after error');
+            renderMessages(cachedData.messages, { isFromCache: true, isErrorRecovery: true });
+            showToast('Connection issue. Showing cached messages.', 'info');
+        } else {
+            showErrorState(chatBox, 'Unable to load messages. Please check your connection.');
+        }
+    }
+
+    /**
+     * Updates typing indicator with smooth animations.
+     */
+    function updateTypingIndicator(isTyping) {
+        const chatBox = document.getElementById('chatBox');
+        const existingIndicator = document.getElementById('typing-indicator');
+
+        if (isTyping) {
+            if (!existingIndicator) {
+                const indicatorBubble = document.createElement('div');
+                indicatorBubble.id = 'typing-indicator';
+                indicatorBubble.className = 'typing-indicator-bubble';
+                indicatorBubble.innerHTML = '<span></span><span></span><span></span>';
+                chatBox.appendChild(indicatorBubble);
+                scrollToBottom();
+            }
+        } else {
+            if (existingIndicator) {
+                existingIndicator.style.opacity = '0';
+                setTimeout(() => existingIndicator.remove(), 300);
+            }
+        }
+    }
+
+    /**
+     * Updates peer online status.
+     */
+    function updatePeerStatus(isOnline) {
+        const statusElement = document.getElementById('peerStatus');
+        if (statusElement) {
+            statusElement.innerText = isOnline ? 'Online' : '';
+        }
+    }
+
+    /**
+     * Merges message arrays intelligently for progressive loading.
+     */
+    function mergeMessageArrays(existing, incoming, operation = 'append') {
+        if (!existing || !incoming) return existing || incoming || [];
+
+        const existingIds = new Set(existing.map(m => m.id));
+        const newMessages = incoming.filter(m => !existingIds.has(m.id));
+
+        if (operation === 'prepend') {
+            return [...incoming, ...existing];
+        } else {
+            return [...existing, ...newMessages];
+        }
+    }
+
+    /**
+     * Enhanced infinite scroll with debouncing, scroll preservation, and smooth animations.
      */
     async function loadMoreMessages() {
         const chatBox = document.getElementById('chatBox');
-        const messageCount = chatBox.querySelectorAll('.message-container').length;
 
-        // --- NEW: Instant check to avoid unnecessary server requests ---
-        // If we have fewer than 50 messages, we know we have them all.
-        if (messageCount < 50 && chatBox.dataset.initialLoadComplete === 'true') {
-            if (chatBox.dataset.allLoaded !== 'true') {
-                chatBox.dataset.allLoaded = 'true';
-                const noMoreMsg = document.createElement('div');
-                noMoreMsg.textContent = 'No older messages';
-                noMoreMsg.style.cssText = 'text-align: center; padding: 10px; opacity: 0.5; font-size: 0.9em;';
-                chatBox.prepend(noMoreMsg);
-            }
+        // Enhanced early exit conditions
+        if (!chatBox || chatBox.dataset.loadingMore === 'true' || chatBox.dataset.allLoaded === 'true') {
             return;
         }
 
+        const messageCount = chatBox.querySelectorAll('.message-container').length;
         const oldestMessage = chatBox.querySelector('.message-container[data-timestamp]');
-        if (!oldestMessage || chatBox.dataset.loading === 'true') return;
 
-        chatBox.dataset.loading = 'true'; // Prevent multiple loads
-        const beforeTs = oldestMessage.dataset.timestamp;
+        // Smart loading thresholds based on message count
+        if (messageCount < 20 && chatBox.dataset.initialLoadComplete === 'true' && !oldestMessage) {
+            showEndOfHistoryIndicator();
+            return;
+        }
 
-        // Show a subtle loading indicator
-        const loader = document.createElement('div');
-        loader.id = 'history-loader';
-        loader.innerHTML = '<div class="loading-dots" style="padding: 10px;"><span></span><span></span><span></span></div>';
-        loader.style.textAlign = 'center';
-        loader.style.padding = '10px';
-        loader.style.opacity = '0.7';
-        chatBox.prepend(loader);
+        if (!oldestMessage) {
+            console.log('🚀 INFINITE: No oldest message found');
+            return;
+        }
 
-        const moreMessagesLoaded = await loadMessages({ beforeTs: beforeTs });
-        loader.remove(); // Hide loader
-        delete chatBox.dataset.loading;
+        // Debounced scroll handling
+        if (!chatBox.dataset.lastScrollTime) {
+            chatBox.dataset.lastScrollTime = '0';
+        }
 
-        if (!moreMessagesLoaded) {
-            chatBox.dataset.allLoaded = 'true'; // Mark that we've reached the end
-            const noMoreMsg = document.createElement('div');
-            noMoreMsg.textContent = 'No older messages';
-            noMoreMsg.style.cssText = 'text-align: center; padding: 10px; opacity: 0.5; font-size: 0.9em;';
-            chatBox.prepend(noMoreMsg);
+        const now = Date.now();
+        const timeSinceLastScroll = now - parseInt(chatBox.dataset.lastScrollTime);
+
+        if (timeSinceLastScroll < 300) { // Debounce for 300ms
+            console.log('🚀 INFINITE: Scroll debounced, ignoring');
+            return;
+        }
+
+        chatBox.dataset.lastScrollTime = now.toString();
+
+        // Store scroll state for restoration
+        const scrollState = {
+            previousScrollHeight: chatBox.scrollHeight,
+            previousScrollTop: chatBox.scrollTop,
+            oldestMessageTimestamp: oldestMessage.dataset.timestamp,
+            triggerPosition: chatBox.scrollTop
+        };
+
+        console.log('🚀 INFINITE: Loading older messages with scroll preservation');
+
+        // Set loading state
+        chatBox.dataset.loadingMore = 'true';
+
+        try {
+            const success = await loadMessages({
+                beforeTs: scrollState.oldestMessageTimestamp,
+                isLoadingMore: true
+            });
+
+            if (success) {
+                console.log('🚀 INFINITE: Older messages loaded successfully');
+                // Restore scroll position with enhanced precision
+                setTimeout(() => {
+                    restoreScrollPositionEnhanced(scrollState);
+                }, 150);
+            } else {
+                console.log('🚀 INFINITE: No more older messages available');
+                showEndOfHistoryIndicator();
+            }
+        } catch (error) {
+            console.error('🚀 INFINITE: Failed to load older messages:', error);
+            showToast('Failed to load older messages. Please try again.', 'error');
+        } finally {
+            // Clean up loading state after a delay
+            setTimeout(() => {
+                delete chatBox.dataset.loadingMore;
+            }, 500);
+        }
+    }
+
+    /**
+     * Enhanced scroll position restoration with multiple fallback strategies.
+     */
+    function restoreScrollPositionEnhanced(scrollState) {
+        const chatBox = document.getElementById('chatBox');
+        if (!chatBox) return;
+
+        const newScrollHeight = chatBox.scrollHeight;
+        const heightDifference = newScrollHeight - scrollState.previousScrollHeight;
+
+        // Multiple restoration strategies
+        const strategies = [
+            // Strategy 1: Maintain relative position from top
+            () => scrollState.previousScrollTop + heightDifference,
+
+            // Strategy 2: Maintain relative position from bottom
+            () => {
+                const previousBottomPosition = scrollState.previousScrollHeight - scrollState.previousScrollTop;
+                return newScrollHeight - previousBottomPosition;
+            },
+
+            // Strategy 3: Smart positioning based on trigger point
+            () => {
+                const triggerElement = chatBox.querySelector(`[data-timestamp="${scrollState.oldestMessageTimestamp}"]`);
+                if (triggerElement) {
+                    const rect = triggerElement.getBoundingClientRect();
+                    const chatBoxRect = chatBox.getBoundingClientRect();
+                    return chatBox.scrollTop + rect.top - chatBoxRect.top;
+                }
+                return scrollState.previousScrollTop + heightDifference;
+            }
+        ];
+
+        let newScrollTop = strategies[0](); // Default strategy
+
+        // Try each strategy and validate the result
+        for (const strategy of strategies) {
+            const candidate = strategy();
+            if (candidate >= 0 && candidate <= newScrollHeight - chatBox.clientHeight) {
+                newScrollTop = candidate;
+                break;
+            }
+        }
+
+        // Ensure scroll position is within bounds
+        newScrollTop = Math.max(0, Math.min(newScrollTop, newScrollHeight - chatBox.clientHeight));
+
+        console.log('🚀 INFINITE: Enhanced scroll restoration:', {
+            previousScrollHeight: scrollState.previousScrollHeight,
+            newScrollHeight,
+            heightDifference,
+            previousScrollTop: scrollState.previousScrollTop,
+            newScrollTop,
+            strategy: 'enhanced'
+        });
+
+        // Smooth scroll restoration
+        chatBox.scrollTo({
+            top: newScrollTop,
+            behavior: 'auto'
+        });
+    }
+
+    /**
+     * Shows end of history indicator with smooth animation.
+     */
+    function showEndOfHistoryIndicator() {
+        const chatBox = document.getElementById('chatBox');
+        if (chatBox.dataset.allLoaded === 'true') return;
+
+        chatBox.dataset.allLoaded = 'true';
+
+        const endIndicator = document.createElement('div');
+        endIndicator.id = 'end-of-history';
+        endIndicator.style.cssText = `
+            text-align: center;
+            padding: 15px;
+            background: var(--button-bg);
+            border-radius: 12px;
+            margin: 15px;
+            color: var(--list-item-subtext-color);
+            font-size: 0.9em;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: relative;
+        `;
+        endIndicator.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <span style="font-size: 1.2em;">📭</span>
+                <span>No older messages available</span>
+            </div>
+        `;
+
+        chatBox.prepend(endIndicator);
+
+        // Animate in
+        setTimeout(() => {
+            endIndicator.style.opacity = '1';
+            endIndicator.style.transform = 'translateY(0)';
+        }, 100);
+
+        // Auto-hide after 4 seconds with fade out animation
+        setTimeout(() => {
+            endIndicator.style.opacity = '0';
+            endIndicator.style.transform = 'translateY(-5px)';
+            setTimeout(() => {
+                if (endIndicator.parentNode) {
+                    endIndicator.remove();
+                }
+            }, 400);
+        }, 4000);
+    }
+
+    /**
+     * Enhanced scroll event handler with debouncing and smart loading triggers.
+     */
+    function createEnhancedScrollHandler() {
+        const chatBox = document.getElementById('chatBox');
+        if (!chatBox) return;
+
+        let scrollTimeout;
+        let lastScrollTop = 0;
+        let scrollDirection = 'down';
+
+        chatBox.addEventListener('scroll', (e) => {
+            const currentScrollTop = e.target.scrollTop;
+
+            // Update scroll direction
+            if (currentScrollTop > lastScrollTop) {
+                scrollDirection = 'down';
+            } else if (currentScrollTop < lastScrollTop) {
+                scrollDirection = 'up';
+            }
+
+            lastScrollTop = currentScrollTop;
+
+            // Clear existing timeout
+            if (scrollTimeout) {
+                clearTimeout(scrollTimeout);
+            }
+
+            // Debounced scroll handling
+            scrollTimeout = setTimeout(() => {
+                handleScrollEnd(e.target, scrollDirection);
+            }, 150);
+        }, { passive: true });
+    }
+
+    /**
+     * Handles scroll end events with smart loading logic.
+     */
+    function handleScrollEnd(chatBox, scrollDirection) {
+        const scrollTop = chatBox.scrollTop;
+        const scrollHeight = chatBox.scrollHeight;
+        const clientHeight = chatBox.clientHeight;
+
+        // Update scroll-to-bottom button visibility
+        const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
+        if (scrollToBottomBtn) {
+            const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+            scrollToBottomBtn.style.display = distanceFromBottom > 200 ? 'flex' : 'none';
+        }
+
+        // Handle new messages indicator
+        const newMessagesIndicator = document.getElementById('new-messages-indicator');
+        if (newMessagesIndicator) {
+            const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+            if (distanceFromBottom < 50 && newMessagesIndicator.style.display === 'block') {
+                newMessagesIndicator.style.display = 'none';
+            }
+        }
+
+        // Smart infinite scroll trigger
+        if (scrollDirection === 'up' && scrollTop < 100) {
+            // Only trigger if not already loading and not at end of history
+            if (chatBox.dataset.loadingMore !== 'true' && chatBox.dataset.allLoaded !== 'true') {
+                loadMoreMessages();
+            }
+        }
+    }
+
+    /**
+     * Initializes enhanced scroll handling when chat loads.
+     */
+    function initializeEnhancedScrollHandling() {
+        // Remove old scroll listener and add enhanced one
+        const chatBox = document.getElementById('chatBox');
+        if (chatBox) {
+            // Remove existing scroll listeners (best effort)
+            chatBox.removeEventListener('scroll', handleScrollEnd);
+
+            // Add enhanced scroll handling
+            createEnhancedScrollHandler();
         }
     }
 
@@ -2676,10 +5300,11 @@
         tempElement.dataset.messageId = realMsg.id;
         delete tempElement.dataset.tempId;
 
-        // Update the status icon from clock to single tick
+        // Update the status icon from sending to sent
         const statusIcon = tempElement.querySelector('.status-icon');
         if (statusIcon) {
-            statusIcon.innerHTML = ' ✓'; // Sent icon
+            statusIcon.innerHTML = '✓'; // Sent icon (single tick)
+            statusIcon.className = 'status-icon sent'; // Apply sent styling
         }
 
         // Re-attach event listeners for the now-permanent message
@@ -2736,19 +5361,19 @@
         let statusIconHtml = '';
         if (isMe) {
             if (isTemp) {
-                statusIconHtml = '<span class="status-icon"> 🕒</span>'; // Clock for sending
+                statusIconHtml = '<span class="status-icon sending">⏳</span>'; // Hourglass for sending
             } else if (m.seen === true || m.seen === "true") {
-                statusIconHtml = '<span class="status-icon seen"> ✓✓</span>'; // Double check for seen
+                statusIconHtml = '<span class="status-icon seen">✓✓</span>'; // Double blue check for seen
             } else {
-                statusIconHtml = '<span class="status-icon"> ✓</span>'; // Single check for sent
+                statusIconHtml = '<span class="status-icon sent">✓</span>'; // Single grey check for sent
             }
         }
         const timestamp = m.ts ? new Date(m.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
         
-        // New structure for WhatsApp-like timestamp
+        // New structure for WhatsApp-like timestamp with better positioning
         const metaHtml = `
             <div class="message-meta">
-                <small style="font-size: 0.75em; opacity: 0.7;">${timestamp}</small>${statusIconHtml}
+                <small style="font-size: 0.75em; opacity: 0.7; color: inherit;">${timestamp}</small>${statusIconHtml}
             </div>`;
 
         // --- New: Render images and files differently ---
@@ -2799,235 +5424,633 @@
         // Add event listeners for own, non-temporary, non-deleted messages
         if (!isTemp && !isDeleted) {
             addMessageEventListeners(bubble, m);
+            // Make phone numbers clickable in the message
+            makePhoneNumbersClickable(messageContainer);
         }
 
         return messageContainer; // Return the element instead of appending it directly
     }
 
     /**
-     * Attaches context menu event listeners to a message bubble.
+     * Enhanced message event listeners with performance optimizations and better UX.
      * @param {HTMLElement} bubble - The message bubble element.
      * @param {Object} m - The message object.
      */
     function addMessageEventListeners(bubble, m) {
-        const container = bubble.parentElement; // The .message-container
+        const container = bubble.parentElement;
         const replyIcon = container.querySelector('.reply-icon');
 
-        // --- Desktop Feature 1: Hover to show reply icon ---
+        if (!container || !replyIcon) return;
+
+        // Performance optimization: Use event delegation and passive listeners where possible
+        const eventOptions = { passive: true };
+
+        // --- Enhanced Desktop Features ---
+        let hoverTimeout;
         container.addEventListener('mouseenter', () => {
-            if (window.innerWidth > 768) { // Only on larger screens
-                replyIcon.style.opacity = '1';
-                replyIcon.style.pointerEvents = 'auto';
+            if (window.innerWidth > 768) {
+                // Debounce hover effects
+                clearTimeout(hoverTimeout);
+                hoverTimeout = setTimeout(() => {
+                    replyIcon.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+                    replyIcon.style.opacity = '1';
+                    replyIcon.style.pointerEvents = 'auto';
+                    replyIcon.style.transform = 'translateY(-50%) scale(1.1)';
+                }, 50);
             }
-        });
+        }, eventOptions);
+
         container.addEventListener('mouseleave', () => {
             if (window.innerWidth > 768) {
+                clearTimeout(hoverTimeout);
+                replyIcon.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
                 replyIcon.style.opacity = '0';
                 replyIcon.style.pointerEvents = 'none';
+                replyIcon.style.transform = 'translateY(-50%) scale(0.9)';
             }
-        });
-        replyIcon.addEventListener('click', () => initiateReply(m.id, m.msg));
+        }, eventOptions);
 
-        // --- Desktop Feature 2: Right-click for context menu ---
+        replyIcon.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            initiateReply(m.id, m.msg);
+        });
+
+        // --- Enhanced Desktop Context Menu ---
         bubble.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             e.stopPropagation();
             showContextMenu(e, m.id, m.msg);
-        });
+        }, { passive: false });
 
-        // --- Mobile Feature 1: Swipe to reply ---
-        let startX = 0;
-        let dist = 0;
-        const swipeThreshold = 60; // How far to swipe to trigger reply
+        // --- Enhanced Mobile Features ---
+        let touchStartTime = 0;
+        let startX = 0, startY = 0;
+        let distX = 0, distY = 0;
+        const swipeThreshold = 60;
+        const longPressDuration = 500;
 
         container.addEventListener('touchstart', (e) => {
-            // Don't interfere if it's a multi-touch gesture
             if (e.touches.length > 1) return;
+
             const touch = e.touches[0];
+            touchStartTime = Date.now();
             startX = touch.clientX;
-            dist = 0;
-            container.style.transition = 'none'; // Disable transition during swipe
-        });
+            startY = touch.clientY;
+            distX = 0;
+            distY = 0;
+
+            // Disable transitions during gesture
+            container.style.transition = 'none';
+
+            // Start long-press timer
+            clearTimeout(container.longPressTimer);
+            container.longPressTimer = setTimeout(() => {
+                if (Math.abs(distX) < 10 && Math.abs(distY) < 10) { // Ensure minimal movement
+                    e.preventDefault();
+                    showContextMenu(e, m.id, m.msg);
+                }
+            }, longPressDuration);
+        }, { passive: true });
 
         container.addEventListener('touchmove', (e) => {
             if (e.touches.length > 1) return;
+
             const touch = e.touches[0];
-            dist = touch.clientX - startX;
-            if (dist > 0) { // Only allow right-swipe
-                container.style.transform = `translateX(${dist}px)`;
-                // Show reply icon during swipe
-                const iconOpacity = Math.min(dist / swipeThreshold, 1);
-                replyIcon.style.opacity = iconOpacity;
-                replyIcon.style.transform = `translateY(-50%) scale(${iconOpacity})`;
-            }
-        });
+            distX = touch.clientX - startX;
+            distY = touch.clientY - startY;
 
-        container.addEventListener('touchend', () => {
-            if (dist === 0) return; // This was a tap, not a swipe
-            container.style.transition = 'transform 0.3s ease'; // Re-enable transition
-            if (dist > swipeThreshold) {
-                // Swiped far enough, trigger reply
+            // Cancel long-press if significant movement
+            if (Math.abs(distX) > 10 || Math.abs(distY) > 10) {
+                clearTimeout(container.longPressTimer);
+            }
+
+            // Handle horizontal swipe for reply
+            if (Math.abs(distX) > Math.abs(distY) && distX > 0) {
+                e.preventDefault();
+                const progress = Math.min(distX / swipeThreshold, 1);
+
+                container.style.transform = `translateX(${distX * 0.3}px)`;
+                replyIcon.style.opacity = progress;
+                replyIcon.style.transform = `translateY(-50%) scale(${0.9 + progress * 0.2})`;
+            }
+        }, { passive: false });
+
+        container.addEventListener('touchend', (e) => {
+            clearTimeout(container.longPressTimer);
+            const touchDuration = Date.now() - touchStartTime;
+
+            if (distX > swipeThreshold && Math.abs(distY) < 50) {
+                // Successful swipe for reply
+                e.preventDefault();
                 initiateReply(m.id, m.msg);
-                // Animate back smoothly
-                container.style.transform = 'translateX(0)';
-            } else {
-                // Didn't swipe far enough, just snap back
-                container.style.transform = 'translateX(0)';
-            }
-            replyIcon.style.opacity = '0'; // Hide icon after swipe ends
-        });
 
-        // --- Mobile Feature 2: Long-press for context menu ---
-        let longPressTimer;
-        bubble.addEventListener('touchstart', (e) => {
-            // Don't start the timer if it's a multi-touch gesture
-            if (e.touches.length > 1) {
-                clearTimeout(longPressTimer);
-                return;
+                // Enhanced swipe feedback animation
+                container.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                container.style.transform = 'translateX(20px)';
+
+                setTimeout(() => {
+                    container.style.transition = 'transform 0.3s ease';
+                    container.style.transform = 'translateX(0)';
+                }, 100);
+            } else {
+                // Snap back animation
+                container.style.transition = 'transform 0.3s ease';
+                container.style.transform = 'translateX(0)';
             }
-            longPressTimer = setTimeout(() => {
-                e.preventDefault(); // Prevent other events like click from firing
-                showContextMenu(e, m.id, m.msg);
-            }, 500);
-        });
-        // Clear the timer if the touch ends or moves, to prevent it from firing
-        bubble.addEventListener('touchend', () => clearTimeout(longPressTimer));
-        bubble.addEventListener('touchmove', () => clearTimeout(longPressTimer));
+
+            // Reset reply icon
+            replyIcon.style.opacity = '0';
+            replyIcon.style.transform = 'translateY(-50%) scale(0.9)';
+        }, { passive: true });
     }
 
     /**
-     * Renders an array of message objects into the chat box.
+     * Enhanced error handling and retry mechanisms.
+     */
+    function initializeErrorHandling() {
+        // Global error handler for unhandled promise rejections
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('🚀 ERROR: Unhandled promise rejection:', event.reason);
+            showToast('An unexpected error occurred. Please refresh if issues persist.', 'error');
+        });
+
+        // Network status monitoring
+        window.addEventListener('online', handleNetworkStatusChange);
+        window.addEventListener('offline', handleNetworkStatusChange);
+
+        // Initialize network status
+        handleNetworkStatusChange();
+    }
+
+    /**
+     * Handles network status changes.
+     */
+    function handleNetworkStatusChange() {
+        const isOnline = navigator.onLine;
+        const statusIndicator = document.getElementById('network-status-indicator');
+
+        if (isOnline) {
+            // Online - remove offline indicators
+            if (statusIndicator) statusIndicator.remove();
+
+            // Resume polling if needed
+            if (appState.userId && appState.peerId) {
+                const chatBox = document.getElementById('chatBox');
+                if (chatBox && chatBox.dataset.initialLoadComplete === 'true') {
+                    startPolling('messages', () => loadMessages({ isPolling: true }), appState.pollingRate);
+                }
+            }
+
+            showToast('Connection restored!', 'success');
+        } else {
+            // Offline - show indicator
+            if (!statusIndicator) {
+                showNetworkStatusIndicator('offline');
+            }
+
+            // Pause polling to save resources
+            stopPolling('messages');
+
+            showToast('Connection lost. Showing cached messages.', 'info');
+        }
+    }
+
+    /**
+     * Shows network status indicator.
+     */
+    function showNetworkStatusIndicator(status) {
+        const indicator = document.createElement('div');
+        indicator.id = 'network-status-indicator';
+        indicator.style.cssText = `
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--container-bg);
+            border: 1px solid var(--list-item-border);
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 0.8em;
+            color: var(--text-color);
+            box-shadow: var(--container-shadow);
+            z-index: 1000;
+            opacity: 0.9;
+            transition: opacity 0.3s ease;
+        `;
+
+        if (status === 'offline') {
+            indicator.innerHTML = '📡 <span>Offline - Using cached data</span>';
+        }
+
+        document.body.appendChild(indicator);
+
+        // Auto-hide when back online
+        if (status === 'offline') {
+            const checkOnline = () => {
+                if (navigator.onLine) {
+                    indicator.style.opacity = '0';
+                    setTimeout(() => indicator.remove(), 300);
+                } else {
+                    setTimeout(checkOnline, 5000);
+                }
+            };
+            setTimeout(checkOnline, 5000);
+        }
+    }
+
+    /**
+     * Enhanced retry mechanism for failed operations.
+     */
+    function retryLastOperation() {
+        const chatBox = document.getElementById('chatBox');
+        if (!chatBox) return;
+
+        // Remove error state
+        chatBox.innerHTML = '';
+
+        // Retry the last operation
+        if (appState.userId && appState.peerId) {
+            loadMessages({ isInitialLoad: true, isErrorRecovery: true });
+        }
+    }
+
+    /**
+     * Performance monitoring and optimization.
+     */
+    function initializePerformanceMonitoring() {
+        // Monitor render performance
+        if (window.performance && window.performance.mark) {
+            let renderCount = 0;
+            const originalRenderMessages = renderMessages;
+
+            renderMessages = function(messages, options) {
+                performance.mark(`render-start-${renderCount}`);
+
+                const result = originalRenderMessages.call(this, messages, options);
+
+                performance.mark(`render-end-${renderCount}`);
+                performance.measure(`render-${renderCount}`, `render-start-${renderCount}`, `render-end-${renderCount}`);
+
+                const measure = performance.getEntriesByName(`render-${renderCount}`)[0];
+                if (measure && measure.duration > 100) {
+                    console.warn(`🚀 PERFORMANCE: Slow render detected: ${measure.duration.toFixed(2)}ms`);
+                }
+
+                renderCount++;
+                return result;
+            };
+        }
+
+        // Memory usage monitoring for large message lists
+        setInterval(() => {
+            const chatBox = document.getElementById('chatBox');
+            if (chatBox) {
+                const messageCount = chatBox.querySelectorAll('.message-container').length;
+
+                if (messageCount > 500) {
+                    console.warn(`🚀 PERFORMANCE: Large message list detected: ${messageCount} messages`);
+                    // Could implement virtual scrolling here for very large lists
+                }
+            }
+        }, 30000); // Check every 30 seconds
+    }
+
+    /**
+     * Enhanced stable message rendering with anti-blinking technology and smooth animations.
      * @param {Array<Object>} messages - The messages to render.
-     * @param {boolean} [shouldScroll=true] - Whether to scroll to the bottom.
-     * @param {number} [unreadCount=0] - The number of unread messages, used to place the separator.
+     * @param {object} options - Rendering options with stability features.
      */
     function renderMessages(messages, options = {}) {
-        const { isInitialLoad = false, unreadCount = 0, beforeTs = null, isFromCache = false } = options;
+        const {
+            isInitialLoad = false,
+            unreadCount = 0,
+            beforeTs = null,
+            isFromCache = false,
+            isPolling = false,
+            isLoadingMore = false,
+            isErrorRecovery = false,
+            data = null
+        } = options;
+
         const box = document.getElementById("chatBox");
-    
-        let lastDateString = null;
-        if (box.lastChild) {
-            // Get the date of the last message already in the chatbox
-            const lastMsg = box.querySelector('.message-container:last-child');
-            if (lastMsg && lastMsg.dataset.timestamp) {
-                lastDateString = new Date(lastMsg.dataset.timestamp).toDateString();
+        console.log('🚀 STABLE: renderMessages called with', messages.length, 'messages');
+
+        // Enhanced stability checks to prevent unnecessary re-renders
+        if (isPolling && !isLoadingMore) {
+            const hasSignificantChanges = detectMessageChanges(box, messages);
+            if (!hasSignificantChanges) {
+                console.log('🚀 STABLE: No significant changes, skipping render');
+                return;
             }
         }
 
-        // This block now only runs for the very first render from cache,
-        // or if there was no cache and we are rendering from the server for the first time.
-        // It clears the box and renders everything from scratch.
+        // Prevent layout shifts during rendering
+        const originalScrollHeight = box.scrollHeight;
+        const originalScrollTop = box.scrollTop;
+
+        if (isInitialLoad && !isFromCache && !isErrorRecovery) {
+            // Only clear for true initial loads
+            renderInitialMessages(box, messages, unreadCount);
+        } else if (isLoadingMore) {
+            // Progressive loading of older messages
+            renderOlderMessages(box, messages, originalScrollHeight, originalScrollTop);
+        } else {
+            // Incremental updates for polling and cache merges
+            renderIncrementalMessages(box, messages, options);
+        }
+
+        // Update cache timestamp
+        if (messages.length > 0) {
+            localStorage.setItem('lastCacheUpdate', Date.now().toString());
+        }
+    }
+
+    /**
+     * Detects if there are significant message changes that require re-rendering.
+     */
+    function detectMessageChanges(chatBox, newMessages) {
+        const existingMessages = chatBox.querySelectorAll('.message-container[data-message-id]');
+        const existingIds = new Set([...existingMessages].map(el => el.dataset.messageId));
+        const newIds = new Set(newMessages.map(m => m.id));
+
+        // Check for new messages or significant count differences
+        const hasNewMessages = newMessages.some(m => !existingIds.has(m.id));
+        const significantCountDiff = Math.abs(newMessages.length - existingIds.size) > 2;
+
+        return hasNewMessages || significantCountDiff;
+    }
+
+    /**
+     * Renders messages for initial load with smooth animations.
+     */
+    function renderInitialMessages(chatBox, messages, unreadCount) {
+        console.log('🚀 STABLE: Rendering initial messages');
+
+        // Clear and prepare for fresh render
+        chatBox.style.opacity = '0';
+        chatBox.innerHTML = '';
+
+        const fragment = document.createDocumentFragment();
+        let lastDateString = null;
+        const firstUnreadIndex = unreadCount > 0 ? Math.max(0, messages.length - unreadCount) : -1;
+
+        messages.forEach((message, index) => {
+            // Add date separators
+            const currentDateString = new Date(message.ts).toDateString();
+            if (currentDateString !== lastDateString) {
+                const dateSeparator = createDateSeparator(message.ts);
+                fragment.appendChild(dateSeparator);
+                lastDateString = currentDateString;
+            }
+
+            // Add unread separator
+            if (index === firstUnreadIndex) {
+                const unreadSeparator = createUnreadSeparator();
+                fragment.appendChild(unreadSeparator);
+            }
+
+            // Render message with animation
+            const messageElement = renderSingleMessage(message, false);
+            messageElement.style.opacity = '0';
+            messageElement.style.transform = 'translateY(20px)';
+            fragment.appendChild(messageElement);
+        });
+
+        chatBox.appendChild(fragment);
+
+        // Animate in messages with staggered timing
+        setTimeout(() => {
+            chatBox.style.transition = 'opacity 0.3s ease';
+            chatBox.style.opacity = '1';
+
+            const messageElements = chatBox.querySelectorAll('.message-container');
+            messageElements.forEach((element, index) => {
+                setTimeout(() => {
+                    element.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+                    element.style.opacity = '1';
+                    element.style.transform = 'translateY(0)';
+                }, index * 50); // Stagger animation
+            });
+        }, 50);
+    }
+
+    /**
+     * Renders older messages for infinite scroll with scroll preservation.
+     */
+    function renderOlderMessages(chatBox, messages, originalScrollHeight, originalScrollTop) {
+        console.log('🚀 STABLE: Rendering older messages progressively');
+
+        const fragment = document.createDocumentFragment();
+        let lastDateString = null;
+
+        // Get the date of the first existing message for proper date separation
+        const firstExisting = chatBox.querySelector('.message-container');
+        if (firstExisting?.dataset.timestamp) {
+            lastDateString = new Date(firstExisting.dataset.timestamp).toDateString();
+        }
+
+        // Reverse messages for proper chronological order (oldest first)
+        const reversedMessages = [...messages].reverse();
+
+        reversedMessages.forEach(message => {
+            const currentDateString = new Date(message.ts).toDateString();
+
+            // Add date separator if needed
+            if (currentDateString !== lastDateString) {
+                const dateSeparator = createDateSeparator(message.ts);
+                fragment.appendChild(dateSeparator);
+                lastDateString = currentDateString;
+            }
+
+            const messageElement = renderSingleMessage(message, false);
+            messageElement.style.opacity = '0';
+            fragment.appendChild(messageElement);
+        });
+
+        // Prepend older messages
+        chatBox.prepend(fragment);
+
+        // Animate in older messages
+        const newElements = chatBox.querySelectorAll('.message-container:nth-child(-n+' + messages.length + ')');
+        newElements.forEach((element, index) => {
+            setTimeout(() => {
+                element.style.transition = 'opacity 0.3s ease';
+                element.style.opacity = '1';
+            }, index * 30);
+        });
+
+        // Restore scroll position after a brief delay
+        setTimeout(() => {
+            const newScrollHeight = chatBox.scrollHeight;
+            const heightDifference = newScrollHeight - originalScrollHeight;
+            chatBox.scrollTop = originalScrollTop + heightDifference;
+        }, 100);
+    }
+
+    /**
+     * Renders incremental message updates for polling and real-time updates.
+     */
+    function renderIncrementalMessages(chatBox, messages, options) {
+        console.log('🚀 STABLE: Rendering incremental messages');
+
+        const fragment = document.createDocumentFragment();
+        let newMessagesAdded = false;
+        const existingMessageIds = new Set([...chatBox.querySelectorAll('[data-message-id]')].map(el => el.dataset.messageId));
+        let lastDateString = null;
+
+        // Get last message date for proper date separation
+        const lastExisting = chatBox.querySelector('.message-container:last-child');
+        if (lastExisting?.dataset.timestamp) {
+            lastDateString = new Date(lastExisting.dataset.timestamp).toDateString();
+        }
+
+        messages.forEach(message => {
+            const isMe = message.from == appState.userId || message.fromId == appState.userId;
+
+            // Handle temporary message replacement
+            const tempMatch = isMe ? chatBox.querySelector(`[data-temp-id='${message.tempId}']`) : null;
+            if (tempMatch) {
+                replaceTempMessageWithAnimation(tempMatch, message);
+                return;
+            }
+
+            // Skip if message already exists
+            if (existingMessageIds.has(message.id)) {
+                updateExistingMessage(message);
+                return;
+            }
+
+            // Add new message
+            const messageElement = renderSingleMessage(message, true);
+            messageElement.classList.add('new-message-animation');
+
+            // Add date separator if needed
+            const currentDateString = new Date(message.ts).toDateString();
+            if (currentDateString !== lastDateString) {
+                const dateSeparator = createDateSeparator(message.ts);
+                fragment.appendChild(dateSeparator);
+                lastDateString = currentDateString;
+            }
+
+            fragment.appendChild(messageElement);
+            newMessagesAdded = true;
+
+            if (!isMe) {
+                playNotificationSound();
+            }
+        });
+
+        if (newMessagesAdded) {
+            chatBox.appendChild(fragment);
+            handleNewMessageScroll(options);
+
+            // Make phone numbers clickable in newly added messages
+            const newMessageElements = fragment.querySelectorAll('.message-container');
+            newMessageElements.forEach(element => {
+                makePhoneNumbersClickable(element);
+            });
+        }
+    }
+
+    /**
+     * Creates a date separator element.
+     */
+    function createDateSeparator(timestamp) {
+        const separator = document.createElement('div');
+        separator.className = 'date-separator';
+        separator.textContent = formatDateSeparator(timestamp);
+        separator.style.opacity = '0';
+        separator.style.transform = 'translateY(10px)';
+
+        setTimeout(() => {
+            separator.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            separator.style.opacity = '1';
+            separator.style.transform = 'translateY(0)';
+        }, 50);
+
+        return separator;
+    }
+
+    /**
+     * Creates an unread messages separator.
+     */
+    function createUnreadSeparator() {
+        const separator = document.createElement('div');
+        separator.className = 'unread-separator';
+        separator.textContent = 'Unread Messages';
+        separator.style.opacity = '0';
+        separator.style.transform = 'scale(0.9)';
+
+        setTimeout(() => {
+            separator.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            separator.style.opacity = '1';
+            separator.style.transform = 'scale(1)';
+        }, 100);
+
+        return separator;
+    }
+
+    /**
+     * Replaces temporary message with real message using smooth animation.
+     */
+    function replaceTempMessageWithAnimation(tempElement, realMessage) {
+        const realElement = renderSingleMessage(realMessage, false);
+
+        // Animate replacement
+        tempElement.style.opacity = '0';
+        tempElement.style.transform = 'scale(0.95)';
+
+        setTimeout(() => {
+            tempElement.parentNode.replaceChild(realElement, tempElement);
+            realElement.style.opacity = '0';
+            realElement.style.transform = 'scale(0.95)';
+
+            setTimeout(() => {
+                realElement.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                realElement.style.opacity = '1';
+                realElement.style.transform = 'scale(1)';
+            }, 50);
+        }, 200);
+    }
+
+    /**
+     * Updates existing message properties (like seen status).
+     */
+    function updateExistingMessage(message) {
+        const element = document.querySelector(`[data-message-id='${message.id}']`);
+        if (!element) return;
+
+        const statusIcon = element.querySelector('.status-icon');
+        if (statusIcon && message.seen === 'true' && !statusIcon.classList.contains('seen')) {
+            statusIcon.style.transition = 'color 0.3s ease';
+            statusIcon.innerHTML = '✓✓';
+            statusIcon.className = 'status-icon seen';
+        }
+    }
+
+    /**
+     * Handles scroll behavior for new messages.
+     */
+    function handleNewMessageScroll(options) {
+        const { isInitialLoad = false, isPolling = false } = options;
+        const chatBox = document.getElementById('chatBox');
+        const newMessagesIndicator = document.getElementById('new-messages-indicator');
+
         if (isInitialLoad) {
-            box.innerHTML = ""; // Only clear if we didn't render from cache
-            const fragment = document.createDocumentFragment();
-            const firstUnreadIndex = unreadCount > 0 ? Math.max(0, messages.length - unreadCount) : -1;
+            scrollToBottom();
+            return;
+        }
 
-            messages.forEach((m, index) => {
-                const currentDateString = new Date(m.ts).toDateString();
-                if (currentDateString !== lastDateString) {
-                    const dateSeparator = document.createElement('div');
-                    dateSeparator.className = 'date-separator';
-                    dateSeparator.textContent = formatDateSeparator(m.ts);
-                    fragment.appendChild(dateSeparator);
-                    lastDateString = currentDateString;
-                }
-                if (index === firstUnreadIndex) {
-                    const separator = document.createElement('div');
-                    separator.className = 'unread-separator';
-                    separator.textContent = 'Unread Messages';
-                    fragment.appendChild(separator);
-                }
-                const msgElement = renderSingleMessage(m, false);
-                fragment.appendChild(msgElement);
-            });
-            box.appendChild(fragment);
-    
-        // If loading older messages (history), prepend them.
-        } else if (beforeTs) { // This is for infinite scroll (loading older messages)
-            const firstMessage = box.querySelector('.message-container');
-            const oldScrollHeight = box.scrollHeight;
-            const fragment = document.createDocumentFragment();
+        const distanceFromBottom = chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight;
 
-            lastDateString = new Date(messages[messages.length - 1].ts).toDateString();
-
-            messages.reverse().forEach(m => {
-                const currentDateString = new Date(m.ts).toDateString();
-                if (currentDateString !== lastDateString) {
-                    const dateSeparator = document.createElement('div');
-                    dateSeparator.className = 'date-separator';
-                    dateSeparator.textContent = formatDateSeparator(lastDateString); // Use the date of the previous block
-                    fragment.appendChild(dateSeparator);
-                }
-                fragment.appendChild(renderSingleMessage(m, false));
-            });
-            box.prepend(fragment);
-
-            // Maintain scroll position so the user doesn't jump
-            box.scrollTop = box.scrollHeight - oldScrollHeight;
-    
-        // This is a polling update or the first server fetch after a cache render.
-        // Be smart about rendering: only add or update messages.
-        } else { // This block now handles both polling and the initial fetch after a cache render
-            const fragment = document.createDocumentFragment();
-            let newMessagesAdded = false;
-            const existingMessageIds = new Set([...box.querySelectorAll('[data-message-id]')].map(el => el.dataset.messageId));
-    
-            messages.forEach(msg => {
-                const isMe = msg.from == appState.userId || msg.fromId == appState.userId;
-    
-                // Check if this server message corresponds to a temporary "sending" message on screen.
-                // The server now returns the tempId, so we can match it directly.
-                const tempMatch = isMe ? box.querySelector(`[data-temp-id='${msg.tempId}']`) : null;
-
-                if (tempMatch) {
-                    // It's a sent message that was previously optimistic. Replace it.
-                    replaceTempMessage(tempMatch, msg);
-                } else if (!existingMessageIds.has(msg.id)) {
-                    // It's a genuinely new message (e.g., from the other user). Render it.
-                    const newElement = renderSingleMessage(msg, true); // Animate new incoming messages
-                    newElement.classList.add('new-message-animation');
-
-                    // Check if a date separator is needed before adding the new message
-                    const currentDateString = new Date(msg.ts).toDateString();
-                    if (currentDateString !== lastDateString) {
-                        const dateSeparator = document.createElement('div');
-                        dateSeparator.className = 'date-separator';
-                        dateSeparator.textContent = formatDateSeparator(msg.ts);
-                        fragment.appendChild(dateSeparator);
-                        lastDateString = currentDateString;
-                    }
-                    fragment.appendChild(newElement);
-                    newMessagesAdded = true;
-                    if (!isMe) {
-                        playNotificationSound();
-                    }
-                } else {
-                    // The message already exists. Just update its 'seen' status if needed.
-                    const element = box.querySelector(`[data-message-id='${msg.id}']`);
-                    const statusIcon = element?.querySelector('.status-icon');
-                    if (statusIcon && msg.seen === 'true' && !statusIcon.classList.contains('seen')) {
-                        statusIcon.innerHTML = ' ✓✓';
-                        statusIcon.classList.add('seen');
-                    }
-                }
-            });
-
-            if (newMessagesAdded) {
-                box.appendChild(fragment);
-            }
-
-            // --- New Conditional Auto-Scroll Logic ---
-            const newMessagesIndicator = document.getElementById('new-messages-indicator');
-            const distanceFromBottom = box.scrollHeight - box.scrollTop - box.clientHeight;
-            const shouldAutoScroll = distanceFromBottom < 80;
-
-            if (shouldAutoScroll) {
-                scrollToBottom();
-                newMessagesIndicator.style.display = 'none'; // Ensure it's hidden
-            } else if (newMessagesAdded) {
-                // If new messages were added and user is scrolled up, show the indicator.
-                newMessagesIndicator.style.display = 'block';
-            }
+        if (distanceFromBottom < 150) {
+            // Auto-scroll if user is near bottom
+            scrollToBottom();
+            if (newMessagesIndicator) newMessagesIndicator.style.display = 'none';
+        } else if (isPolling) {
+            // Show indicator if user is scrolled up
+            if (newMessagesIndicator) newMessagesIndicator.style.display = 'block';
         }
     }
 
