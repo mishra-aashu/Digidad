@@ -1,0 +1,38 @@
+{
+  "name": "digidad-messaging-app",
+  "version": "1.0.0",
+  "description": "A modern messaging app built with Node.js, React, and Supabase",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js",
+    "build": "npm run build --prefix client",
+    "install-client": "npm install --prefix client",
+    "dev-client": "npm run dev --prefix client",
+    "install-server": "npm install --prefix server",
+    "setup": "npm run install-server && npm run install-client",
+    "dev-full": "concurrently \"npm run dev\" \"npm run dev-client\""
+  },
+  "keywords": [
+    "messaging",
+    "react",
+    "nodejs",
+    "supabase",
+    "real-time"
+  ],
+  "author": "Digidad Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^7.6.0",
+    "nodemon": "^3.1.10"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "helmet": "^6.0.1",
+    "jsonwebtoken": "^9.0.0",
+    "socket.io": "^4.7.2"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "digidad-server",
+  "version": "1.0.0",
+  "description": "Node.js backend server for Digidad messaging app",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.4",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "digidad-messaging-app": "file:..",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "helmet": "^6.0.1",
+    "jsonwebtoken": "^9.0.0",
+    "socket.io": "^4.7.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  },
+  "keywords": [
+    "nodejs",
+    "express",
+    "socket.io",
+    "supabase",
+    "messaging"
+  ],
+  "author": "Digidad Team",
+  "license": "MIT"
+}
